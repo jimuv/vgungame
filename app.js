@@ -168,8 +168,8 @@ update() {
             }
             
         }
-}
-
+        }
+    }   
     addButton(button) {
         this.buttons.push(button);
     }
