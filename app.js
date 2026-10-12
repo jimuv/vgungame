@@ -4,6 +4,7 @@ canvas.width = 800;
 canvas.height = 600;
 const radius = 20;
 let keys = {};
+let fWasPressed = false;
 let mouseX=0;
 let mouseY=0;
 let mouseDown=false;
@@ -234,6 +235,38 @@ for (let i = 0; i < balls.length; i++) {
         const ball1 = balls[i];
         const ball2 = balls[j];
 
+        if (ball1.isProjectile || ball2.isProjectile) {
+    let projectile;
+    let enemy;
+
+    if (ball1.isProjectile && !ball2.isProjectile && !ball2.isPlayer) {
+        projectile = ball1;
+        enemy = ball2;
+    } else if (ball2.isProjectile && !ball1.isProjectile && !ball1.isPlayer) {
+        projectile = ball2;
+        enemy = ball1;
+    }
+
+    if (projectile && enemy) {
+        const dx = enemy.x - projectile.x;
+        const dy = enemy.y - projectile.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < projectile.radius + enemy.radius && !enemy.hit) {
+            enemy.hit = true;
+            enemy.color = "lightcoral";
+            projectile.remove = true;
+
+            setTimeout(() => {
+                enemy.color = "red";
+                enemy.hit = false;
+            }, 200);
+        }
+    }
+
+    continue;
+}
+
         const dx = ball2.x - ball1.x;
         const dy = ball2.y - ball1.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -278,6 +311,7 @@ for (let i = 0; i < balls.length; i++) {
             ball2.y += ny * overlap / 2;
         }
     }
+    
 }
 
 
@@ -286,6 +320,35 @@ for (let i = 0; i < balls.length; i++) {
 if (menubutton.isPressed()) {
     menu.visible = !menu.visible;
 }
+
+
+const player = balls.find(ball => ball.isPlayer);
+
+if (keys['f'] && !fWasPressed && player) {
+    const dx = mouseX - player.x;
+    const dy = mouseY - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > 0) {
+        const speed = 5;
+
+        balls.push({
+            x: player.x,
+            y: player.y,
+            dx: (dx / distance) * speed,
+            dy: (dy / distance) * speed,
+            color: "yellow",
+            radius: radius,
+            isProjectile: true,
+            createdAt: Date.now()
+        });
+    }
+}
+
+fWasPressed = keys['f'];
+
+
+
 
 if (menu.visible) {
     if (button.isPressed()) {
@@ -350,8 +413,14 @@ for (const frame of ballFrames) {
 
     frame.draw(ctx);
 }
-
+balls = balls.filter(ball =>
+    !ball.remove &&
+    (!ball.isProjectile || Date.now() - ball.createdAt < 3000)
+);
     justClicked=false;
     requestAnimationFrame(animate);
 }
+
+
+
 animate();
