@@ -11,7 +11,7 @@ let mouseDown=false;
 let justClicked = false;
 
 let balls =[
-    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: 100, maxHealth: 100,hit: false, isDead: false}
+    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: 100, maxHealth: 100,hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null}
 ]
 window.addEventListener("keydown", (event)=>{
     keys[event.key.toLowerCase()] = true;
@@ -48,6 +48,7 @@ class Button {
         this.transparency=transparency;
     }
     update() {
+
         if (mouseDown && mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height) {
             return true;
         }
@@ -70,7 +71,7 @@ class Button {
 }
 
 class Frame {
-    constructor(x, y, width, height, color,transparency,ball) {
+    constructor(x, y, width, height, color,transparency,ball,hasTitleBar=false) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -78,36 +79,59 @@ class Frame {
         this.color = color;
         this.visible = false;
         this.buttons = [];
+        this.texts = [];
         this.transparency=transparency;
         this.dragging=false;
         this.dragOffsetX=0;
         this.dragOffsetY=0;
         this.titleBarHeight=30;
+        this.hasTitleBar=hasTitleBar;
 
         this.ball=ball;
-        this.exitButton = new Button(
-            this.x + this.width - 30, this.y + 5, 25, 20, "X", "red", .75
-        );
+        this.exitButton = hasTitleBar ? new Button(
+        this.x + this.width - 30,
+        this.y + 5,
+        25, 20, "X", "red", 0.75
+        ) : null;
     }
+    addText(text) {
+    this.texts.push(text);
+    }   
     
     draw(ctx) {
         if (this.visible) {
+            
             ctx.fillStyle = this.color;
             ctx.globalAlpha = this.transparency;
             ctx.fillRect(this.x, this.y, this.width, this.height);
 
             ctx.fillStyle = 'black';
-            ctx.fillRect(this.x, this.y, this.width, this.titleBarHeight);
-            ctx.fillStyle = 'white';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Frame', this.x + this.width / 2, this.y + this.titleBarHeight / 2);
-            this.exitButton.draw(ctx);
+            if (this.hasTitleBar) {
+                ctx.fillRect(this.x, this.y, this.width, this.titleBarHeight);
+            }
+            if (this.hasTitleBar) {
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
+    ctx.fillText(
+        'Frame',
+        this.x + this.width / 2,
+        this.y + this.titleBarHeight / 2
+    );
+    }
+
+    if (this.exitButton) {
+        this.exitButton.draw(ctx);
+    }
+                
 
             for (const button of this.buttons) {
                 button.draw(ctx);
+            }
+            for (const text of this.texts) {
+            text.draw(ctx);
             }
         }
     }
@@ -119,6 +143,7 @@ update() {
     }
 
     if (
+        this.hasTitleBar &&
         justClicked &&
         mouseX >= this.x &&
         mouseX <= this.x + this.width &&
@@ -143,8 +168,10 @@ update() {
 
         this.x = newX;
         this.y = newY;
-        this.exitButton.x += moveX;
-        this.exitButton.y += moveY;
+        if (this.exitButton) {
+            this.exitButton.x += moveX;
+            this.exitButton.y += moveY;
+        }
         for (const button of this.buttons) {
             button.x += moveX;
             button.y += moveY;
@@ -155,32 +182,89 @@ update() {
     for (const button of this.buttons) {
         button.update();
     }
-
+    if (this.exitButton) {
         this.exitButton.update();
+
         if (this.exitButton.isPressed()) {
             this.visible = false;
             this.dragging = false;
-            
-        if (this.ball && this.ball.isEnemy) {
+
+            if (this.ball && this.ball.isEnemy) {
                 this.ball.remove = true;
                 clearTimeout(this.ball.randomMovementTimer);
                 this.ball.randomMovementTimer = null;
-            }
-            
+                }
         }
         }
     }   
-    addButton(button) {
+        addButton(button) {
         this.buttons.push(button);
     }
 }
+class Gun {
+    constructor(name, damage, fireRate, ammo) {
+        this.name = name;
+        this.damage = damage;
+        this.fireRate = fireRate;
+        this.ammo = ammo;
+        if (this.name==="Pistol"||this.name===null){
+            this.x=0;
+            this.y=0;
+            this.width=20;
+            this.height=5;
+        }
+    }
+    translate(dx, dy) {
+        this.angle=Math.atan2(dy, dx)
+    }
+    draw(ctx){
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = 'black';
+        ctx.fillRect((-this.width / 2)+22, 18-this.height / 2, this.width, this.height);
+        ctx.restore();
+    }
+}
+
+class Text {
+    constructor(x, y, text, color, size) {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.size = size;
+    }
+
+    draw(ctx) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = this.color;
+        ctx.font = `${this.size}px Arial`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(this.text, this.x, this.y);
+    }
+}
+const pistol = new Gun("Pistol", 10, 1, Infinity);
+pistol.draw(ctx);
+const info = new Frame(
+    50, 50, 150, 70, "lightblue", 0, null
+);
+const infotext1 = new Text(
+    60, 60, "Ammo: Infinity", "black", 14
+);
+const infotext2 = new Text(
+    60, 80, "Health: 100", "black", 14
+);
+info.addText(infotext1);
+info.addText(infotext2);
 
 const menubutton = new Button(
     100, 300, 50, 50, "Menu", "lightgreen", 1
 );
 
 const menu = new Frame(
-    250, 250, 300, 250, "lightgray", 0.5, null
+    250, 250, 300, 250, "lightgray", 0.5, null, true
 );
 
 const button = new Button(
@@ -207,7 +291,7 @@ const button6 = new Button(
 );
 
 const skinsmenu = new Frame(
-    400, 400, 300, 250, "lightorange", 0.5, null
+    400, 400, 300, 250, "lightorange", 0.5, null, true
 
 );
 menu.addButton(button);
@@ -402,6 +486,28 @@ if (button4.isPressed()) {
 
 const player = balls.find(ball => ball.isPlayer);
 
+
+if (player) {
+    pistol.x=player.x - pistol.width / 2;
+    pistol.y=player.y - pistol.height / 2;
+    pistol.translate(mouseX - player.x, mouseY - player.y);
+    pistol.draw(ctx);
+
+    info.visible = true;
+    
+    info.x = player.x +25 ;
+    info.y = player.y - 30;
+
+    infotext1.x = info.x + 10;
+    infotext1.y = info.y + 10;
+    infotext1.text = `Ammo: ${player.ammo}`;
+    infotext2.x = info.x + 10;
+    infotext2.y = info.y + 30;
+    infotext2.text = `Health: ${player.health}`;
+} else {
+    info.visible = false;
+}
+info.draw(ctx);
 if (keys['f'] && !fWasPressed && player) {
     const dx = mouseX - player.x;
     const dy = mouseY - player.y;
@@ -470,7 +576,7 @@ if (menu.visible) {
         const frameX = 350 + (frameIndex % 2) * 230;
         const frameY = 100 + Math.floor(frameIndex / 2) * 140;
         const newFrame = new Frame(
-            frameX, frameY, 200, 120, "lightgray", 0.5, newBall
+            frameX, frameY, 200, 120, "lightgray", 0.5, newBall, true
         );
         newFrame.visible = true;
 
@@ -506,6 +612,9 @@ function startRandomMovement(ball) {
 }
 
 for (const frame of ballFrames) {
+    if (frame.ball.remove || !balls.includes(frame.ball)) {
+        continue;
+    }
     frame.update();
 
     if (frame.buttons[0].isPressed()) {
@@ -518,7 +627,7 @@ for (const frame of ballFrames) {
         frame.ball.dx = 0;
         frame.ball.dy = 0;
     }
-
+    
     frame.draw(ctx);
 }
 balls = balls.filter(ball =>
