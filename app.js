@@ -38,6 +38,8 @@ add powerups: health, speed, damage, armor
 let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: 100, maxHealth: 100,hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null}
 ]
+let objects = [];
+
 window.addEventListener("keydown", (event)=>{
     keys[event.key.toLowerCase()] = true;
 });
@@ -226,6 +228,74 @@ update() {
         this.buttons.push(button);
     }
 }
+class Object {
+    constructor(type) {
+        if (type === "heal") {
+            this.x = Math.random() * (canvas.width - 20) + 10;
+            this.y = Math.random() * (canvas.height - 20) + 10;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.color = "green";
+            this.type = "heal";
+            this.healAmount = 25;
+
+            this.scale=3;
+            this.startTime=performance.now();
+            this.duration=1000;
+        }
+        if (type === "rock") {
+            this.x = Math.random() * (canvas.width - 20) + 10;
+            this.y = Math.random() * (canvas.height - 20) + 10;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.color = "gray";
+            this.type = "rock";
+            this.healAmount = -25;
+
+            this.scale=3;
+            this.startTime=performance.now();
+            this.duration=1000;
+        }
+    }
+    update(){
+        const elapsed = performance.now() - this.startTime;
+        const progress = Math.min(elapsed / this.duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        this.scale= 3-eased*2;
+        
+        
+        let r, g, b;
+
+        if (this.type === "heal") {
+            r = 0;
+            g = 128;
+            b = 0;
+        } else if (this.type === "rock") {
+            r = 128;
+            g = 128;
+            b = 128;
+        }
+
+        this.color = `rgb(
+            ${Math.round(r * eased)},
+            ${Math.round(g * eased)},
+            ${Math.round(b * eased)}
+        )`;
+    }
+     draw(ctx) {
+        this.update();
+        const width = this.width * this.scale;
+        const height = this.height * this.scale;
+        const x = this.x + (this.width - width) / 2;
+        const y = this.y + (this.height - height) / 2;
+
+        
+        ctx.fillStyle = this.color;
+        ctx.fillRect(x, y, width, height);
+    }
+}
 class Gun {
     constructor(name, damage, fireRate, ammo, projectileSpeed = 5, bulletCount = 1, spread = 0) {
         this.name = name;
@@ -248,6 +318,14 @@ class Gun {
             this.y=-10;
             this.width=60;
             this.height=10;
+            this.angle=0;
+            this.lastShot=0;
+        }
+        if(this.name==="Sniper"){
+            this.x=0;
+            this.y=-25;
+            this.width=90;
+            this.height=7;
             this.angle=0;
             this.lastShot=0;
         }
@@ -321,7 +399,9 @@ class Text {
 const weapons = {
     Pistol: new Gun("Pistol", 10, 6, Infinity, 5),
 
-    Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, Math.PI / 6)
+    Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, Math.PI / 6),
+
+    Sniper: new Gun("Sniper", 100, .5, 25, 7)
 };
 
 let currentWeapon = weapons.Pistol;
@@ -372,7 +452,15 @@ const buttonshop1 = new Button(
 const buttonshop2 = new Button(
     550, 500, 50, 50, "shotgun", "blue", 0.5
 );
-
+const buttonshop3 = new Button(
+    600, 500, 50, 50, "sniper", "green", 0.5
+);
+const buttonshop4 = new Button(
+    450, 500, 50, 50, "heal package", "brightgreen", 0.5
+);
+const buttonshop5 = new Button(
+    400, 500, 50, 50, "big ROCK", "gray", 0.5
+);
 const button5 = new Button(
     500, 500, 50, 50, "red ball", "red", 0.5
 );
@@ -398,7 +486,9 @@ skinsmenu.addButton(button5);
 skinsmenu.addButton(button6);
 shopmenu.addButton(buttonshop1);
 shopmenu.addButton(buttonshop2);
-
+shopmenu.addButton(buttonshop3);
+shopmenu.addButton(buttonshop4);
+shopmenu.addButton(buttonshop5);
 let ballFrames = [];
 
 function animate(){
@@ -413,12 +503,14 @@ function animate(){
     skinsmenu.draw(ctx);
     shopmenu.update();
     shopmenu.draw(ctx);
+    
 for (const ball of balls) {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
     ctx.globalAlpha = ball.isDead ? 0.25 : 1;
     ctx.fill();
+    ctx.globalAlpha = 1;
     if (ball === balls[0]) {
         if (keys['w']) ball.y -= 2;
         if (keys['s']) ball.y += 2;
@@ -572,7 +664,51 @@ for (let i = 0; i < balls.length; i++) {
 
 
       
-    
+    const player = balls.find(ball => ball.isPlayer);
+    if (player) {
+        for (const obj of objects) {
+            if (obj.type === "heal"||obj.type === "rock") {
+                obj.draw(ctx);
+                const closestX = Math.max(
+            obj.x,
+            Math.min(player.x, obj.x + obj.width)
+        );
+
+        const closestY = Math.max(
+            obj.y,
+            Math.min(player.y, obj.y + obj.height)
+        );
+
+        const dx = player.x - closestX;
+        const dy = player.y - closestY;
+
+        if (dx * dx + dy * dy < player.radius * player.radius &&!player.isDead) {
+            player.health = Math.max(
+                0,
+                Math.min(player.health + obj.healAmount, player.maxHealth)
+            );
+            
+
+            obj.remove = true;
+            if (player.health <= 0 && !player.isDead) {
+                player.isDead = true;
+                player.transparency = 0.95;
+
+                setTimeout(() => {
+                    player.isDead = false;
+                    player.health = player.maxHealth;
+                    player.x = canvas.width / 2;
+                    player.y = canvas.height / 2;
+                    player.dx = 0;
+                    player.dy = 0;
+                }, 2000);
+            }
+        }
+                
+            }
+        }
+        objects = objects.filter(obj => !obj.remove);
+    }
 if (menubutton.isPressed()) {
     menu.visible = !menu.visible;
 }
@@ -585,7 +721,7 @@ if (buttonshop.isPressed()) {
 }
 
 
-const player = balls.find(ball => ball.isPlayer);
+
 
 
 if (player) {
@@ -633,6 +769,15 @@ if (shopmenu.visible) {
     }
     if (buttonshop2.isPressed()) {
         currentWeapon = weapons.Shotgun;
+    }
+    if (buttonshop3.isPressed()) {
+        currentWeapon = weapons.Sniper;
+    }
+    if (buttonshop4.isPressed()) {
+        objects.push(new Object("heal"));
+    }
+    if (buttonshop5.isPressed()) {
+        objects.push(new Object("rock"));
     }
 }
 if (menu.visible) {
