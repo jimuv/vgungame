@@ -9,6 +9,31 @@ let mouseX=0;
 let mouseY=0;
 let mouseDown=false;
 let justClicked = false;
+// Placeholders
+let enemyCountMax=10;
+let enemyCounter=0;
+let weapons = ["Pistol"];
+let money=0;
+let skins = ["red", "blue", "green", "yellow", "purple"];
+let enemyVariants=["red"]
+let wave = 1;
+let waveEnemies = [5, 10, 15, 20, 25];
+let rewards = [10, 20, 30, 40, 50];
+let armor = ["Leather", "Chain", "Plate"];
+let stats = {
+    speed: 1,
+    health: 100,
+    damage: 10,
+    fireRate: 1,
+    armor: 0
+}
+/*
+plans:
+add shop
+guns: shotgun, rifle, sniper, rocket launcher???
+add powerups: health, speed, damage, armor
+
+*/
 
 let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: 100, maxHealth: 100,hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null}
