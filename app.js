@@ -27,12 +27,14 @@ let stats = {
     fireRate: 1,
     armor: 0
 }
+let currentCategory = "Guns";
 /*
 plans:
 add shop
 guns: shotgun, rifle, sniper, rocket launcher???
 add powerups: health, speed, damage, armor
 
+from shop, add sections, skins, guns, powerups, armor (basic subsections or whatever)
 */
 
 let balls =[
@@ -195,6 +197,7 @@ update() {
 
         this.x = newX;
         this.y = newY;
+
         if (this.exitButton) {
             this.exitButton.x += moveX;
             this.exitButton.y += moveY;
@@ -203,6 +206,18 @@ update() {
             button.x += moveX;
             button.y += moveY;
         }
+        for (const text of this.texts) {
+        text.x += moveX;
+        text.y += moveY;
+     }   
+        
+    if (this === shopmenu) {
+        for (const entry of itemButtons) {
+            entry.button.x += moveX;
+            entry.button.y += moveY;
+        }
+    }
+
     }
 
 
@@ -394,7 +409,11 @@ class Gun {
     }
         ctx.restore();
     }
-}const glassesImage = new Image();
+    
+}
+
+
+const glassesImage = new Image();
 glassesImage.src = "assets/glasses.png";
 
 
@@ -477,14 +496,32 @@ class Text {
     }
 }
 const weapons = {
-    Pistol: new Gun("Pistol", 10, 6, Infinity, 5),
-
-    Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, Math.PI / 6),
-
-    Sniper: new Gun("Sniper", 100, .5, 25, 7),
-
-    DualWield: new Gun("Dual Wield", 10, 12, Infinity, 5, 2, 0),
+    Pistol: new Gun("Pistol", 10, 3, Infinity),
+    Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, 0.5),
+    Sniper: new Gun("Sniper", 50, 0.5, 10, 10, 1),
+    DualWield: new Gun("Dual Wield", 8, 5, Infinity)
 };
+
+const shopItems = {
+    Guns: [
+        { name: "Pistol", action: () => currentWeapon = weapons.Pistol },
+        { name: "Shotgun", action: () => currentWeapon = weapons.Shotgun },
+        { name: "Sniper", action: () => currentWeapon = weapons.Sniper },
+        { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield }
+    ],
+    Utility: [
+        { name: "Heal Package", action: () => objects.push(new Object("heal")) },
+        { name: "Big Rock", action: () => objects.push(new Object("rock")) }
+    ],
+    Skins: [
+        { name: "Red Ball", action: () => balls[0].color = "red" },
+        { name: "Blue Ball", action: () => balls[0].color = "blue" }
+    ],
+    Armor: []
+};
+
+let itemButtons = [];
+
 
 let currentWeapon = weapons.Pistol;
 currentWeapon.draw(ctx);
@@ -529,24 +566,20 @@ const buttonshop = new Button(
     450, 450, 50, 50, "Shop", "lightgreen", 0.5
 );
 
-const buttonshop1 = new Button(
-    500, 500, 50, 50, "pistol", "red", 0.5
+
+const buttonshopGun = new Button(
+    400, 300, 50, 50, "Guns", "purple", 0.5
 );
-const buttonshop2 = new Button(
-    550, 500, 50, 50, "shotgun", "blue", 0.5
+const buttonshopUtil = new Button(
+    450, 300, 50, 50, "Utility", "purple", 0.5
 );
-const buttonshop3 = new Button(
-    600, 500, 50, 50, "sniper", "green", 0.5
+const buttonshopSkins = new Button(
+    500, 300, 50, 50, "Skins", "purple", 0.5
 );
-const buttonshop4 = new Button(
-    450, 500, 50, 50, "heal package", "brightgreen", 0.5
+const buttonshopArmor = new Button(
+    550, 300, 50, 50, "Armor", "purple", 0.5
 );
-const buttonshop5 = new Button(
-    400, 500, 50, 50, "big ROCK", "gray", 0.5
-);
-const buttonshop6 = new Button(
-    450, 550, 50, 50, "dual wield", "purple", 0.5
-);
+
 const button5 = new Button(
     500, 500, 50, 50, "red ball", "red", 0.5
 );
@@ -570,12 +603,28 @@ menu.addButton(button4);
 menu.addButton(buttonshop);
 skinsmenu.addButton(button5);
 skinsmenu.addButton(button6);
-shopmenu.addButton(buttonshop1);
-shopmenu.addButton(buttonshop2);
-shopmenu.addButton(buttonshop3);
-shopmenu.addButton(buttonshop4);
-shopmenu.addButton(buttonshop5);
-shopmenu.addButton(buttonshop6);
+
+shopmenu.addButton(buttonshopGun);
+shopmenu.addButton(buttonshopUtil);
+shopmenu.addButton(buttonshopSkins);
+shopmenu.addButton(buttonshopArmor);
+
+function showCategory(category) {
+    currentCategory = category;
+    itemButtons = shopItems[category].map((item, index) => ({
+        item,
+        button: new Button(
+            shopmenu.x + 10 + (index % 2) * 100,
+            shopmenu.y + 80 + Math.floor(index / 2) * 45,
+            90, 35,
+            item.name,
+            "lightgray",
+            1
+        )
+    }));
+}
+showCategory(currentCategory);
+
 let ballFrames = [];
 
 function animate(){
@@ -590,6 +639,11 @@ function animate(){
     skinsmenu.draw(ctx);
     shopmenu.update();
     shopmenu.draw(ctx);
+    if (shopmenu.visible) {
+    for (const entry of itemButtons) {
+        entry.button.draw(ctx);
+    }
+}
     bushes.forEach(bush => bush.draw(ctx));
     trees.forEach(tree => tree.draw(ctx));
     
@@ -813,6 +867,7 @@ if (buttonshop.isPressed()) {
 
 
 
+
 if (player) {
     currentWeapon.x = player.x - currentWeapon.width / 2;
     currentWeapon.y = player.y - currentWeapon.height / 2;
@@ -867,25 +922,25 @@ if(skinsmenu.visible){
     }
 }
 if (shopmenu.visible) {
-    if (buttonshop1.isPressed()) {
-        currentWeapon = weapons.Pistol;
+    if (buttonshopGun.isPressed()) {
+        showCategory("Guns");
+    } else if (buttonshopUtil.isPressed()) {
+        showCategory("Utility");
+    } else if (buttonshopSkins.isPressed()) {
+        showCategory("Skins");
+    } else if (buttonshopArmor.isPressed()) {
+        showCategory("Armor");
     }
-    if (buttonshop2.isPressed()) {
-        currentWeapon = weapons.Shotgun;
-    }
-    if (buttonshop3.isPressed()) {
-        currentWeapon = weapons.Sniper;
-    }
-    if (buttonshop4.isPressed()) {
-        objects.push(new Object("heal"));
-    }
-    if (buttonshop5.isPressed()) {
-        objects.push(new Object("rock"));
-    }
-    if (buttonshop6.isPressed()) {
-    currentWeapon = weapons.DualWield;
+
+    for (const entry of itemButtons) {
+        if (entry.button.isPressed()) {
+            entry.item.action();
+        }
     }
 }
+
+    
+
 if (menu.visible) {
     if (button.isPressed()) {
         for (const ball of balls) {
