@@ -1,7 +1,7 @@
 # vgungame
 This project will be about a basic shooter game, this is going to rely on a mouse and keyboard to shoot. As of now, this game is not as polished, and is more focused on the physics and how it works first, so not much of "design," but more on functionality, maybe even like a sandbox game.
 
-![Sample](Sample.png)
+![Sample](assets/Sample.png)
 
 # Code Info
 So this game is displayed on the web, which is through a canvas and html. The main part of this project is the actual game, which is through javascript.
@@ -15,3 +15,7 @@ As of enemies, this will probably be just a target practice, zombies, or actual 
 
 # problems
 Some problems I'm facing right now is actual game design, I would say that I have no idea what im planning to make, which im basically just adding stuff as I learn.
+
+# showcase
+
+![Sample](assets/487563cde1baebdc74301ae9043a83c4.gif)

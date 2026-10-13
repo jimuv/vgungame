@@ -12,7 +12,7 @@ let justClicked = false;
 // Placeholders
 let enemyCountMax=10;
 let enemyCounter=0;
-let weapons = ["Pistol"];
+// let weapons = ["Pistol"];
 let money=0;
 let skins = ["red", "blue", "green", "yellow", "purple"];
 let enemyVariants=["red"]
@@ -227,20 +227,68 @@ update() {
     }
 }
 class Gun {
-    constructor(name, damage, fireRate, ammo) {
+    constructor(name, damage, fireRate, ammo, projectileSpeed = 5, bulletCount = 1, spread = 0) {
         this.name = name;
         this.damage = damage;
         this.fireRate = fireRate;
         this.ammo = ammo;
+        this.projectileSpeed = projectileSpeed;
+        this.bulletCount = bulletCount;
+        this.spread = spread;
         if (this.name==="Pistol"||this.name===null){
             this.x=0;
             this.y=0;
             this.width=20;
             this.height=5;
+            this.angle=0;
+            this.lastShot=0;
+        }
+        if(this.name==="Shotgun"){
+            this.x=0;
+            this.y=-10;
+            this.width=60;
+            this.height=10;
+            this.angle=0;
+            this.lastShot=0;
         }
     }
     translate(dx, dy) {
         this.angle=Math.atan2(dy, dx)
+    }
+    canShoot(){
+        return Date.now() - this.lastShot >= 1000 / this.fireRate && (this.ammo > 0 || this.ammo === Infinity);
+    }
+    shoot(player,targetX,targetY){
+        if (!this.canShoot()) return [];
+
+        this.lastShot = Date.now();
+
+        if (this.ammo !== Infinity) {
+            this.ammo--;
+        }
+
+        const dx= targetX - player.x;
+        const dy= targetY - player.y;
+        const angle=Math.atan2(dy, dx);
+        const projectiles = [];
+
+        for(let i=0;i<this.bulletCount;i++){
+            const offset=this.bulletCount===1?0:(i/(this.bulletCount-1)-0.5)*this.spread;
+            const projectileAngle=angle+offset;
+            projectiles.push({
+                x: player.x,
+                y: player.y,
+                dx: Math.cos(projectileAngle)*this.projectileSpeed,
+                dy: Math.sin(projectileAngle)*this.projectileSpeed,
+                color: "yellow",
+                radius: 5,
+                isProjectile: true,
+                createdAt: Date.now(),
+                damage: this.damage
+            })
+        }
+
+        return projectiles;
     }
     draw(ctx){
         ctx.save();
@@ -270,8 +318,14 @@ class Text {
         ctx.fillText(this.text, this.x, this.y);
     }
 }
-const pistol = new Gun("Pistol", 10, 1, Infinity);
-pistol.draw(ctx);
+const weapons = {
+    Pistol: new Gun("Pistol", 10, 6, Infinity, 5),
+
+    Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, Math.PI / 6)
+};
+
+let currentWeapon = weapons.Pistol;
+currentWeapon.draw(ctx);
 const info = new Frame(
     50, 50, 150, 70, "lightblue", 0, null
 );
@@ -308,6 +362,17 @@ const button4 = new Button(
     450, 400, 50, 50, "Skins", "lightyellow", 0.5
 );
 
+const buttonshop = new Button(
+    450, 450, 50, 50, "Shop", "lightgreen", 0.5
+);
+
+const buttonshop1 = new Button(
+    500, 500, 50, 50, "pistol", "red", 0.5
+);
+const buttonshop2 = new Button(
+    550, 500, 50, 50, "shotgun", "blue", 0.5
+);
+
 const button5 = new Button(
     500, 500, 50, 50, "red ball", "red", 0.5
 );
@@ -319,13 +384,20 @@ const skinsmenu = new Frame(
     400, 400, 300, 250, "lightorange", 0.5, null, true
 
 );
+
+const shopmenu = new Frame(
+    400, 400, 300, 250, "lightgreen", 0.5, null, true
+
+);
 menu.addButton(button);
 menu.addButton(button2);
 menu.addButton(button3);
 menu.addButton(button4);
-
+menu.addButton(buttonshop);
 skinsmenu.addButton(button5);
 skinsmenu.addButton(button6);
+shopmenu.addButton(buttonshop1);
+shopmenu.addButton(buttonshop2);
 
 let ballFrames = [];
 
@@ -339,7 +411,8 @@ function animate(){
     menubutton.draw(ctx);
     skinsmenu.update();
     skinsmenu.draw(ctx);
-
+    shopmenu.update();
+    shopmenu.draw(ctx);
 for (const ball of balls) {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
@@ -406,7 +479,7 @@ for (let i = 0; i < balls.length; i++) {
         if (distance < projectile.radius + enemy.radius && !enemy.hit && !enemy.isDead) {
             enemy.hit = true;
             enemy.color = "lightcoral";
-            enemy.health -= 10;
+            enemy.health -= projectile.damage;
             if (enemy.health <= 0) {
                 enemy.isDead = true;
                 enemy.transparency=0.95;
@@ -507,16 +580,19 @@ if (menubutton.isPressed()) {
 if (button4.isPressed()) {
     skinsmenu.visible = !skinsmenu.visible;
 }
+if (buttonshop.isPressed()) {
+    shopmenu.visible = !shopmenu.visible;
+}
 
 
 const player = balls.find(ball => ball.isPlayer);
 
 
 if (player) {
-    pistol.x=player.x - pistol.width / 2;
-    pistol.y=player.y - pistol.height / 2;
-    pistol.translate(mouseX - player.x, mouseY - player.y);
-    pistol.draw(ctx);
+    currentWeapon.x = player.x - currentWeapon.width / 2;
+    currentWeapon.y = player.y - currentWeapon.height / 2;
+    currentWeapon.translate(mouseX - player.x, mouseY - player.y);
+    currentWeapon.draw(ctx);
 
     info.visible = true;
     
@@ -525,7 +601,9 @@ if (player) {
 
     infotext1.x = info.x + 10;
     infotext1.y = info.y + 10;
-    infotext1.text = `Ammo: ${player.ammo}`;
+    infotext1.text = `Weapon: ${currentWeapon.name} | Ammo: ${
+    currentWeapon.ammo === Infinity ? "Inf" : currentWeapon.ammo
+}`;
     infotext2.x = info.x + 10;
     infotext2.y = info.y + 30;
     infotext2.text = `Health: ${player.health}`;
@@ -534,24 +612,8 @@ if (player) {
 }
 info.draw(ctx);
 if (keys['f'] && !fWasPressed && player) {
-    const dx = mouseX - player.x;
-    const dy = mouseY - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance > 0) {
-        const speed = 5;
-
-        balls.push({
-            x: player.x,
-            y: player.y,
-            dx: (dx / distance) * speed,
-            dy: (dy / distance) * speed,
-            color: "yellow",
-            radius: radius,
-            isProjectile: true,
-            createdAt: Date.now(),
-        });
-    }
+    const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
+    balls.push(...newProjectiles);
 }
 
 fWasPressed = keys['f'];
@@ -565,7 +627,14 @@ if(skinsmenu.visible){
         balls[0].color = "blue";
     }
 }
-
+if (shopmenu.visible) {
+    if (buttonshop1.isPressed()) {
+        currentWeapon = weapons.Pistol;
+    }
+    if (buttonshop2.isPressed()) {
+        currentWeapon = weapons.Shotgun;
+    }
+}
 if (menu.visible) {
     if (button.isPressed()) {
         for (const ball of balls) {
