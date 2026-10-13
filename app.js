@@ -1066,6 +1066,7 @@ if (menu.visible && clickedFrame === menu) {
         newFrame.addButton(moveButton);
         newFrame.addButton(stopButton);
         frameOrder.push(newFrame);
+        ballFrames.push(newFrame);
     }
 }
 
