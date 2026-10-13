@@ -56,9 +56,18 @@ canvas.addEventListener('mousemove', (e) => {
     mouseY = e.clientY - rect.top;
 });
 
-canvas.addEventListener('mousedown', () => {
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    
     mouseDown = true;
     justClicked = true;
+
+    clickedFrame=getTopFrameAtMouse();
+    if(clickedFrame){
+        bringFrameToFront(clickedFrame);
+    }
 });
 
 canvas.addEventListener('mouseup', () => {
@@ -172,6 +181,7 @@ update() {
     }
 
     if (
+        this === clickedFrame &&
         this.hasTitleBar &&
         justClicked &&
         mouseX >= this.x &&
@@ -227,7 +237,7 @@ update() {
     if (this.exitButton) {
         this.exitButton.update();
 
-        if (this.exitButton.isPressed()) {
+        if (this === clickedFrame && this.exitButton.isPressed()) {
             this.visible = false;
             this.dragging = false;
 
@@ -568,16 +578,16 @@ const buttonshop = new Button(
 
 
 const buttonshopGun = new Button(
-    400, 300, 50, 50, "Guns", "purple", 0.5
+    400, 650, 50, 50, "Guns", "purple", 0.5
 );
 const buttonshopUtil = new Button(
-    450, 300, 50, 50, "Utility", "purple", 0.5
+    450, 650, 50, 50, "Utility", "purple", 0.5
 );
 const buttonshopSkins = new Button(
-    500, 300, 50, 50, "Skins", "purple", 0.5
+    500, 650, 50, 50, "Skins", "purple", 0.5
 );
 const buttonshopArmor = new Button(
-    550, 300, 50, 50, "Armor", "purple", 0.5
+    550, 650, 50, 50, "Armor", "purple", 0.5
 );
 
 const button5 = new Button(
@@ -625,25 +635,56 @@ function showCategory(category) {
 }
 showCategory(currentCategory);
 
+
+
 let ballFrames = [];
+let frameOrder = [menu, skinsmenu, shopmenu];
+let clickedFrame = null;
+
+function isInsideFrame(frame, x, y) {
+    return frame.visible &&
+        x >= frame.x &&
+        x <= frame.x + frame.width &&
+        y >= frame.y &&
+        y <= frame.y + frame.height;
+}
+
+function getTopFrameAtMouse() {
+    for (let i = frameOrder.length - 1; i >= 0; i--) {
+        if (isInsideFrame(frameOrder[i], mouseX, mouseY)) {
+            return frameOrder[i];
+        }
+    }
+    return null;
+}
+
+function bringFrameToFront(frame) {
+    const index = frameOrder.indexOf(frame);
+
+    if (index !== -1) {
+        frameOrder.splice(index, 1);
+        frameOrder.push(frame);
+    }
+}
+
+function drawFrame(frame) {
+    frame.update();
+    frame.draw(ctx);
+
+    if (frame === shopmenu && shopmenu.visible) {
+        for (const entry of itemButtons) {
+            entry.button.draw(ctx);
+        }
+    }
+}
 
 function animate(){
     
     ctx.clearRect(0,0,canvas.width, canvas.height);
     
-    menu.update();
-    menu.draw(ctx);
-    menubutton.update();
     menubutton.draw(ctx);
-    skinsmenu.update();
-    skinsmenu.draw(ctx);
-    shopmenu.update();
-    shopmenu.draw(ctx);
-    if (shopmenu.visible) {
-    for (const entry of itemButtons) {
-        entry.button.draw(ctx);
-    }
-}
+
+    
     bushes.forEach(bush => bush.draw(ctx));
     trees.forEach(tree => tree.draw(ctx));
     
@@ -852,14 +893,14 @@ for (let i = 0; i < balls.length; i++) {
         }
         objects = objects.filter(obj => !obj.remove);
     }
-if (menubutton.isPressed()) {
+if (!clickedFrame && menubutton.isPressed()) {
     menu.visible = !menu.visible;
 }
 
-if (button4.isPressed()) {
+if (clickedFrame === menu && button4.isPressed()) {
     skinsmenu.visible = !skinsmenu.visible;
 }
-if (buttonshop.isPressed()) {
+if (clickedFrame === menu && buttonshop.isPressed()) {
     shopmenu.visible = !shopmenu.visible;
 }
 
@@ -913,15 +954,16 @@ if (keys['f'] && !fWasPressed && player) {
 fWasPressed = keys['f'];
 
 
-if(skinsmenu.visible){
-    if(button5.isPressed()){
+if (skinsmenu.visible) {
+    if (clickedFrame === skinsmenu && button5.isPressed()) {
         balls[0].color = "red";
-    } 
-    if(button6.isPressed()){
+    }
+
+    if (clickedFrame === skinsmenu && button6.isPressed()) {
         balls[0].color = "blue";
     }
 }
-if (shopmenu.visible) {
+if (shopmenu.visible && clickedFrame === shopmenu) {
     if (buttonshopGun.isPressed()) {
         showCategory("Guns");
     } else if (buttonshopUtil.isPressed()) {
@@ -941,7 +983,7 @@ if (shopmenu.visible) {
 
     
 
-if (menu.visible) {
+if (menu.visible && clickedFrame === menu) {
     if (button.isPressed()) {
         for (const ball of balls) {
             ball.dx = 2;
@@ -992,7 +1034,7 @@ if (menu.visible) {
 
         newFrame.addButton(moveButton);
         newFrame.addButton(stopButton);
-        ballFrames.push(newFrame);
+        frameOrder.push(newFrame);
     }
 }
 
@@ -1011,24 +1053,29 @@ function startRandomMovement(ball) {
     changeDirection();
 }
 
-for (const frame of ballFrames) {
-    if (frame.ball.remove || !balls.includes(frame.ball)) {
+for (const frame of ballFrames){
+    if (frame.ball.remove || !balls.includes(frame.ball)){
         continue;
     }
-    frame.update();
-
-    if (frame.buttons[0].isPressed()) {
-        startRandomMovement(frame.ball);
+    if(clickedFrame===frame){
+        if(frame.buttons[0].isPressed()){
+            startRandomMovement(frame.ball);
+        }
+        if(frame.buttons[1].isPressed()){
+            clearTimeout(frame.ball.randomMovementTimer);
+            frame.ball.randomMovementTimer = null;
+            frame.ball.dx = 0;
+            frame.ball.dy = 0;
+        }
     }
+}
+frameOrder = frameOrder.filter(frame =>
+    !ballFrames.includes(frame) ||
+    (frame.ball && !frame.ball.remove && balls.includes(frame.ball))
+);
 
-    if (frame.buttons[1].isPressed()) {
-        clearTimeout(frame.ball.randomMovementTimer);
-        frame.ball.randomMovementTimer = null;
-        frame.ball.dx = 0;
-        frame.ball.dy = 0;
-    }
-    
-    frame.draw(ctx);
+for (const frame of frameOrder) {
+    drawFrame(frame);
 }
 balls = balls.filter(ball =>
     !ball.remove &&
