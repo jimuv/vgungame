@@ -404,6 +404,11 @@ bushImage.src = "assets/bush.png";
 
 const bushes = [];
 
+const treeImage = new Image();
+treeImage.src = "assets/tree.png";
+
+const trees = [];
+
 class Bush {
     constructor(x, y, width = 60, height = 60) {
         this.x = x;
@@ -424,10 +429,34 @@ class Bush {
         }
     }
 }
+
+class Tree {
+    constructor(x, y, width = 60, height = 120) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    draw(ctx) {
+        if (treeImage.complete && treeImage.naturalWidth > 0) {
+            ctx.drawImage(
+                treeImage,
+                this.x,
+                this.y,
+                this.width,
+                this.height
+            );
+        }
+    }
+}
 //test:
 bushes.push(new Bush(150, 200));
 bushes.push(new Bush(400, 300));
 bushes.push(new Bush(600, 150));
+
+trees.push(new Tree(500, 450));
+
 
 class Text {
     constructor(x, y, text, color, size) {
@@ -562,6 +591,7 @@ function animate(){
     shopmenu.update();
     shopmenu.draw(ctx);
     bushes.forEach(bush => bush.draw(ctx));
+    trees.forEach(tree => tree.draw(ctx));
     
 for (const ball of balls) {
     ctx.beginPath();
