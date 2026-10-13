@@ -35,10 +35,18 @@ guns: shotgun, rifle, sniper, rocket launcher???
 add powerups: health, speed, damage, armor
 
 from shop, add sections, skins, guns, powerups, armor (basic subsections or whatever)
+
+
+add to shop: accessory? (put that into skin maybe to save space)
+
+skin ideas:
+tophat, glasses, monocle, crown
+
+weapon skins? (improve gun models first...)
 */
 
 let balls =[
-    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: 100, maxHealth: 100,hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null}
+    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null}
 ]
 let objects = [];
 
@@ -527,8 +535,31 @@ const shopItems = {
         { name: "Red Ball", action: () => balls[0].color = "red" },
         { name: "Blue Ball", action: () => balls[0].color = "blue" }
     ],
-    Armor: []
+    Armor: [
+        { name: "Leather Armor", action: () => equipArmor(5) },
+        { name: "Iron Armor", action: () => equipArmor(10) },
+        { name: "Gold Armor", action: () => equipArmor(15) }
+    ]
 };
+
+function getMaxHealth() {
+    return 100 + stats.armor * 5;
+}
+
+function equipArmor(armorValue) {
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+
+    const oldMaxHealth = player.maxHealth;
+
+    stats.armor = armorValue;
+    player.maxHealth = getMaxHealth();
+
+    player.health = Math.min(
+        player.health + (player.maxHealth - oldMaxHealth),
+        player.maxHealth
+    );
+}
 
 let itemButtons = [];
 
@@ -543,7 +574,7 @@ const infotext1 = new Text(
     60, 60, "Ammo: Infinity", "black", 14
 );
 const infotext2 = new Text(
-    60, 80, "Health: 100", "black", 14
+    60, 80, `Health: ${getMaxHealth()}`, "black", 14
 );
 info.addText(infotext1);
 info.addText(infotext2);
@@ -963,7 +994,7 @@ if (skinsmenu.visible) {
         balls[0].color = "blue";
     }
 }
-if (shopmenu.visible && clickedFrame === shopmenu) {
+if (shopmenu.visible) {
     if (buttonshopGun.isPressed()) {
         showCategory("Guns");
     } else if (buttonshopUtil.isPressed()) {
