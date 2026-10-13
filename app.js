@@ -329,6 +329,14 @@ class Gun {
             this.angle=0;
             this.lastShot=0;
         }
+        if(this.name==="Dual Wield"){
+            this.x = 0;
+            this.y = 0;
+            this.width = 20;
+            this.height = 5;
+            this.angle = 0;
+            this.lastShot = 0;
+        }
     }
     translate(dx, dy) {
         this.angle=Math.atan2(dy, dx)
@@ -373,10 +381,53 @@ class Gun {
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.rotate(this.angle);
         ctx.fillStyle = 'black';
-        ctx.fillRect((-this.width / 2)+22, 18-this.height / 2, this.width, this.height);
+        if (this.name === "Dual Wield") {
+        ctx.fillRect(-this.width / 2 + 22, -22, this.width, this.height);
+        ctx.fillRect(-this.width / 2 + 22, 15, this.width, this.height);
+    } else {
+        ctx.fillRect(
+            -this.width / 2 + 22,
+            18 - this.height / 2,
+            this.width,
+            this.height
+        );
+    }
         ctx.restore();
     }
+}const glassesImage = new Image();
+glassesImage.src = "assets/glasses.png";
+
+
+
+const bushImage = new Image();
+bushImage.src = "assets/bush.png";
+
+const bushes = [];
+
+class Bush {
+    constructor(x, y, width = 60, height = 60) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    draw(ctx) {
+        if (bushImage.complete && bushImage.naturalWidth > 0) {
+            ctx.drawImage(
+                bushImage,
+                this.x,
+                this.y,
+                this.width,
+                this.height
+            );
+        }
+    }
 }
+//test:
+bushes.push(new Bush(150, 200));
+bushes.push(new Bush(400, 300));
+bushes.push(new Bush(600, 150));
 
 class Text {
     constructor(x, y, text, color, size) {
@@ -401,11 +452,14 @@ const weapons = {
 
     Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, Math.PI / 6),
 
-    Sniper: new Gun("Sniper", 100, .5, 25, 7)
+    Sniper: new Gun("Sniper", 100, .5, 25, 7),
+
+    DualWield: new Gun("Dual Wield", 10, 12, Infinity, 5, 2, 0),
 };
 
 let currentWeapon = weapons.Pistol;
 currentWeapon.draw(ctx);
+
 const info = new Frame(
     50, 50, 150, 70, "lightblue", 0, null
 );
@@ -461,6 +515,9 @@ const buttonshop4 = new Button(
 const buttonshop5 = new Button(
     400, 500, 50, 50, "big ROCK", "gray", 0.5
 );
+const buttonshop6 = new Button(
+    450, 550, 50, 50, "dual wield", "purple", 0.5
+);
 const button5 = new Button(
     500, 500, 50, 50, "red ball", "red", 0.5
 );
@@ -489,6 +546,7 @@ shopmenu.addButton(buttonshop2);
 shopmenu.addButton(buttonshop3);
 shopmenu.addButton(buttonshop4);
 shopmenu.addButton(buttonshop5);
+shopmenu.addButton(buttonshop6);
 let ballFrames = [];
 
 function animate(){
@@ -503,6 +561,7 @@ function animate(){
     skinsmenu.draw(ctx);
     shopmenu.update();
     shopmenu.draw(ctx);
+    bushes.forEach(bush => bush.draw(ctx));
     
 for (const ball of balls) {
     ctx.beginPath();
@@ -730,6 +789,20 @@ if (player) {
     currentWeapon.translate(mouseX - player.x, mouseY - player.y);
     currentWeapon.draw(ctx);
 
+        if (
+        currentWeapon.name === "Dual Wield" &&
+        glassesImage.complete &&
+        glassesImage.naturalWidth > 0
+    ) {
+        ctx.drawImage(
+            glassesImage,
+            player.x - player.radius,
+            player.y - player.radius,
+            player.radius * 2,
+            player.radius * 2
+        );
+    }
+
     info.visible = true;
     
     info.x = player.x +25 ;
@@ -778,6 +851,9 @@ if (shopmenu.visible) {
     }
     if (buttonshop5.isPressed()) {
         objects.push(new Object("rock"));
+    }
+    if (buttonshop6.isPressed()) {
+    currentWeapon = weapons.DualWield;
     }
 }
 if (menu.visible) {

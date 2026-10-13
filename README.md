@@ -19,3 +19,5 @@ Some problems I'm facing right now is actual game design, I would say that I hav
 # showcase
 
 ![Sample](assets/487563cde1baebdc74301ae9043a83c4.gif)
+
+![Sample2](assets/9913ae2a6d0c38196c511a216b1ad6ea.gif)
