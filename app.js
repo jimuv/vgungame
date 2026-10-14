@@ -725,6 +725,12 @@ const button5 = new Button(
 const button6 = new Button(
     550, 500, 50, 50, "blue ball", "blue", 0.5
 );
+const button7 = new Button(
+    500, 550, 50, 50, "green ball", "green", 0.5
+);
+const button8 = new Button(
+    550, 550, 50, 50, "yellow ball", "yellow", 0.5
+);
 const buttonSettings = new Button(
     450, 350, 50, 50, "Settings", "lightgray", 0.5
 );
@@ -746,6 +752,8 @@ menu.addButton(buttonshop);
 menu.addButton(buttonSettings);
 skinsmenu.addButton(button5);
 skinsmenu.addButton(button6);
+skinsmenu.addButton(button7);
+skinsmenu.addButton(button8);
 
 settings.addButton(bgButton);
 
@@ -820,6 +828,14 @@ function animate(){
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    ctx.fillStyle = isDarkMode ? "#fffefe" : "#000000";
+    ctx.font = "16px Arial";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+
+    ctx.fillText(`Money: ${money}`, 10, 10);
+    // ctx.fillText(`Wave: ${wave}`, 10, 30);
+    // ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
     menubutton.draw(ctx);
 
     
@@ -1111,6 +1127,12 @@ if (skinsmenu.visible) {
     if (clickedFrame === skinsmenu && button6.isPressed()) {
         balls[0].color = "blue";
     }
+    if (clickedFrame === skinsmenu && button7.isPressed()) {
+        balls[0].color = "green";
+    }
+    if (clickedFrame === skinsmenu && button8.isPressed()) {
+        balls[0].color = "yellow";
+    }
 }
 if (shopmenu.visible) {
     if (buttonshopGun.isPressed()) {
@@ -1129,7 +1151,7 @@ if (shopmenu.visible) {
         }
     }
 }
-if(settings.visible){
+if(settings.visible&&clickedFrame===settings){
     if(bgButton.isPressed()&& !bgCooldown){
         isDarkMode=!isDarkMode;
         bgCooldown = true;
