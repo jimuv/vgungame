@@ -884,6 +884,8 @@ for (let i = 0; i < balls.length; i++) {
                 
                 setTimeout(() => {
                 enemy.remove = true;
+                money += 10;
+                console.log("Money: " + money); // TEMPORARY
             }, 800);
             }
             projectile.remove = true;
