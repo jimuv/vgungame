@@ -27,9 +27,18 @@ const accessoryImages = {
     "Crown": new Image()
 }
 accessoryImages["Glasses"].src = "assets/glasses.png";
-accessoryImages["Top Hat"].src = "assets/glasses.png";
-accessoryImages["Monocle"].src = "assets/glasses.png";
-accessoryImages["Crown"].src = "assets/glasses.png";
+accessoryImages["Top Hat"].src = "assets/Top_Hat.png";
+accessoryImages["Monocle"].src = "assets/monocle.png";
+accessoryImages["Crown"].src = "assets/Crown.png";
+
+const weaponImages= {
+    "Pistol": new Image(),
+    "Shotgun": new Image(),
+    "Sniper": new Image(),
+}
+weaponImages["Pistol"].src = "assets/Pistol.png";
+weaponImages["Shotgun"].src = "assets/Shotgun.png";
+weaponImages["Sniper"].src = "assets/glasses.png";
 let armor = ["Leather", "Chain", "Plate"];
 let stats = {
     speed: 1,
@@ -349,6 +358,8 @@ class Gun {
         this.projectileSpeed = projectileSpeed;
         this.bulletCount = bulletCount;
         this.spread = spread;
+        this.offsetX = 0;
+        this.offsetY = 0;  
         if (this.name==="Pistol"||this.name===null){
             this.x=0;
             this.y=0;
@@ -356,14 +367,18 @@ class Gun {
             this.height=5;
             this.angle=0;
             this.lastShot=0;
+            this.offsetX=10;
+            this.offsetY=0;
         }
         if(this.name==="Shotgun"){
             this.x=0;
             this.y=-10;
             this.width=60;
-            this.height=10;
+            this.height=10+20;
             this.angle=0;
             this.lastShot=0;
+            this.offsetX=10;
+            this.offsetY=0;
         }
         if(this.name==="Sniper"){
             this.x=0;
@@ -372,6 +387,8 @@ class Gun {
             this.height=7;
             this.angle=0;
             this.lastShot=0;
+            this.offsetX=0;
+            this.offsetY=-10;
         }
         if(this.name==="Dual Wield"){
             this.x = 0;
@@ -380,6 +397,8 @@ class Gun {
             this.height = 5;
             this.angle = 0;
             this.lastShot = 0;
+            this.offsetX=0;
+            this.offsetY=0;
         }
     }
     translate(dx, dy) {
@@ -420,24 +439,7 @@ class Gun {
 
         return projectiles;
     }
-    draw(ctx){
-        ctx.save();
-        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-        ctx.rotate(this.angle);
-        ctx.fillStyle = 'black';
-        if (this.name === "Dual Wield") {
-        ctx.fillRect(-this.width / 2 + 22, -22, this.width, this.height);
-        ctx.fillRect(-this.width / 2 + 22, 15, this.width, this.height);
-    } else {
-        ctx.fillRect(
-            -this.width / 2 + 22,
-            18 - this.height / 2,
-            this.width,
-            this.height
-        );
-    }
-        ctx.restore();
-    }
+    
     
 }
 
@@ -583,9 +585,18 @@ function getAccessory() {
         height= player.radius*2;
     }
     if(player.accessory==="Top Hat"){
-        y=player.y - player.radius-75;
+        y=player.y - player.radius-25;
         width= player.radius*2;
-        height= player.radius*9;
+        height= player.radius*2;
+    }
+    if(player.accessory==="Crown"){
+        y=player.y - player.radius-25;
+        width= player.radius*2;
+        height= player.radius*2;
+    }
+    if(player.accessory==="Monocle"){
+        width= player.radius*2;
+        height= player.radius*2;
     }
     ctx.drawImage(image, x, y, width, height);
 }
@@ -604,11 +615,46 @@ function equipArmor(armorValue) {
     );
 }
 
+
+
 let itemButtons = [];
 
 
 let currentWeapon = weapons.Pistol;
-currentWeapon.draw(ctx);
+
+function gunDraw() {
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+    
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(currentWeapon.angle);
+    if (currentWeapon.name === "Dual Wield") {
+        const image = weaponImages["Pistol"];
+
+        if (image && image.complete && image.naturalWidth > 0) {
+            ctx.drawImage(image, 0, -player.radius-19, currentWeapon.width+5, currentWeapon.height+25);
+            ctx.drawImage(image, 0, 10, currentWeapon.width+5, currentWeapon.height+25);
+        } else {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, -22, currentWeapon.width, currentWeapon.height);
+            ctx.fillRect(0, 10, currentWeapon.width, currentWeapon.height);
+        }
+    } else {
+        const image = weaponImages[currentWeapon.name];
+
+        if (image && image.complete && image.naturalWidth > 0) {
+            ctx.drawImage(
+                image,
+                currentWeapon.offsetX,
+                currentWeapon.offsetY,
+                currentWeapon.width + 5,
+                currentWeapon.height + 25
+            );
+        }
+    }
+    ctx.restore();
+}
 
 const info = new Frame(
     50, 50, 150, 70, "lightblue", 0, null
@@ -987,7 +1033,8 @@ if (player) {
     currentWeapon.x = player.x - currentWeapon.width / 2;
     currentWeapon.y = player.y - currentWeapon.height / 2;
     currentWeapon.translate(mouseX - player.x, mouseY - player.y);
-    currentWeapon.draw(ctx);
+    
+    gunDraw();
 
         if (
         currentWeapon.name === "Dual Wield" &&
