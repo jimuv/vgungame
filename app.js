@@ -12,13 +12,24 @@ let justClicked = false;
 // Placeholders
 let enemyCountMax=10;
 let enemyCounter=0;
-// let weapons = ["Pistol"];
 let money=0;
 let skins = ["red", "blue", "green", "yellow", "purple"];
 let enemyVariants=["red"]
 let wave = 1;
 let waveEnemies = [5, 10, 15, 20, 25];
 let rewards = [10, 20, 30, 40, 50];
+
+let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
+const accessoryImages = {
+    "Glasses": new Image(),
+    "Top Hat": new Image(),
+    "Monocle": new Image(),
+    "Crown": new Image()
+}
+accessoryImages["Glasses"].src = "assets/glasses.png";
+accessoryImages["Top Hat"].src = "assets/glasses.png";
+accessoryImages["Monocle"].src = "assets/glasses.png";
+accessoryImages["Crown"].src = "assets/glasses.png";
 let armor = ["Leather", "Chain", "Plate"];
 let stats = {
     speed: 1,
@@ -533,7 +544,8 @@ const shopItems = {
     ],
     Skins: [
         { name: "Red Ball", action: () => balls[0].color = "red" },
-        { name: "Blue Ball", action: () => balls[0].color = "blue" }
+        { name: "Blue Ball", action: () => balls[0].color = "blue" },
+        ...accessories.map(name => ({ name, action: () => wearAccessory(name)}))
     ],
     Armor: [
         { name: "Leather Armor", action: () => equipArmor(5) },
@@ -546,6 +558,37 @@ function getMaxHealth() {
     return 100 + stats.armor * 5;
 }
 
+function wearAccessory(accessoryName) {
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+    player.accessory = accessoryName;
+
+
+}
+function getAccessory() {
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+    const image = accessoryImages[player.accessory];
+
+    if(!image||!image.complete||image.naturalWidth===0){
+        return null;
+    }
+    let width = player.radius * 2;
+    let height = player.radius * 2;
+    let x = player.x - player.radius;
+    let y = player.y - player.radius;
+
+    if(player.accessory==="Glasses"){
+        width= player.radius*2;
+        height= player.radius*2;
+    }
+    if(player.accessory==="Top Hat"){
+        y=player.y - player.radius-75;
+        width= player.radius*2;
+        height= player.radius*9;
+    }
+    ctx.drawImage(image, x, y, width, height);
+}
 function equipArmor(armorValue) {
     const player = balls.find(ball => ball.isPlayer);
     if (!player) return;
@@ -959,7 +1002,7 @@ if (player) {
             player.radius * 2
         );
     }
-
+    getAccessory();
     info.visible = true;
     
     info.x = player.x +25 ;
