@@ -9,6 +9,9 @@ let mouseX=0;
 let mouseY=0;
 let mouseDown=false;
 let justClicked = false;
+let isDarkMode = false;
+let bgCooldown = false;
+const BG_COOLDOWN_MS = 1000;
 // Placeholders
 let enemyCountMax=10;
 let enemyCounter=0;
@@ -660,10 +663,10 @@ const info = new Frame(
     50, 50, 150, 70, "lightblue", 0, null
 );
 const infotext1 = new Text(
-    60, 60, "Ammo: Infinity", "black", 14
+    60, 60, "Ammo: Infinity", isDarkMode ? "#fffefe" : "#000000", 14
 );
 const infotext2 = new Text(
-    60, 80, `Health: ${getMaxHealth()}`, "black", 14
+    60, 80, `Health: ${getMaxHealth()}`, isDarkMode ? "#fffefe" : "#000000", 14
 );
 info.addText(infotext1);
 info.addText(infotext2);
@@ -676,6 +679,12 @@ const menu = new Frame(
     250, 250, 300, 250, "lightgray", 0.5, null, true
 );
 
+const settings = new Frame(
+    400, 400, 300, 250, "darkgray", 0.5, null, true
+);
+const bgButton = new Button(
+    450, 450, 150, 50, "Change Background", "lightgray", 0.5
+);
 const button = new Button(
     300, 300, 150, 50, "Move Ball", "darkgray", 0.5
 );
@@ -716,6 +725,9 @@ const button5 = new Button(
 const button6 = new Button(
     550, 500, 50, 50, "blue ball", "blue", 0.5
 );
+const buttonSettings = new Button(
+    450, 350, 50, 50, "Settings", "lightgray", 0.5
+);
 
 const skinsmenu = new Frame(
     400, 400, 300, 250, "lightorange", 0.5, null, true
@@ -731,8 +743,11 @@ menu.addButton(button2);
 menu.addButton(button3);
 menu.addButton(button4);
 menu.addButton(buttonshop);
+menu.addButton(buttonSettings);
 skinsmenu.addButton(button5);
 skinsmenu.addButton(button6);
+
+settings.addButton(bgButton);
 
 shopmenu.addButton(buttonshopGun);
 shopmenu.addButton(buttonshopUtil);
@@ -758,7 +773,7 @@ showCategory(currentCategory);
 
 
 let ballFrames = [];
-let frameOrder = [menu, skinsmenu, shopmenu];
+let frameOrder = [menu, skinsmenu, shopmenu, settings];
 let clickedFrame = null;
 
 function isInsideFrame(frame, x, y) {
@@ -801,7 +816,10 @@ function drawFrame(frame) {
 function animate(){
     
     ctx.clearRect(0,0,canvas.width, canvas.height);
-    
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     menubutton.draw(ctx);
 
     
@@ -1028,6 +1046,9 @@ if (clickedFrame === menu && button4.isPressed()) {
 if (clickedFrame === menu && buttonshop.isPressed()) {
     shopmenu.visible = !shopmenu.visible;
 }
+if (clickedFrame === menu && buttonSettings.isPressed()) {
+    settings.visible = !settings.visible;
+}
 
 
 
@@ -1062,11 +1083,13 @@ if (player) {
 
     infotext1.x = info.x + 10;
     infotext1.y = info.y + 10;
+    infotext1.color = isDarkMode ? "#fffefe" : "#000000";
     infotext1.text = `Weapon: ${currentWeapon.name} | Ammo: ${
     currentWeapon.ammo === Infinity ? "Inf" : currentWeapon.ammo
 }`;
     infotext2.x = info.x + 10;
     infotext2.y = info.y + 30;
+    infotext2.color = isDarkMode ? "#fffefe" : "#000000";
     infotext2.text = `Health: ${player.health}`;
 } else {
     info.visible = false;
@@ -1104,6 +1127,15 @@ if (shopmenu.visible) {
         if (entry.button.isPressed()) {
             entry.item.action();
         }
+    }
+}
+if(settings.visible){
+    if(bgButton.isPressed()&& !bgCooldown){
+        isDarkMode=!isDarkMode;
+        bgCooldown = true;
+        setTimeout(() => {
+            bgCooldown = false;
+        }, BG_COOLDOWN_MS);
     }
 }
 
