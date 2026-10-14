@@ -66,7 +66,7 @@ weapon skins? (improve gun models first...)
 */
 
 let balls =[
-    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null}
+    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false}
 ]
 let objects = [];
 
@@ -824,7 +824,10 @@ for (const ball of balls) {
 
     ball.x += ball.dx;
     ball.y += ball.dy;
-
+    const player = balls.find(b => b.isPlayer);
+    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&!player.isDead&&player.isDead===false){
+                startFollowing(ball);
+            }
     
     if (ball.x + ball.radius > canvas.width) {
     ball.x = canvas.width - ball.radius;
@@ -1132,7 +1135,8 @@ if (menu.visible && clickedFrame === menu) {
             health: 100,
             maxHealth: 100,
             isDead: false,
-            isEnemy: true
+            isEnemy: true,
+            following: false
         };
 
         balls.push(newBall);
@@ -1147,7 +1151,11 @@ if (menu.visible && clickedFrame === menu) {
 
         const moveButton = new Button(
             newFrame.x + 25, newFrame.y + 40,
-            150, 30, "Move Ball", "darkgray", .5
+            100, 30, "Move Ball", "darkgray", .5
+        );
+        const followButton = new Button(
+            newFrame.x + 125, newFrame.y + 40,
+            50, 30, "Follow Ball", "darkgray", .5
         );
 
         const stopButton = new Button(
@@ -1157,11 +1165,24 @@ if (menu.visible && clickedFrame === menu) {
 
         newFrame.addButton(moveButton);
         newFrame.addButton(stopButton);
+        newFrame.addButton(followButton);
         frameOrder.push(newFrame);
         ballFrames.push(newFrame);
     }
 }
 
+function startFollowing(ball) {
+    const player = balls.find(b => b.isPlayer);
+    if (!player) return;
+
+    const dx= player.x - ball.x;
+    const dy= player.y - ball.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > 0) {
+        ball.dx = (dx / distance) * 2;
+        ball.dy = (dy / distance) * 2;
+    }
+}
 function startRandomMovement(ball) {
     clearTimeout(ball.randomMovementTimer);
 
@@ -1190,6 +1211,9 @@ for (const frame of ballFrames){
             frame.ball.randomMovementTimer = null;
             frame.ball.dx = 0;
             frame.ball.dy = 0;
+        }
+        if(frame.buttons[2].isPressed()){
+            frame.ball.following=true;
         }
     }
 }
