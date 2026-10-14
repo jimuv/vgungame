@@ -23,6 +23,8 @@ let waveEnemies = [5, 10, 15, 20, 25];
 let rewards = [10, 20, 30, 40, 50];
 
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
+let Owned = [];
+
 const accessoryImages = {
     "Glasses": new Image(),
     "Top Hat": new Image(),
@@ -53,19 +55,8 @@ let stats = {
 let currentCategory = "Guns";
 /*
 plans:
-add shop
-guns: shotgun, rifle, sniper, rocket launcher???
+guns: rocket launcher???
 add powerups: health, speed, damage, armor
-
-from shop, add sections, skins, guns, powerups, armor (basic subsections or whatever)
-
-
-add to shop: accessory? (put that into skin maybe to save space)
-
-skin ideas:
-tophat, glasses, monocle, crown
-
-weapon skins? (improve gun models first...)
 */
 
 let balls =[
@@ -550,7 +541,7 @@ const shopItems = {
     Skins: [
         { name: "Red Ball", action: () => balls[0].color = "red" },
         { name: "Blue Ball", action: () => balls[0].color = "blue" },
-        ...accessories.map(name => ({ name, action: () => wearAccessory(name)}))
+        ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, action: () => wearAccessory(name)}))
     ],
     Armor: [
         { name: "Leather Armor", action: () => equipArmor(5) },
@@ -566,8 +557,16 @@ function getMaxHealth() {
 function wearAccessory(accessoryName) {
     const player = balls.find(ball => ball.isPlayer);
     if (!player) return;
+    if(accessoryName==="Crown"&&!Owned.includes("Crown")&&money>=10){
+        Owned.push("Crown");
+        money-=10;
+    }
+    if(Owned.includes(accessoryName)){
+        player.accessory= accessoryName;
+    }
+    if(accessoryName!=="Crown"){
     player.accessory = accessoryName;
-
+    }
 
 }
 function getAccessory() {
@@ -770,7 +769,7 @@ function showCategory(category) {
             shopmenu.x + 10 + (index % 2) * 100,
             shopmenu.y + 80 + Math.floor(index / 2) * 45,
             90, 35,
-            item.name,
+            `${item.name} $${item.price ?? 0}`,
             "lightgray",
             1
         )
@@ -922,7 +921,6 @@ for (let i = 0; i < balls.length; i++) {
                 setTimeout(() => {
                 enemy.remove = true;
                 money += 10;
-                console.log("Money: " + money); // TEMPORARY
             }, 800);
             }
             projectile.remove = true;
