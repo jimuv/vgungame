@@ -5,6 +5,7 @@ canvas.height = 600;
 const radius = 20;
 let keys = {};
 let fWasPressed = false;
+let gWasPressed = false;
 let mouseX=0;
 let mouseY=0;
 let mouseDown=false;
@@ -40,10 +41,12 @@ const weaponImages= {
     "Pistol": new Image(),
     "Shotgun": new Image(),
     "Sniper": new Image(),
+    "Katana": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
 weaponImages["Sniper"].src = "assets/glasses.png";
+weaponImages["Katana"].src = "assets/Katana.png";
 let armor = ["Leather", "Chain", "Plate"];
 let stats = {
     speed: 1,
@@ -57,10 +60,12 @@ let currentCategory = "Guns";
 plans:
 guns: rocket launcher???
 add powerups: health, speed, damage, armor
+
+add: melee
 */
 
 let balls =[
-    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false}
+    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed}
 ]
 let objects = [];
 
@@ -313,11 +318,13 @@ class Object {
             this.radius = 10;
             this.color = "blue";
             this.type = "speedboost";
-            this.speedAmount = 2;
+            this.healAmount = 0;
+            this.speedAmount = .2;
 
             this.scale=3;
             this.startTime=performance.now();
             this.duration=1000;
+            this.durationBoost=5000;
         }
     }
     update(){
@@ -451,6 +458,48 @@ class Gun {
     
 }
 
+class melee {
+    constructor(name, damage, range) {
+        this.name = name;
+        this.damage = damage;
+        this.range = range;
+
+        this.swinging = false;
+        this.swingStart=0;
+        this.swingDuration=300;
+    }
+
+    swing(){
+        if (this.swinging) return;
+        this.swinging=true;
+        this.swingStart=Date.now();
+    }
+
+    draw(ctx, player, mouseX, mouseY) {
+        if (!this.swinging) return;
+        const elapsed = Date.now() - this.swingStart;
+        const progress = Math.min(elapsed / this.swingDuration, 1);
+
+        const aimAngle = Math.atan2(mouseY - player.y, mouseX - player.x);
+
+        const swingAngle = aimAngle + (Math.PI / 4) * (1 - progress);
+
+        const image = weaponImages["Katana"];
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate(swingAngle);
+        if (image.complete && image.naturalWidth > 0) {
+            ctx.drawImage(image, 0, -50, this.range, 40);
+        }
+        ctx.restore();
+
+        if(progress>=1){
+            this.swinging=false;
+        }
+    }
+}
+
+const katana = new melee("Katana", 20, 50);
 
 const glassesImage = new Image();
 glassesImage.src = "assets/glasses.png";
@@ -550,7 +599,8 @@ const shopItems = {
     ],
     Utility: [
         { name: "Heal Package", action: () => objects.push(new Object("heal")) },
-        { name: "Big Rock", action: () => objects.push(new Object("rock")) }
+        { name: "Big Rock", action: () => objects.push(new Object("rock")) },
+        { name: "Speed Boost", action: () => objects.push(new Object("speedboost")) }
     ],
     Skins: [
         { name: "Red Ball", action: () => balls[0].color = "red" },
@@ -863,10 +913,10 @@ for (const ball of balls) {
     ctx.fill();
     ctx.globalAlpha = 1;
     if (ball === balls[0]) {
-        if (keys['w']) ball.y -= 2;
-        if (keys['s']) ball.y += 2;
-        if (keys['a']) ball.x -= 2;
-        if (keys['d']) ball.x += 2;
+        if (keys['w']) ball.y -= 2*stats.speed;
+        if (keys['s']) ball.y += 2*stats.speed;
+        if (keys['a']) ball.x -= 2*stats.speed;
+        if (keys['d']) ball.x += 2*stats.speed;
     }
 
     ball.x += ball.dx;
@@ -1022,8 +1072,7 @@ for (let i = 0; i < balls.length; i++) {
     const player = balls.find(ball => ball.isPlayer);
     if (player) {
         for (const obj of objects) {
-            if (obj.type === "heal"||obj.type === "rock") {
-                obj.draw(ctx);
+            if (["heal", "rock", "speedboost"].includes(obj.type)) {                obj.draw(ctx);
                 const closestX = Math.max(
             obj.x,
             Math.min(player.x, obj.x + obj.width)
@@ -1042,7 +1091,12 @@ for (let i = 0; i < balls.length; i++) {
                 0,
                 Math.min(player.health + obj.healAmount, player.maxHealth)
             );
-            
+            if (obj.type === "speedboost") {
+                stats.speed += obj.speedAmount;
+                setTimeout(() => {
+                    stats.speed -= obj.speedAmount;
+                }, obj.durationBoost);
+            }
 
             obj.remove = true;
             if (player.health <= 0 && !player.isDead) {
@@ -1089,7 +1143,7 @@ if (player) {
     currentWeapon.translate(mouseX - player.x, mouseY - player.y);
     
     gunDraw();
-
+    katana.draw(ctx, player, mouseX, mouseY);
         if (
         currentWeapon.name === "Dual Wield" &&
         glassesImage.complete &&
@@ -1127,9 +1181,12 @@ if (keys['f'] && !fWasPressed && player) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
 }
+if (keys['g'] && !gWasPressed && player) {
+    katana.swing();
+}
 
 fWasPressed = keys['f'];
-
+gWasPressed = keys['g'];
 
 if (skinsmenu.visible) {
     if (clickedFrame === skinsmenu && button5.isPressed()) {
