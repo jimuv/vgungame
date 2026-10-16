@@ -305,6 +305,20 @@ class Object {
             this.startTime=performance.now();
             this.duration=1000;
         }
+        if (type === "speedboost") {
+            this.x = Math.random() * (canvas.width - 20) + 10;
+            this.y = Math.random() * (canvas.height - 20) + 10;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.color = "blue";
+            this.type = "speedboost";
+            this.speedAmount = 2;
+
+            this.scale=3;
+            this.startTime=performance.now();
+            this.duration=1000;
+        }
     }
     update(){
         const elapsed = performance.now() - this.startTime;
