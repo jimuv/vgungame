@@ -737,7 +737,29 @@ info.addText(infotext2);
 const menubutton = new Button(
     100, 300, 50, 50, "Menu", "lightgreen", 1
 );
-
+const mobilebutton = new Button(
+    canvas.width-50, canvas.height-50, 50, 50, "Mobile", "lightblue", 1
+);
+const mobileW = new Button(
+    75, canvas.height-150, 75, 75, "W", "lightblue", 1
+)
+const mobileA = new Button(
+    0, canvas.height-75, 75, 75, "A", "lightblue", 1
+)
+const mobileS = new Button(
+    75, canvas.height-75, 75, 75, "S", "lightblue", 1
+)
+const mobileD = new Button(
+    150, canvas.height-75, 75, 75, "D", "lightblue", 1
+)
+const mobileShoot = new Button(
+    canvas.width-150, canvas.height-75, 75, 75, "Shoot", "lightyellow", 1
+);
+mobileW.visible=false;
+mobileA.visible=false;
+mobileS.visible=false;
+mobileD.visible=false;
+mobileShoot.visible=false;
 const menu = new Frame(
     250, 250, 300, 250, "lightgray", 0.5, null, true
 );
@@ -900,8 +922,22 @@ function animate(){
     // ctx.fillText(`Wave: ${wave}`, 10, 30);
     // ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
     menubutton.draw(ctx);
-
-    
+    mobilebutton.draw(ctx);
+    if (mobileW.visible) {
+    mobileW.draw(ctx);
+}
+    if (mobileA.visible) {
+    mobileA.draw(ctx);
+}
+    if (mobileS.visible) {
+    mobileS.draw(ctx);
+}
+    if (mobileD.visible) {
+    mobileD.draw(ctx);
+}
+    if (mobileShoot.visible) {
+    mobileShoot.draw(ctx);
+}
     bushes.forEach(bush => bush.draw(ctx));
     trees.forEach(tree => tree.draw(ctx));
     
@@ -913,10 +949,18 @@ for (const ball of balls) {
     ctx.fill();
     ctx.globalAlpha = 1;
     if (ball === balls[0]) {
-        if (keys['w']) ball.y -= 2*stats.speed;
-        if (keys['s']) ball.y += 2*stats.speed;
-        if (keys['a']) ball.x -= 2*stats.speed;
-        if (keys['d']) ball.x += 2*stats.speed;
+        if (keys['w'] || (mobileW.visible && mobileW.update())) {
+        ball.y -= 2 * stats.speed;
+    }
+        if (keys['s'] || (mobileS.visible && mobileS.update())) {
+        ball.y += 2*stats.speed;
+    }
+        if (keys['a'] || (mobileA.visible && mobileA.update())) {
+        ball.x -= 2*stats.speed;
+    }
+        if (keys['d'] || (mobileD.visible && mobileD.update())) {
+        ball.x += 2*stats.speed;
+    }
     }
 
     ball.x += ball.dx;
@@ -1121,7 +1165,17 @@ for (let i = 0; i < balls.length; i++) {
 if (!clickedFrame && menubutton.isPressed()) {
     menu.visible = !menu.visible;
 }
-
+if (!clickedFrame && mobileShoot.isPressed() && player) {
+    const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
+    balls.push(...newProjectiles);
+}
+if (!clickedFrame && mobilebutton.isPressed()) {
+    mobileW.visible = !mobileW.visible;
+    mobileA.visible = !mobileA.visible;
+    mobileS.visible = !mobileS.visible;
+    mobileD.visible = !mobileD.visible;
+    mobileShoot.visible = !mobileShoot.visible;
+}
 if (clickedFrame === menu && button4.isPressed()) {
     skinsmenu.visible = !skinsmenu.visible;
 }
