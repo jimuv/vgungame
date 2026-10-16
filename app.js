@@ -45,7 +45,7 @@ const weaponImages= {
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
-weaponImages["Sniper"].src = "assets/glasses.png";
+weaponImages["Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
 let armor = ["Leather", "Chain", "Plate"];
 let stats = {
@@ -399,7 +399,7 @@ class Gun {
             this.x=0;
             this.y=-25;
             this.width=90;
-            this.height=7;
+            this.height=40;
             this.angle=0;
             this.lastShot=0;
             this.offsetX=0;
@@ -585,8 +585,8 @@ class Text {
 }
 const weapons = {
     Pistol: new Gun("Pistol", 10, 3, Infinity),
-    Shotgun: new Gun("Shotgun", 8, 1, 64, 5, 5, 0.5),
-    Sniper: new Gun("Sniper", 50, 0.5, 10, 10, 1),
+    Shotgun: new Gun("Shotgun", 15, 1, 240, 5, 5, 0.5),
+    Sniper: new Gun("Sniper", 100, 0.5, 50, 10, 1),
     DualWield: new Gun("Dual Wield", 8, 5, Infinity)
 };
 
