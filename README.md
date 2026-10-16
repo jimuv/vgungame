@@ -15,7 +15,7 @@ As of enemies, this will probably be just a target practice, zombies, or actual 
 
 Note: I am planning to make this a sandbox mode for the early stages, and will work on playability, such as waves in the future
 
-This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable.
+<!-- This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable. -->
 
 # problems
 Some problems I'm facing right now is actual game design, I would say that I have no idea what im planning to make, which im basically just adding stuff as I learn.

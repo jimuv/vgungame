@@ -922,7 +922,7 @@ function animate(){
     // ctx.fillText(`Wave: ${wave}`, 10, 30);
     // ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
     menubutton.draw(ctx);
-    mobilebutton.draw(ctx);
+    // mobilebutton.draw(ctx);
     if (mobileW.visible) {
     mobileW.draw(ctx);
 }
@@ -1170,11 +1170,11 @@ if (!clickedFrame && mobileShoot.isPressed() && player) {
     balls.push(...newProjectiles);
 }
 if (!clickedFrame && mobilebutton.isPressed()) {
-    mobileW.visible = !mobileW.visible;
-    mobileA.visible = !mobileA.visible;
-    mobileS.visible = !mobileS.visible;
-    mobileD.visible = !mobileD.visible;
-    mobileShoot.visible = !mobileShoot.visible;
+    // mobileW.visible = !mobileW.visible;
+    // mobileA.visible = !mobileA.visible;
+    // mobileS.visible = !mobileS.visible;
+    // mobileD.visible = !mobileD.visible;
+    // mobileShoot.visible = !mobileShoot.visible;
 }
 if (clickedFrame === menu && button4.isPressed()) {
     skinsmenu.visible = !skinsmenu.visible;
