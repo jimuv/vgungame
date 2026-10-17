@@ -463,16 +463,17 @@ class melee {
         this.name = name;
         this.damage = damage;
         this.range = range;
-
         this.swinging = false;
         this.swingStart=0;
         this.swingDuration=300;
+        this.hitEnemies= new Set();
     }
 
     swing(){
         if (this.swinging) return;
         this.swinging=true;
         this.swingStart=Date.now();
+        this.hitEnemies.clear();
     }
 
     draw(ctx, player, mouseX, mouseY) {
@@ -483,7 +484,6 @@ class melee {
         const aimAngle = Math.atan2(mouseY - player.y, mouseX - player.x);
 
         const swingAngle = aimAngle + (Math.PI / 4) * (1 - progress);
-
         const image = weaponImages["Katana"];
         ctx.save();
         ctx.translate(player.x, player.y);
@@ -497,7 +497,63 @@ class melee {
             this.swinging=false;
         }
     }
-}
+
+    update(player, mouseX, mouseY) {
+        if (!this.swinging) return;
+        const bladeLength = this.range;
+
+        const elapsed = Date.now() - this.swingStart;
+        const progress = Math.min(elapsed / this.swingDuration, 1);
+        for (const enemy of balls) {
+                if (!enemy.isEnemy || enemy.isDead || enemy.remove || this.hitEnemies.has(enemy)){
+                    continue;
+                }
+                const dx = enemy.x - balls[0].x;
+                const dy = enemy.y - balls[0].y;
+                
+                const aimAngle = Math.atan2(mouseY - balls[0].y, mouseX - balls[0].x);
+
+                const localX= dx*Math.cos(-aimAngle)-dy*Math.sin(-aimAngle);
+                const localY= dx*Math.sin(-aimAngle)+dy*Math.cos(-aimAngle);
+
+                const closestX= Math.max(0, Math.min(localX, bladeLength));
+                const closestY = Math.max(-50, Math.min(localY, -10));  
+                const distanceSq= (localX-closestX)*(localX-closestX)+(localY-closestY)*(localY-closestY);
+
+                if (distanceSq <= enemy.radius * enemy.radius) {                    
+                    this.hitEnemies.add(enemy);
+                    enemy.health -= this.damage;
+                    enemy.color = "lightcoral";
+
+                    if(enemy.health <= 0){
+                        enemy.isDead = true;
+                        enemy.transparency = 0.95;
+                        enemy.dx=0;
+                        enemy.dy=0;
+
+                        setTimeout(() => {
+                            enemy.remove = true;
+                            money+= 10;
+                        }, 1000);
+                    }
+                    else {
+                        setTimeout(() => {
+                            if (!enemy.isDead) {
+                                enemy.color = "red";
+                            }
+                        }, 200);
+                    }
+                }
+                
+            }
+            if (progress >= 1) {
+                    this.swinging = false;
+                }
+
+        }
+    }
+
+
 
 const katana = new melee("Katana", 20, 50);
 
@@ -1197,6 +1253,7 @@ if (player) {
     currentWeapon.translate(mouseX - player.x, mouseY - player.y);
     
     gunDraw();
+    katana.update(player,mouseX, mouseY);
     katana.draw(ctx, player, mouseX, mouseY);
         if (
         currentWeapon.name === "Dual Wield" &&
