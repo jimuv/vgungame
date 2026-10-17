@@ -30,12 +30,14 @@ const accessoryImages = {
     "Glasses": new Image(),
     "Top Hat": new Image(),
     "Monocle": new Image(),
-    "Crown": new Image()
+    "Crown": new Image(),
+    "Cool Armor": new Image()
 }
 accessoryImages["Glasses"].src = "assets/glasses.png";
 accessoryImages["Top Hat"].src = "assets/Top_Hat.png";
 accessoryImages["Monocle"].src = "assets/monocle.png";
 accessoryImages["Crown"].src = "assets/Crown.png";
+accessoryImages["Cool Armor"].src = "assets/glasses.png";
 
 const weaponImages= {
     "Pistol": new Image(),
@@ -53,7 +55,6 @@ weaponImages["Explosive Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
 weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png"; //placeholder
-let armor = ["Leather", "Chain", "Plate"];
 let stats = {
     speed: 1,
     health: 100,
@@ -812,9 +813,10 @@ const shopItems = {
         ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, action: () => wearAccessory(name)}))
     ],
     Armor: [
-        { name: "Leather Armor", action: () => equipArmor(5) },
-        { name: "Iron Armor", action: () => equipArmor(10) },
-        { name: "Gold Armor", action: () => equipArmor(15) }
+        { name: "Leather Armor", action: () => equipArmor(5, "Leather Armor") },
+        { name: "Iron Armor", action: () => equipArmor(10, "Iron Armor") },
+        { name: "Gold Armor", action: () => equipArmor(15, "Gold Armor") },
+        { name: "Cool Armor", action: () => equipArmor(20, "Cool Armor") }
     ]
 };
 
@@ -840,6 +842,20 @@ function wearAccessory(accessoryName) {
 function getAccessory() {
     const player = balls.find(ball => ball.isPlayer);
     if (!player) return;
+
+    if (player.armorName === "Cool Armor") {
+        const armorImage = accessoryImages["Cool Armor"];
+
+        ctx.drawImage(
+            armorImage,
+            player.x - player.radius,
+            player.y - player.radius,
+            player.radius * 2,
+            player.radius * 2
+        );
+
+}
+
     const image = accessoryImages[player.accessory];
 
     if(!image||!image.complete||image.naturalWidth===0){
@@ -850,6 +866,7 @@ function getAccessory() {
     let x = player.x - player.radius;
     let y = player.y - player.radius;
 
+    
     if(player.accessory==="Glasses"){
         width= player.radius*2;
         height= player.radius*2;
@@ -870,12 +887,12 @@ function getAccessory() {
     }
     ctx.drawImage(image, x, y, width, height);
 }
-function equipArmor(armorValue) {
+function equipArmor(armorValue, armorName) {
     const player = balls.find(ball => ball.isPlayer);
     if (!player) return;
 
     const oldMaxHealth = player.maxHealth;
-
+    player.armorName=   armorName;
     stats.armor = armorValue;
     player.maxHealth = getMaxHealth();
 
