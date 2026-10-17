@@ -60,11 +60,30 @@ let stats = {
 }
 let currentCategory = "Guns";
 /*
-plans:
+plans (not implemented yet):
 guns: rocket launcher???
 add powerups: health, speed, damage, armor
 
 add: melee
+
+for menu:
+add < > to switch between categories in shop,
+also if theres more than 1 page of whatever
+
+for mobile: add touch controls and improve shooting, draggable aim?
+
+for objects: add walls (penetration, less dmg/deflect/absorb)
+
+for enemies: give them guns/weapons (melee preferably)
+
+for weapons: add rpg, then use explosion for grenade (utility)
+
+for gameplay: add random events (2x money multiplier?)
+add sound
+add gamemode, will need a new main menu button
+
+other fun options: 2 player in 1 device mode?
+map creation? (will need export/import)
 */
 
 let balls =[
