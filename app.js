@@ -43,7 +43,8 @@ const weaponImages= {
     "Sniper": new Image(),
     "Explosive Sniper": new Image(),
     "Katana": new Image(),
-    "Nodachi": new Image()
+    "Nodachi": new Image(),
+    "Dragon Slayer": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -51,7 +52,7 @@ weaponImages["Sniper"].src = "assets/Sniper.png";
 weaponImages["Explosive Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
-//weaponImages["Dragon Slayer"].src = "assets/Katana.png"; //placeholder
+weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png"; //placeholder
 let armor = ["Leather", "Chain", "Plate"];
 let stats = {
     speed: 1,
@@ -553,11 +554,15 @@ class melee {
 
         const swingAngle = aimAngle + (Math.PI / 4) * (1 - progress);
         const image = weaponImages[this.name];
+        var Slayer=0;
         ctx.save();
         ctx.translate(player.x, player.y);
         ctx.rotate(swingAngle);
         if (image.complete && image.naturalWidth > 0) {
-            ctx.drawImage(image, 0, -50, this.range, 40);
+            if(this.name==="Dragon Slayer"){
+                Slayer=40;
+            }
+            ctx.drawImage(image, 0, -50-(Slayer/2), this.range, 40+Slayer);
         }
         ctx.restore();
 
@@ -625,6 +630,7 @@ class melee {
 
 const katana = new melee("Katana", 20, 50);
 const nodachi = new melee("Nodachi", 50, 100);
+const dragonslayer = new melee("Dragon Slayer", 75, 150);
 let currentMelee = katana;
 
 function createExplosion(x, y, radius, damage) {
@@ -791,7 +797,8 @@ const shopItems = {
         { name: "Explosive Sniper", action: () => currentWeapon = weapons.ExplosiveSniper },
         { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield },
         { name: "Katana", action: () => currentMelee= katana },
-        { name: "Nodachi", action: () => currentMelee= nodachi }
+        { name: "Nodachi", action: () => currentMelee= nodachi },
+        { name: "Dragon Slayer", action: () => currentMelee= dragonslayer }
     ],
     Utility: [
         { name: "Heal Package", action: () => objects.push(new Object("heal")) },
