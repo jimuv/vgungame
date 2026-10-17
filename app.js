@@ -41,12 +41,14 @@ const weaponImages= {
     "Pistol": new Image(),
     "Shotgun": new Image(),
     "Sniper": new Image(),
+    "Explosive Sniper": new Image(),
     "Katana": new Image(),
     "Nodachi": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
 weaponImages["Sniper"].src = "assets/Sniper.png";
+weaponImages["Explosive Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
 //weaponImages["Dragon Slayer"].src = "assets/Katana.png"; //placeholder
@@ -90,6 +92,7 @@ let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed}
 ]
 let objects = [];
+let explosions = [];
 
 window.addEventListener("keydown", (event)=>{
     keys[event.key.toLowerCase()] = true;
@@ -348,6 +351,24 @@ class Object {
             this.duration=1000;
             this.durationBoost=5000;
         }
+        if (type === "mine") {
+            this.x = Math.random() * (canvas.width - 20) + 10;
+            this.y = Math.random() * (canvas.height - 20) + 10;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.color = "black";
+            this.type = "mine";
+            this.healAmount = 0;
+            this.speedAmount = 0;
+            this.explosive = true;
+            this.explosionRadius = 90;
+            this.explosionDamage = 50;
+
+            this.scale=3;
+            this.startTime=performance.now();
+            this.duration=1000;
+        }
     }
     update(){
         const elapsed = performance.now() - this.startTime;
@@ -366,6 +387,14 @@ class Object {
             r = 128;
             g = 128;
             b = 128;
+        } else if (this.type === "mine") {
+            r = 0;
+            g = 0;
+            b = 0;
+        } else if (this.type === "speedboost") {
+            r = 0;
+            g = 0;
+            b = 255;
         }
 
         this.color = `rgb(
@@ -387,7 +416,7 @@ class Object {
     }
 }
 class Gun {
-    constructor(name, damage, fireRate, ammo, projectileSpeed = 5, bulletCount = 1, spread = 0) {
+    constructor(name, damage, fireRate, ammo, projectileSpeed = 5, bulletCount = 1, spread = 0, explosive=false, explosionRadius=90, explosionDamage=damage) {
         this.name = name;
         this.damage = damage;
         this.fireRate = fireRate;
@@ -395,6 +424,9 @@ class Gun {
         this.projectileSpeed = projectileSpeed;
         this.bulletCount = bulletCount;
         this.spread = spread;
+        this.explosive = explosive;
+        this.explosionRadius = explosionRadius;
+        this.explosionDamage = explosionDamage;
         this.offsetX = 0;
         this.offsetY = 0;  
         if (this.name==="Pistol"||this.name===null){
@@ -418,6 +450,16 @@ class Gun {
             this.offsetY=0;
         }
         if(this.name==="Sniper"){
+            this.x=0;
+            this.y=-25;
+            this.width=90;
+            this.height=40;
+            this.angle=0;
+            this.lastShot=0;
+            this.offsetX=0;
+            this.offsetY=-10;
+        }
+        if(this.name==="Explosive Sniper"){
             this.x=0;
             this.y=-25;
             this.width=90;
@@ -457,7 +499,7 @@ class Gun {
         const dy= targetY - player.y;
         const angle=Math.atan2(dy, dx);
         const projectiles = [];
-
+        
         for(let i=0;i<this.bulletCount;i++){
             const offset=this.bulletCount===1?0:(i/(this.bulletCount-1)-0.5)*this.spread;
             const projectileAngle=angle+offset;
@@ -470,7 +512,11 @@ class Gun {
                 radius: 5,
                 isProjectile: true,
                 createdAt: Date.now(),
-                damage: this.damage
+                damage: this.damage,
+
+                isExplosive: this.explosive,
+                explosionRadius: this.explosionRadius,
+                explosionDamage: this.explosionDamage,
             })
         }
 
@@ -580,6 +626,73 @@ class melee {
 const katana = new melee("Katana", 20, 50);
 const nodachi = new melee("Nodachi", 50, 100);
 let currentMelee = katana;
+
+function createExplosion(x, y, radius, damage) {
+    explosions.push({ x, y, radius, damage, createdAt: Date.now(),duration: 250});
+
+    for (const enemy of balls) {
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove) {
+            continue;
+        }
+        const dx = enemy.x - x;
+        const dy = enemy.y - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance <= radius + enemy.radius) {
+            enemy.health -= damage;
+            enemy.color = "orange";
+
+            if (enemy.health <= 0) {
+                enemy.isDead = true;
+                enemy.transparency = 0.95;
+                enemy.dx = 0;
+                enemy.dy = 0;
+
+                setTimeout(() => {
+                    if (!enemy.remove) {
+                        enemy.remove = true;
+                        money += 10;
+                    }
+                }, 800);
+            } else {
+                setTimeout(() => {
+                    if (!enemy.isDead) {
+                        enemy.color = "red";
+                    }
+                }, 200);
+            }
+        }
+    }
+
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player || player.isDead || player.remove) {
+        return;
+    }
+    const dx = player.x - x;
+    const dy = player.y - y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < radius + player.radius) {
+        player.health -= damage * 0.1;
+        player.health = Math.max(0, player.health);
+
+        if (player.health <= 0) {
+            player.isDead = true;
+            player.transparency = 0.95;
+
+            setTimeout(() => {
+                player.isDead = false;
+                player.health = getMaxHealth();
+                player.x= canvas.width / 2;
+                player.y= canvas.height / 2;
+                player.dx=0;
+                player.dy=0;
+            }, 2000);
+    }
+    }
+}
+
+
 const glassesImage = new Image();
 glassesImage.src = "assets/glasses.png";
 
@@ -666,6 +779,7 @@ const weapons = {
     Pistol: new Gun("Pistol", 10, 3, Infinity),
     Shotgun: new Gun("Shotgun", 15, 1, 240, 5, 5, 0.5),
     Sniper: new Gun("Sniper", 100, 0.5, 50, 10, 1),
+    ExplosiveSniper: new Gun("Explosive Sniper", 100, 0.5, 50, 10, 1,0,true,120,100),
     DualWield: new Gun("Dual Wield", 8, 5, Infinity)
 };
 
@@ -674,6 +788,7 @@ const shopItems = {
         { name: "Pistol", action: () => currentWeapon = weapons.Pistol },
         { name: "Shotgun", action: () => currentWeapon = weapons.Shotgun },
         { name: "Sniper", action: () => currentWeapon = weapons.Sniper },
+        { name: "Explosive Sniper", action: () => currentWeapon = weapons.ExplosiveSniper },
         { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield },
         { name: "Katana", action: () => currentMelee= katana },
         { name: "Nodachi", action: () => currentMelee= nodachi }
@@ -681,7 +796,8 @@ const shopItems = {
     Utility: [
         { name: "Heal Package", action: () => objects.push(new Object("heal")) },
         { name: "Big Rock", action: () => objects.push(new Object("rock")) },
-        { name: "Speed Boost", action: () => objects.push(new Object("speedboost")) }
+        { name: "Speed Boost", action: () => objects.push(new Object("speedboost")) },
+        { name: "Mine", action: () => objects.push(new Object("mine")) }
     ],
     Skins: [
         { name: "Red Ball", action: () => balls[0].color = "red" },
@@ -848,6 +964,9 @@ const menu = new Frame(
 const settings = new Frame(
     400, 400, 300, 250, "darkgray", 0.5, null, true
 );
+const globalStopFollow = new Button(
+    450, 300, 50, 50, "Stop Follow", "red", 0.5
+);
 const bgButton = new Button(
     450, 450, 150, 50, "Change Background", "lightgray", 0.5
 );
@@ -916,6 +1035,7 @@ menu.addButton(button3);
 menu.addButton(button4);
 menu.addButton(buttonshop);
 menu.addButton(buttonSettings);
+menu.addButton(globalStopFollow);
 skinsmenu.addButton(button5);
 skinsmenu.addButton(button6);
 skinsmenu.addButton(button7);
@@ -1075,6 +1195,7 @@ if (ball.y + ball.radius > canvas.height) {
 
 
 
+
 for (let i = 0; i < balls.length; i++) {
     for (let j = i + 1; j < balls.length; j++) {
         const ball1 = balls[i];
@@ -1101,6 +1222,15 @@ for (let i = 0; i < balls.length; i++) {
             enemy.hit = true;
             enemy.color = "lightcoral";
             enemy.health -= projectile.damage;
+            if (projectile.isExplosive) {
+                createExplosion(
+                    projectile.x,
+                    projectile.y,
+                    projectile.explosionRadius,
+                    projectile.explosionDamage
+                );
+            }
+
             if (enemy.health <= 0) {
                 enemy.isDead = true;
                 enemy.transparency=0.95;
@@ -1190,18 +1320,88 @@ for (let i = 0; i < balls.length; i++) {
         }
     }
     
+ 
 }
 
+       for (const explosion of explosions) {
+        const progress = Math.min(
+            (Date.now() - explosion.createdAt) / explosion.duration,
+            1
+        );
 
+        ctx.save();
+        ctx.globalAlpha = 1 - progress;
+        ctx.fillStyle = "orange";
+        ctx.beginPath();
+        ctx.arc(
+            explosion.x,
+            explosion.y,
+            explosion.radius * progress,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+
+        ctx.strokeStyle = "yellow";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    explosions = explosions.filter(
+        explosion => Date.now() - explosion.createdAt < explosion.duration
+    );
       
     const player = balls.find(ball => ball.isPlayer);
     if (player) {
         for (const obj of objects) {
-            if (["heal", "rock", "speedboost"].includes(obj.type)) {                obj.draw(ctx);
+            if (["heal", "rock", "speedboost", "mine"].includes(obj.type)) {                
+                obj.draw(ctx);
                 const closestX = Math.max(
             obj.x,
             Math.min(player.x, obj.x + obj.width)
         );
+            if (obj.type === "mine") {
+                if (player.isDead || player.remove) continue;
+                let dx = player.x - obj.x;
+                let dy = player.y - obj.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < obj.radius + player.radius) {
+                    createExplosion(
+                        obj.x,
+                        obj.y,
+                        obj.explosionRadius,
+                        obj.explosionDamage
+                    );
+
+                    obj.remove = true;
+                    continue;
+                }
+
+            for (const enemy of balls) {
+                if (!enemy.isEnemy || enemy.isDead || enemy.remove) continue;
+
+                const dx = enemy.x - obj.x;
+                const dy = enemy.y - obj.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < obj.radius + enemy.radius) {
+                    createExplosion(
+                        obj.x,
+                        obj.y,
+                        obj.explosionRadius,
+                        obj.explosionDamage
+                    );
+
+                    obj.remove = true;
+                    break;
+                }
+            }
+
+    continue;
+}
+        
 
         const closestY = Math.max(
             obj.y,
@@ -1380,6 +1580,11 @@ if (menu.visible && clickedFrame === menu) {
         for (const ball of balls) {
             ball.dx = 0;
             ball.dy = 0;
+        }
+    }
+    if (globalStopFollow.isPressed()) {
+        for (const ball of balls) {
+            ball.following = false;
         }
     }
 
