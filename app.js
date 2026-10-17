@@ -41,12 +41,15 @@ const weaponImages= {
     "Pistol": new Image(),
     "Shotgun": new Image(),
     "Sniper": new Image(),
-    "Katana": new Image()
+    "Katana": new Image(),
+    "Nodachi": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
 weaponImages["Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
+weaponImages["Nodachi"].src = "assets/Katana.png";
+//weaponImages["Dragon Slayer"].src = "assets/Katana.png"; //placeholder
 let armor = ["Leather", "Chain", "Plate"];
 let stats = {
     speed: 1,
@@ -484,7 +487,7 @@ class melee {
         const aimAngle = Math.atan2(mouseY - player.y, mouseX - player.x);
 
         const swingAngle = aimAngle + (Math.PI / 4) * (1 - progress);
-        const image = weaponImages["Katana"];
+        const image = weaponImages[this.name];
         ctx.save();
         ctx.translate(player.x, player.y);
         ctx.rotate(swingAngle);
@@ -556,7 +559,8 @@ class melee {
 
 
 const katana = new melee("Katana", 20, 50);
-
+const nodachi = new melee("Nodachi", 50, 100);
+let currentMelee = katana;
 const glassesImage = new Image();
 glassesImage.src = "assets/glasses.png";
 
@@ -651,7 +655,9 @@ const shopItems = {
         { name: "Pistol", action: () => currentWeapon = weapons.Pistol },
         { name: "Shotgun", action: () => currentWeapon = weapons.Shotgun },
         { name: "Sniper", action: () => currentWeapon = weapons.Sniper },
-        { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield }
+        { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield },
+        { name: "Katana", action: () => currentMelee= katana },
+        { name: "Nodachi", action: () => currentMelee= nodachi }
     ],
     Utility: [
         { name: "Heal Package", action: () => objects.push(new Object("heal")) },
@@ -1253,8 +1259,8 @@ if (player) {
     currentWeapon.translate(mouseX - player.x, mouseY - player.y);
     
     gunDraw();
-    katana.update(player,mouseX, mouseY);
-    katana.draw(ctx, player, mouseX, mouseY);
+    currentMelee.update(player,mouseX, mouseY);
+    currentMelee.draw(ctx, player, mouseX, mouseY);
         if (
         currentWeapon.name === "Dual Wield" &&
         glassesImage.complete &&
@@ -1293,7 +1299,7 @@ if (keys['f'] && !fWasPressed && player) {
     balls.push(...newProjectiles);
 }
 if (keys['g'] && !gWasPressed && player) {
-    katana.swing();
+    currentMelee.swing();
 }
 
 fWasPressed = keys['f'];
