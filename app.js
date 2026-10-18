@@ -528,6 +528,21 @@ class Gun {
     
 }
 
+let soundEnabled = false;
+
+function playSound() {
+    const audio = new AudioContext();
+    const oscillator = audio.createOscillator();
+    const gain= audio.createGain();
+
+    oscillator.type = 'square';
+    oscillator.frequency.value=100;
+    gain.gain.value=0.1;
+    oscillator.connect(gain);
+    gain.connect(audio.destination);
+    oscillator.start();
+    oscillator.stop(audio.currentTime + 0.1);
+}
 class melee {
     constructor(name, damage, range) {
         this.name = name;
@@ -954,6 +969,8 @@ function wearAccessory(accessoryName) {
     if(accessoryName==="Crown"&&!Owned.includes("Crown")&&money>=10){
         Owned.push("Crown");
         money-=10;
+    } else {
+        playSound();
     }
     if(Owned.includes(accessoryName)){
         player.accessory= accessoryName;
@@ -1121,6 +1138,9 @@ const bgButton = new Button(
 const toggleWall = new Button(
     450, 500, 150, 50, "Toggle Wall", "lightgray", 0.5
 );
+const toggleSound = new Button(
+    450, 550, 150, 50, "Toggle Sound", "lightgray", 0.5
+);
 const button = new Button(
     300, 300, 150, 50, "Move Ball", "darkgray", 0.5
 );
@@ -1194,7 +1214,7 @@ skinsmenu.addButton(button8);
 
 settings.addButton(bgButton);
 settings.addButton(toggleWall);
-
+settings.addButton(toggleSound);
 shopmenu.addButton(buttonshopGun);
 shopmenu.addButton(buttonshopUtil);
 shopmenu.addButton(buttonshopSkins);
@@ -1305,17 +1325,18 @@ for (const ball of balls) {
     ctx.fill();
     ctx.globalAlpha = 1;
     if (ball === balls[0]) {
+        const run = keys["shift"] ? 1.5 : 1;
         if (keys['w'] || (mobileW.visible && mobileW.update())) {
-        ball.y -= 2 * stats.speed;
+        ball.y -= 2 * stats.speed * run;
     }
         if (keys['s'] || (mobileS.visible && mobileS.update())) {
-        ball.y += 2*stats.speed;
+        ball.y += 2*stats.speed * run;
     }
         if (keys['a'] || (mobileA.visible && mobileA.update())) {
-        ball.x -= 2*stats.speed;
+        ball.x -= 2*stats.speed * run;
     }
         if (keys['d'] || (mobileD.visible && mobileD.update())) {
-        ball.x += 2*stats.speed;
+        ball.x += 2*stats.speed * run;
     }
     }
 
@@ -1722,6 +1743,9 @@ if(settings.visible&&clickedFrame===settings){
 
     if(toggleWall.isPressed()){
         wallsVisible = !wallsVisible;
+    }
+    if(toggleSound.isPressed()){
+        soundEnabled = !soundEnabled;
     }
 }
 
