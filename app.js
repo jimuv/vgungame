@@ -708,12 +708,18 @@ glassesImage.src = "assets/glasses.png";
 const bushImage = new Image();
 bushImage.src = "assets/bush.png";
 
-const bushes = [];
+
 
 const treeImage = new Image();
 treeImage.src = "assets/tree.png";
 
+const wallImage = new Image();
+wallImage.src = "assets/wall.png";
+
+const bushes = [];
 const trees = [];
+const walls = [];
+let wallsVisible = false;
 
 class Bush {
     constructor(x, y, width = 60, height = 60) {
@@ -735,6 +741,120 @@ class Bush {
         }
     }
 }
+
+class Wall {
+    constructor(x, y, width = 100, height = 20, options = {}) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+
+        this.bulletBehavior = options.bulletBehavior || "deflect";
+        this.solid = options.solid ?? true;
+    }
+
+    draw(ctx) {
+        if (wallImage.complete && wallImage.naturalWidth > 0) {
+            ctx.drawImage(
+                wallImage,
+                this.x,
+                this.y,
+                this.width,
+                this.height
+            );
+        }
+    }
+}
+
+function handleWallCollision() {
+    for (let i=balls.length-1; i>=0; i--) {
+        const ball = balls[i];
+        if (ball.isDead || ball.remove) {
+            continue;
+        }
+
+        for (const wall of walls) {
+            if (!wall.solid||wallsVisible===false) {
+                continue;
+            }
+            const closestX = Math.max(wall.x, Math.min(ball.x, wall.x + wall.width));
+            const closestY = Math.max(wall.y, Math.min(ball.y, wall.y + wall.height));
+            let dx= ball.x - closestX;
+            let dy= ball.y - closestY;
+            const distanceSq = dx * dx + dy * dy;
+
+            if (distanceSq >=ball.radius * ball.radius) continue;
+            let nx,ny;
+            const distance = Math.sqrt(distanceSq);
+            if(distance>0.00001){
+                nx= dx/distance;
+                ny= dy/distance;
+            } else {
+                const sides = [
+                    { x: wall.x, y: wall.y + wall.height / 2 },
+                    { x: wall.x + wall.width, y: wall.y + wall.height / 2 },
+                    { x: wall.x + wall.width / 2, y: wall.y },
+                    { x: wall.x + wall.width / 2, y: wall.y + wall.height }
+                ];
+                let minDistSq = Infinity;
+                let closestSide = null;
+                for (const side of sides) {
+                    const sideDx = ball.x - side.x;
+                    const sideDy = ball.y - side.y;
+                    const sideDistSq = sideDx * sideDx + sideDy * sideDy;
+                    if (sideDistSq < minDistSq) {
+                        minDistSq = sideDistSq;
+                        closestSide = side;
+                    }
+                }
+                if (closestSide) {
+                    nx = closestSide.x - ball.x;
+                    ny = closestSide.y - ball.y;
+                }
+
+
+            }
+            
+            if (ball.isProjectile) {
+
+                if(wall.bulletBehavior === "penetrate"){
+                    continue;
+                }
+                if (wall.bulletBehavior === "destroy"){
+                    ball.remove=true;
+                    break;
+                }
+                if(wall.bulletBehavior === "deflect"){
+
+                    const dot = (ball.dx * nx + ball.dy * ny);
+                    if (dot < 0) {
+                        ball.dx -= 2 * dot * nx;
+                        ball.dy -= 2 * dot * ny;
+                    }
+
+                    else{
+                        continue;
+                    }
+                } else{
+                    const dot = (ball.dx * nx + ball.dy * ny);
+                    if (dot < 0) {
+                        ball.dx -= 2 * dot * nx;
+                        ball.dy -= 2 * dot * ny;
+                    }
+                }
+            }
+            const penetrationDepth = ball.radius - distance;
+            if (distance > 0.00001) {
+                ball.x += nx * penetrationDepth;
+                ball.y += ny * penetrationDepth;
+            } else{
+                ball.x += penetrationDepth;
+                ball.y += penetrationDepth;
+            }
+            }
+        }
+    }
+
 
 class Tree {
     constructor(x, y, width = 60, height = 120) {
@@ -763,7 +883,11 @@ bushes.push(new Bush(600, 150));
 
 trees.push(new Tree(500, 450));
 
+walls.push(new Wall(700,500, 200,20, { bulletBehavior: "deflect", solid: true }));
 
+walls.push(new Wall(0,500, 200,20, { bulletBehavior: "destroy", solid: true }));
+
+walls.push(new Wall(700, 100, 10, 200, { bulletBehavior: "penetrate", solid: true }));
 class Text {
     constructor(x, y, text, color, size) {
         this.x = x;
@@ -994,6 +1118,9 @@ const globalStopFollow = new Button(
 const bgButton = new Button(
     450, 450, 150, 50, "Change Background", "lightgray", 0.5
 );
+const toggleWall = new Button(
+    450, 500, 150, 50, "Toggle Wall", "lightgray", 0.5
+);
 const button = new Button(
     300, 300, 150, 50, "Move Ball", "darkgray", 0.5
 );
@@ -1066,6 +1193,7 @@ skinsmenu.addButton(button7);
 skinsmenu.addButton(button8);
 
 settings.addButton(bgButton);
+settings.addButton(toggleWall);
 
 shopmenu.addButton(buttonshopGun);
 shopmenu.addButton(buttonshopUtil);
@@ -1165,7 +1293,10 @@ function animate(){
 }
     bushes.forEach(bush => bush.draw(ctx));
     trees.forEach(tree => tree.draw(ctx));
-    
+    if (wallsVisible) {
+    walls.forEach(wall => wall.draw(ctx));
+    }
+    handleWallCollision();
 for (const ball of balls) {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
@@ -1587,6 +1718,10 @@ if(settings.visible&&clickedFrame===settings){
         setTimeout(() => {
             bgCooldown = false;
         }, BG_COOLDOWN_MS);
+    }
+
+    if(toggleWall.isPressed()){
+        wallsVisible = !wallsVisible;
     }
 }
 
