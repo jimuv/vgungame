@@ -90,6 +90,15 @@ other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
 */
 
+/*
+Wave mode:
+wave 1: 1 ball
+wave 2: 2 balls
+wave 3: 5 balls
+wave 4: 10 balls
+wave 5: big ball, 3 balls
+*/
+
 let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed}
 ]
@@ -642,7 +651,80 @@ class melee {
         }
     }
 
+    function drawEnemyWeapon(enemy){
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
+            return;
+        }
 
+        const weaponImage = weaponImages[enemy.weapon];
+
+        if(!weaponImage || !weaponImage.complete || weaponImage.naturalWidth === 0){
+            return;
+        }
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.rotate(Math.atan2(balls[0].y - enemy.y, balls[0].x - enemy.x));
+        ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
+
+        ctx.restore();
+    }
+
+    function enemyShoot(enemy){
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
+            return;
+        }
+        if (enemy.shootCooldown>0){
+            return;
+        }
+        if (enemy.weapon === "Katana" || enemy.weapon === "Nodachi" || enemy.weapon === "Dragon Slayer") {
+            return;
+        }
+        const player = balls.find(ball => ball.isPlayer);
+        if (!player || player.isDead || player.remove) {
+            return;
+        }
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        const baseGun = globalThis.Object.values(weapons).find(w => w.name === enemy.weapon);
+        if (!baseGun) {
+            return;
+        }
+        if (!enemy.gun) {
+            enemy.gun = new Gun(
+                baseGun.name, 
+                baseGun.damage, 
+                baseGun.fireRate, 
+                Infinity,
+                baseGun.projectileSpeed, 
+                baseGun.bulletCount, 
+                baseGun.spread,
+                baseGun.explosive, 
+                baseGun.explosionRadius, 
+                baseGun.explosionDamage
+            );
+        }
+
+
+        if (distance === 0) {
+            return;
+        }
+
+        const gun = globalThis.Object.values(weapons).find(w => w.name === enemy.weapon);        if (!gun) {
+            return;
+        }
+
+        const projectiles = gun.shoot(enemy, player.x, player.y);
+        for (const projectile of projectiles) {
+            projectile.isEnemyBullet = true;
+            projectile.color="orange";
+            projectile.owner = enemy;
+        }
+        balls.push(...projectiles);
+
+        enemy.shootCooldown = enemy.shootDelay;
+    }
 
 const katana = new melee("Katana", 20, 50);
 const nodachi = new melee("Nodachi", 50, 100);
@@ -1324,6 +1406,11 @@ for (const ball of balls) {
     ctx.globalAlpha = ball.isDead ? 0.25 : 1;
     ctx.fill();
     ctx.globalAlpha = 1;
+    drawEnemyWeapon(ball);
+    if(ball.isEnemy){
+        enemyShoot(ball);
+        ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
+    }
     if (ball === balls[0]) {
         const run = keys["shift"] ? 1.5 : 1;
         if (keys['w'] || (mobileW.visible && mobileW.update())) {
@@ -1378,54 +1465,90 @@ for (let i = 0; i < balls.length; i++) {
         const ball2 = balls[j];
 
         if (ball1.isProjectile || ball2.isProjectile) {
-    let projectile;
-    let enemy;
+    let projectile = null;
+    let target = null;
 
-    if (ball1.isProjectile && !ball2.isProjectile && !ball2.isPlayer) {
+    if (ball1.isProjectile && !ball2.isProjectile) {
         projectile = ball1;
-        enemy = ball2;
-    } else if (ball2.isProjectile && !ball1.isProjectile && !ball1.isPlayer) {
+        target = ball2;
+    } else if (ball2.isProjectile && !ball1.isProjectile) {
         projectile = ball2;
-        enemy = ball1;
+        target = ball1;
     }
 
-    if (projectile && enemy) {
-        const dx = enemy.x - projectile.x;
-        const dy = enemy.y - projectile.y;
+    if (projectile && target && !projectile.remove && !target.remove && !target.isDead) {
+        const correctTarget = projectile.isEnemyBullet
+            ? target.isPlayer
+            : target.isEnemy;
+
+        const dx = target.x - projectile.x;
+        const dy = target.y - projectile.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < projectile.radius + enemy.radius && !enemy.hit && !enemy.isDead) {
-            enemy.hit = true;
-            enemy.color = "lightcoral";
-            enemy.health -= projectile.damage;
-            if (projectile.isExplosive) {
-                createExplosion(
-                    projectile.x,
-                    projectile.y,
-                    projectile.explosionRadius,
-                    projectile.explosionDamage
-                );
-            }
-
-            if (enemy.health <= 0) {
-                enemy.isDead = true;
-                enemy.transparency=0.95;
-                enemy.dx = projectile.dx/15;
-                enemy.dy = projectile.dy/15;
-                
-                setTimeout(() => {
-                enemy.remove = true;
-                money += 10;
-            }, 800);
-            }
+        if (correctTarget && distance < projectile.radius + target.radius) {
             projectile.remove = true;
 
-            setTimeout(() => {
-                enemy.color = "red";
-                enemy.hit = false;
-            }, 200);
+            if (target.isPlayer) {
+                target.health -= projectile.damage;
+                target.health = Math.max(0, target.health);
+                target.color = "lightblue";
+
+                setTimeout(() => {
+                    if (!target.isDead) {
+                        target.color = "blue";
+                    }
+                }, 200);
+
+                if (target.health <= 0) {
+                    target.isDead = true;
+
+                    setTimeout(() => {
+                        target.isDead = false;
+                        target.health = target.maxHealth;
+                        target.x = canvas.width / 2;
+                        target.y = canvas.height / 2;
+                        target.dx = 0;
+                        target.dy = 0;
+                        target.color = "blue";
+                    }, 2000);
+                }
+            } else {
+                target.hit = true;
+                target.color = "lightcoral";
+                target.health -= projectile.damage;
+
+                if (projectile.isExplosive) {
+                    createExplosion(
+                        projectile.x,
+                        projectile.y,
+                        projectile.explosionRadius,
+                        projectile.explosionDamage
+                    );
+                }
+
+                if (target.health <= 0) {
+                    target.isDead = true;
+                    target.transparency = 0.95;
+                    target.dx = projectile.dx / 15;
+                    target.dy = projectile.dy / 15;
+
+                    setTimeout(() => {
+                        if (!target.remove) {
+                            target.remove = true;
+                            money += 10;
+                        }
+                    }, 800);
+                } else {
+                    setTimeout(() => {
+                        if (!target.isDead && !target.remove) {
+                            target.color = "red";
+                        }
+                        target.hit = false;
+                    }, 200);
+                }
+            }
         }
-    }
+    }  
 
     continue;
 }
@@ -1772,6 +1895,7 @@ if (menu.visible && clickedFrame === menu) {
     }
 
     if (button3.isPressed()) {
+        const weaponslist = ["Katana", "Nodachi", "Dragon Slayer", "Pistol", "Shotgun", "Sniper"];
         const newBall = {
             x: canvas.width / 2,
             y: canvas.height / 2,
@@ -1783,7 +1907,11 @@ if (menu.visible && clickedFrame === menu) {
             maxHealth: 100,
             isDead: false,
             isEnemy: true,
-            following: false
+            following: false,
+            weapon: null, //weaponslist[Math.floor(Math.random() * weaponslist.length)]
+            shootCooldown: 0,
+            shootDelay: 1000,
+            accessory: accessories[Math.floor(Math.random() * accessories.length)],
         };
 
         balls.push(newBall);
