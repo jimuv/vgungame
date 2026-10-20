@@ -93,6 +93,15 @@ other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
 */
 
+/*
+Wave mode:
+wave 1: 1 ball
+wave 2: 2 balls
+wave 3: 5 balls
+wave 4: 10 balls
+wave 5: big ball, 3 balls
+*/
+
 let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed}
 ]
@@ -1611,7 +1620,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 }
             }
         }
-    }
+    }  
 
     continue;
 }
@@ -1958,7 +1967,6 @@ if (menu.visible && clickedFrame === menu) {
     }
 
     if (button3.isPressed()) {
-          const weaponslist = ["Katana", "Nodachi", "Dragon Slayer", "Pistol", "Shotgun", "Sniper"];
         const newBall = {
             x: canvas.width / 2,
             y: canvas.height / 2,
