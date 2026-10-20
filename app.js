@@ -17,7 +17,7 @@ const BG_COOLDOWN_MS = 1000;
 let gameScreen = "mainMenu";
 let gameMode = null;
 // Placeholders
-let enemyCountMax=10;
+let enemyCountMax=2;
 let enemyCounter=0;
 let money=0;
 let skins = ["red", "blue", "green", "yellow", "purple"];
@@ -85,12 +85,14 @@ for enemies: give them guns/weapons (melee preferably)
 
 for weapons: add rpg, then use explosion for grenade (utility)
 
-for gameplay: add random events (2x money multiplier?)
+for gameplay: add random events (2x money multiGplier?)
 add sound
 add gamemode, will need a new main menu button
 
 other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
+
+note: fix bug where player can still shoot when dead.
 */
 
 /*
@@ -326,7 +328,8 @@ const modeSelectButtons = [
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
 ]
 
-function spawnEnemy() {
+function spawnEnemy(weapon) {
+    enemyCounter++;
     balls.push({
         x: 100,
         y: 100,
@@ -339,7 +342,8 @@ function spawnEnemy() {
         hit: false,
         isDead: false,
         isEnemy: true,
-        following: true
+        following: true,
+        weapon: weapon
     });
 }
 
@@ -358,7 +362,8 @@ function drawModeSelect() {
             gameMode = "sandbox";
         } else if (modeSelectButtons[1].isPressed()) {
             balls= balls.filter(ball => ball.isPlayer);
-            spawnEnemy();
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
             gameScreen = "game";
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
@@ -682,6 +687,9 @@ class melee {
                         setTimeout(() => {
                             enemy.remove = true;
                             money+= 10;
+                            if(gameMode==="wave"){
+                                enemyCounter--;
+                            }
                         }, 1000);
                     }
                     else {
@@ -760,7 +768,8 @@ class melee {
             return;
         }
 
-        const gun = globalThis.Object.values(weapons).find(w => w.name === enemy.weapon);        if (!gun) {
+        const gun = enemy.gun;
+        if (!gun) {
             return;
         }
 
@@ -804,7 +813,11 @@ function createExplosion(x, y, radius, damage) {
                 setTimeout(() => {
                     if (!enemy.remove) {
                         enemy.remove = true;
+                        if(gameMode==="wave"){
+                                enemyCounter--;
+                            }
                         money += 10;
+                        
                     }
                 }, 800);
             } else {
@@ -1442,8 +1455,18 @@ function animate(){
     ctx.textBaseline = "top";
 
     ctx.fillText(`Money: ${money}`, 10, 10);
-    // ctx.fillText(`Wave: ${wave}`, 10, 30);
-    // ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
+    if (gameMode === "wave") {
+        ctx.fillText(`Wave: ${wave}`, 10, 30);
+        ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
+        if (enemyCounter <=0 && enemyCountMax===2) {
+            wave++;
+            enemyCountMax += 2;
+            spawnEnemy("Pistol");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+        }
+    }
     menubutton.draw(ctx);
     // mobilebutton.draw(ctx);
     if (mobileW.visible) {
@@ -1607,6 +1630,9 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                     setTimeout(() => {
                         if (!target.remove) {
                             target.remove = true;
+                            if(gameMode==="wave"){
+                                enemyCounter--;
+                            }
                             money += 10;
                         }
                     }, 800);
