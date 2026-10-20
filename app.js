@@ -1967,6 +1967,7 @@ if (menu.visible && clickedFrame === menu) {
     }
 
     if (button3.isPressed()) {
+        const weaponslist = ["Katana", "Nodachi", "Dragon Slayer", "Pistol", "Shotgun", "Sniper"];  
         const newBall = {
             x: canvas.width / 2,
             y: canvas.height / 2,
