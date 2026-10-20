@@ -13,6 +13,9 @@ let justClicked = false;
 let isDarkMode = false;
 let bgCooldown = false;
 const BG_COOLDOWN_MS = 1000;
+
+let gameScreen = "mainMenu";
+let gameMode = null;
 // Placeholders
 let enemyCountMax=10;
 let enemyCounter=0;
@@ -305,6 +308,53 @@ update() {
     }   
         addButton(button) {
         this.buttons.push(button);
+    }
+}
+
+const modeSelectButtons = [
+    new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
+    new Button(300, 300, 200, 50, "Sandbox Mode + 1 FollowEnemy", "lightblue", 0.5),
+    new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
+]
+
+function spawnEnemy() {
+    balls.push({
+        x: 100,
+        y: 100,
+        dx: 0,
+        dy: 0,
+        color: "red",
+        radius: radius,
+        health: 100,
+        maxHealth: 100,
+        hit: false,
+        isDead: false,
+        isEnemy: true,
+        following: true
+    });
+}
+
+function drawModeSelect() {
+    ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
+    ctx.font = "24px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("Select Game Mode", canvas.width / 2, 100);
+    for (const button of modeSelectButtons) {
+        button.draw(ctx);
+    }
+    if(justClicked){
+        if (modeSelectButtons[0].isPressed()) {
+            gameScreen = "game";
+            gameMode = "sandbox";
+        } else if (modeSelectButtons[1].isPressed()) {
+            balls= balls.filter(ball => ball.isPlayer);
+            spawnEnemy();
+            gameScreen = "game";
+            gameMode = "wave";
+        } else if (modeSelectButtons[2].isPressed()) {
+            gameScreen = "mainMenu";
+        }
     }
 }
 class Object {
@@ -642,7 +692,79 @@ class melee {
         }
     }
 
+ function drawEnemyWeapon(enemy){
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
+            return;
+        }
 
+        const weaponImage = weaponImages[enemy.weapon];
+
+        if(!weaponImage || !weaponImage.complete || weaponImage.naturalWidth === 0){
+            return;
+        }
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        ctx.rotate(Math.atan2(balls[0].y - enemy.y, balls[0].x - enemy.x));
+        ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
+
+        ctx.restore();
+    }
+
+    function enemyShoot(enemy){
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
+            return;
+        }
+        if (enemy.shootCooldown>0){
+            return;
+        }
+        if (enemy.weapon === "Katana" || enemy.weapon === "Nodachi" || enemy.weapon === "Dragon Slayer") {
+            return;
+        }
+        const player = balls.find(ball => ball.isPlayer);
+        if (!player || player.isDead || player.remove) {
+            return;
+        }
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        const baseGun = globalThis.Object.values(weapons).find(w => w.name === enemy.weapon);
+        if (!baseGun) {
+            return;
+        }
+        if (!enemy.gun) {
+            enemy.gun = new Gun(
+                baseGun.name, 
+                baseGun.damage, 
+                baseGun.fireRate, 
+                Infinity,
+                baseGun.projectileSpeed, 
+                baseGun.bulletCount, 
+                baseGun.spread,
+                baseGun.explosive, 
+                baseGun.explosionRadius, 
+                baseGun.explosionDamage
+            );
+        }
+
+        if (distance === 0) {
+            return;
+        }
+
+        const gun = globalThis.Object.values(weapons).find(w => w.name === enemy.weapon);        if (!gun) {
+            return;
+        }
+
+        const projectiles = gun.shoot(enemy, player.x, player.y);
+        for (const projectile of projectiles) {
+            projectile.isEnemyBullet = true;
+            projectile.color="orange";
+            projectile.owner = enemy;
+        }
+        balls.push(...projectiles);
+
+        enemy.shootCooldown = enemy.shootDelay;
+    }
 
 const katana = new melee("Katana", 20, 50);
 const nodachi = new melee("Nodachi", 50, 100);
@@ -1095,6 +1217,13 @@ const infotext2 = new Text(
 );
 info.addText(infotext1);
 info.addText(infotext2);
+const mainmenu = new Frame(
+    250, 250, 300, 250, "lightgray", 0.5, null, false
+);
+const mainmenuButton1 = new Button(
+    300, 300, 200, 50, "Start Game", "lightgreen", 0.5
+);
+
 
 const menubutton = new Button(
     100, 300, 50, 50, "Menu", "lightgreen", 1
@@ -1200,6 +1329,9 @@ const shopmenu = new Frame(
     400, 400, 300, 250, "lightgreen", 0.5, null, true
 
 );
+mainmenu.addButton(mainmenuButton1);
+mainmenu.visible=true;
+
 menu.addButton(button);
 menu.addButton(button2);
 menu.addButton(button3);
@@ -1279,13 +1411,22 @@ function drawFrame(frame) {
     }
 }
 
+
 function animate(){
     
     ctx.clearRect(0,0,canvas.width, canvas.height);
     ctx.globalAlpha = 1;
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (gameScreen === "mainMenu") {
+        mainmenu.draw(ctx);
 
+    if (mainmenuButton1.isPressed()) {
+        gameScreen = "modeSelect";
+    }
+} else if (gameScreen === "modeSelect") {
+    drawModeSelect();
+    } else if (gameScreen === "game") {
     ctx.fillStyle = isDarkMode ? "#fffefe" : "#000000";
     ctx.font = "16px Arial";
     ctx.textAlign = "left";
@@ -1324,6 +1465,13 @@ for (const ball of balls) {
     ctx.globalAlpha = ball.isDead ? 0.25 : 1;
     ctx.fill();
     ctx.globalAlpha = 1;
+
+    drawEnemyWeapon(ball);
+    if(ball.isEnemy){
+        enemyShoot(ball);
+        ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
+    }
+
     if (ball === balls[0]) {
         const run = keys["shift"] ? 1.5 : 1;
         if (keys['w'] || (mobileW.visible && mobileW.update())) {
@@ -1378,52 +1526,90 @@ for (let i = 0; i < balls.length; i++) {
         const ball2 = balls[j];
 
         if (ball1.isProjectile || ball2.isProjectile) {
-    let projectile;
-    let enemy;
+    let projectile = null;
+    let target = null;
 
-    if (ball1.isProjectile && !ball2.isProjectile && !ball2.isPlayer) {
+if (ball1.isProjectile && !ball2.isProjectile) {
         projectile = ball1;
-        enemy = ball2;
-    } else if (ball2.isProjectile && !ball1.isProjectile && !ball1.isPlayer) {
+        target = ball2;
+    } else if (ball2.isProjectile && !ball1.isProjectile) {
         projectile = ball2;
-        enemy = ball1;
+        target = ball1;
     }
 
-    if (projectile && enemy) {
-        const dx = enemy.x - projectile.x;
-        const dy = enemy.y - projectile.y;
+    if (projectile && target && !projectile.remove && !target.remove && !target.isDead) {
+        const correctTarget = projectile.isEnemyBullet
+            ? target.isPlayer
+            : target.isEnemy;
+
+        const dx = target.x - projectile.x;
+        const dy = target.y - projectile.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < projectile.radius + enemy.radius && !enemy.hit && !enemy.isDead) {
-            enemy.hit = true;
-            enemy.color = "lightcoral";
-            enemy.health -= projectile.damage;
-            if (projectile.isExplosive) {
-                createExplosion(
-                    projectile.x,
-                    projectile.y,
-                    projectile.explosionRadius,
-                    projectile.explosionDamage
-                );
-            }
-
-            if (enemy.health <= 0) {
-                enemy.isDead = true;
-                enemy.transparency=0.95;
-                enemy.dx = projectile.dx/15;
-                enemy.dy = projectile.dy/15;
-                
-                setTimeout(() => {
-                enemy.remove = true;
-                money += 10;
-            }, 800);
-            }
+        if (correctTarget && distance < projectile.radius + target.radius) {
             projectile.remove = true;
 
-            setTimeout(() => {
-                enemy.color = "red";
-                enemy.hit = false;
-            }, 200);
+            if (target.isPlayer) {
+                target.health -= projectile.damage;
+                target.health = Math.max(0, target.health);
+                target.color = "lightblue";
+
+            
+                
+                setTimeout(() => {
+                if (!target.isDead) {
+                        target.color = "blue";
+                    }
+                }, 200);
+
+            if (target.health <= 0) {
+                    target.isDead = true;
+
+                    setTimeout(() => {
+                        target.isDead = false;
+                        target.health = target.maxHealth;
+                        target.x = canvas.width / 2;
+                        target.y = canvas.height / 2;
+                        target.dx = 0;
+                        target.dy = 0;
+                        target.color = "blue";
+                    }, 2000);
+                }
+            } else {
+                target.hit = true;
+                target.color = "lightcoral";
+                target.health -= projectile.damage;
+
+                if (projectile.isExplosive) {
+                    createExplosion(
+                        projectile.x,
+                        projectile.y,
+                        projectile.explosionRadius,
+                        projectile.explosionDamage
+                    );
+                }
+
+                if (target.health <= 0) {
+                    target.isDead = true;
+                    target.transparency = 0.95;
+                    target.dx = projectile.dx / 15;
+                    target.dy = projectile.dy / 15;
+
+                    setTimeout(() => {
+                        if (!target.remove) {
+                            target.remove = true;
+                            money += 10;
+                        }
+                    }, 800);
+                } else {
+                    setTimeout(() => {
+                        if (!target.isDead && !target.remove) {
+                            target.color = "red";
+                        }
+                        target.hit = false;
+                    }, 200);
+                }
+            }
         }
     }
 
@@ -1772,6 +1958,7 @@ if (menu.visible && clickedFrame === menu) {
     }
 
     if (button3.isPressed()) {
+          const weaponslist = ["Katana", "Nodachi", "Dragon Slayer", "Pistol", "Shotgun", "Sniper"];
         const newBall = {
             x: canvas.width / 2,
             y: canvas.height / 2,
@@ -1783,7 +1970,11 @@ if (menu.visible && clickedFrame === menu) {
             maxHealth: 100,
             isDead: false,
             isEnemy: true,
-            following: false
+            following: false,
+            weapon: null, //weaponslist[Math.floor(Math.random() * weaponslist.length)]
+            shootCooldown: 0,
+            shootDelay: 1000,
+            accessory: accessories[Math.floor(Math.random() * accessories.length)],
         };
 
         balls.push(newBall);
@@ -1876,6 +2067,9 @@ balls = balls.filter(ball =>
     !ball.remove &&
     (!ball.isProjectile || Date.now() - ball.createdAt < 3000)
 );
+    
+
+}
     justClicked=false;
     requestAnimationFrame(animate);
 }
