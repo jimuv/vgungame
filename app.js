@@ -25,7 +25,7 @@ let enemyVariants=["red"]
 let wave = 1;
 let waveEnemies = [5, 10, 15, 20, 25];
 let rewards = [10, 20, 30, 40, 50];
-
+let waveStart=false;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
 let Owned = [];
 
@@ -102,10 +102,12 @@ wave 2: 2 balls
 wave 3: 5 balls
 wave 4: 10 balls
 wave 5: big ball, 3 balls
+
+important note: fix size hitbox (ball bigger than hitbox)
 */
 
 let balls =[
-    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed}
+    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed, size: 1}
 ]
 let objects = [];
 let explosions = [];
@@ -328,7 +330,61 @@ const modeSelectButtons = [
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
 ]
 
+const enemyStats = {
+    "Katana": {
+        health: 50,
+        speed: 1,
+        damage: 20,
+        shootDelay: 0,
+        size:1
+    },
+    "Nodachi": {
+        health: 100,
+        speed: 0.5,
+        damage: 30,
+        shootDelay: 0,
+        size:1
+    },
+    "Dragon Slayer": {
+        health: 150,
+        speed: 0.2,
+        damage: 200,
+        shootDelay: 0,
+        size:3
+    },
+    "Pistol": {
+        health: 20,
+        speed: .8,
+        damage: 10,
+        shootDelay: 500,
+        size:1
+    },
+    "Shotgun": {
+        health: 30,
+        speed: 0.75,
+        damage: 40,
+        shootDelay: 1000,
+        size:1
+    },
+    "Sniper": {
+        health: 40,
+        speed: 0.1,
+        damage: 100,
+        shootDelay: 1500,
+        size:1
+    },
+    "Explosive Sniper": {
+        health: 10,
+        speed: 0,
+        damage: 200,
+        shootDelay: 2000,
+        size:1
+    }
+    
+
+}
 function spawnEnemy(weapon) {
+    const stats = enemyStats[weapon] || enemyStats["Katana"];
     enemyCounter++;
     balls.push({
         x: 100,
@@ -337,7 +393,11 @@ function spawnEnemy(weapon) {
         dy: 0,
         color: "red",
         radius: radius,
-        health: 100,
+        health: stats.health,
+        speed: stats.speed,
+        damage: stats.damage,
+        shootDelay: stats.shootDelay,
+        size: stats.size,
         maxHealth: 100,
         hit: false,
         isDead: false,
@@ -364,6 +424,7 @@ function drawModeSelect() {
             balls= balls.filter(ball => ball.isPlayer);
             spawnEnemy("Katana");
             spawnEnemy("Katana");
+            wavestart=true;
             gameScreen = "game";
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
@@ -379,6 +440,7 @@ class Object {
             this.width = 20;
             this.height = 20;
             this.radius = 10;
+            this.size=1;
             this.color = "green";
             this.type = "heal";
             this.healAmount = 25;
@@ -394,6 +456,7 @@ class Object {
             this.height = 20;
             this.radius = 10;
             this.color = "gray";
+            this.size = 1;
             this.type = "rock";
             this.healAmount = -25;
 
@@ -407,6 +470,7 @@ class Object {
             this.width = 20;
             this.height = 20;
             this.radius = 10;
+            this.size=1;
             this.color = "blue";
             this.type = "speedboost";
             this.healAmount = 0;
@@ -423,6 +487,7 @@ class Object {
             this.width = 20;
             this.height = 20;
             this.radius = 10;
+            this.size=1;
             this.color = "black";
             this.type = "mine";
             this.healAmount = 0;
@@ -576,6 +641,7 @@ class Gun {
                 dy: Math.sin(projectileAngle)*this.projectileSpeed,
                 color: "yellow",
                 radius: 5,
+                size: 1,
                 isProjectile: true,
                 createdAt: Date.now(),
                 damage: this.damage,
@@ -1453,7 +1519,12 @@ function animate(){
     ctx.font = "16px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
+    
 
+    /*notes: will compress this later, but for now, this is fine. I want to make sure the game works first.
+    enemies still need properties (health, speed, etc.) balancing for sure needed
+    */
+    
     ctx.fillText(`Money: ${money}`, 10, 10);
     if (gameMode === "wave") {
         ctx.fillText(`Wave: ${wave}`, 10, 30);
@@ -1461,11 +1532,84 @@ function animate(){
         if (enemyCounter <=0 && enemyCountMax===2) {
             wave++;
             enemyCountMax += 2;
+            waveStart=true;
+            for (const ball of balls) {
+                if (ball === balls[0]) {
+                    ball.health=ball.maxHealth;
+                }
+            }
+            money+=rewards[wave] || 0;
+            setTimeout(() => {
             spawnEnemy("Pistol");
             spawnEnemy("Katana");
             spawnEnemy("Katana");
             spawnEnemy("Katana");
+            waveStart=false;
+            }, 5000);
         }
+        else if (!waveStart && enemyCounter <=0 && enemyCountMax===4) {
+            wave++;
+            enemyCountMax++;
+            waveStart=true;
+            for (const ball of balls) {
+                if (ball === balls[0]) {
+                    ball.health=ball.maxHealth;
+                }
+            }
+            money+=rewards[wave] || 0;
+            setTimeout(() => {
+            spawnEnemy("Pistol");
+            spawnEnemy("Pistol");
+            spawnEnemy("Pistol");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            waveStart=false;
+            }, 5000);
+        }
+
+        else if (!waveStart && enemyCounter <=0 && enemyCountMax===5) {
+            wave++;
+            enemyCountMax+=5;
+            waveStart=true;
+            for (const ball of balls) {
+                if (ball === balls[0]) {
+                    ball.health=ball.maxHealth;
+                }
+            }
+            money+=rewards[wave] || 0;
+            setTimeout(() => {
+            spawnEnemy("Shotgun");
+            spawnEnemy("Sniper");
+            spawnEnemy("Pistol");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            spawnEnemy("Katana");
+            waveStart=false;
+            }, 5000);
+        }
+
+        else if (!waveStart && enemyCounter <=0 && wave===4) {
+            wave++;
+            enemyCountMax-=7;
+            waveStart=true;
+            for (const ball of balls) {
+                if (ball === balls[0]) {
+                    ball.health=ball.maxHealth;
+                }
+            }
+            money+=rewards[wave] || 0;
+            setTimeout(() => {
+            spawnEnemy("Dragon Slayer");
+            spawnEnemy("Sniper");
+            spawnEnemy("Sniper");
+            waveStart=false;
+            }, 5000);
+        }
+        
     }
     menubutton.draw(ctx);
     // mobilebutton.draw(ctx);
@@ -1492,7 +1636,7 @@ function animate(){
     handleWallCollision();
 for (const ball of balls) {
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.arc(ball.x, ball.y, ball.radius*ball.size, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
     ctx.globalAlpha = ball.isDead ? 0.25 : 1;
     ctx.fill();
@@ -1611,7 +1755,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 target.hit = true;
                 target.color = "lightcoral";
                 target.health -= projectile.damage;
-
+                target.health = Math.max(0, target.health);
                 if (projectile.isExplosive) {
                     createExplosion(
                         projectile.x,
@@ -1693,7 +1837,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 ball1.radius + ball2.radius - distance;
             if(ball1.isPlayer&&ball2.isEnemy&&ball1.hit==false){
                 ball1.hit=true;
-                ball1.health -= 10;
+                ball1.health -= ball2.damage;
                 ball1.color = "lightblue";
                 setTimeout(() => {
                     ball1.color = "blue";
@@ -2052,8 +2196,8 @@ function startFollowing(ball) {
     const dy= player.y - ball.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     if (distance > 0) {
-        ball.dx = (dx / distance) * 2;
-        ball.dy = (dy / distance) * 2;
+        ball.dx = (dx / distance) * 2 *ball.speed;
+        ball.dy = (dy / distance) * 2 *ball.speed;
     }
 }
 function startRandomMovement(ball) {
