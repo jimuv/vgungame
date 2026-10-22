@@ -393,6 +393,8 @@ function spawnEnemy(weapon) {
         isDead: false,
         isEnemy: true,
         following: true,
+        strafe: true,
+        stuckTimer: 0,
         weapon: weapon
     });
 }
@@ -1141,6 +1143,14 @@ function Map() {
         walls.push(new Wall(0,300, 200,20, { bulletBehavior: "destroy", solid: true }));
         walls.push(new Wall(200,300, 20,50, { bulletBehavior: "destroy", solid: true }));
         walls.push(new Wall(200,470, 20,50, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(450,350, 20,150, { bulletBehavior: "deflect", solid: true }));
+        walls.push(new Wall(550,550, 200,20, { bulletBehavior: "deflect", solid: true }));
+        walls.push(new Wall(550,200, 20,100, { bulletBehavior: "deflect", solid: true }));
+        walls.push(new Wall(550,300, 200,20, { bulletBehavior: "deflect", solid: true }));
+        walls.push(new Wall(200,125, 20,75, { bulletBehavior: "deflect", solid: true }));
+        trees.push(new Tree(550, 325));
+        bushes.push(new Bush(250,300));
+        bushes.push(new Bush(250,470));
     }
 }
 
@@ -2184,6 +2194,8 @@ if (menu.visible && clickedFrame === menu) {
             isDead: false,
             isEnemy: true,
             following: false,
+            strafe: false,
+            stuckTimer: 0,
             weapon: null, //weaponslist[Math.floor(Math.random() * weaponslist.length)]
             shootCooldown: 0,
             shootDelay: 1000,
@@ -2226,12 +2238,40 @@ function startFollowing(ball) {
     const player = balls.find(b => b.isPlayer);
     if (!player) return;
 
-    const dx= player.x - ball.x;
-    const dy= player.y - ball.y;
+    if (ball.stuckTimer === undefined) {
+        ball.stuckTimer = 0;
+        ball.lastDistance = Infinity;
+    }
+    if (ball.StrafeDir === undefined) {
+        ball.StrafeDir = Math.random() < 0.5 ? -1 : 1;
+    }
+
+    const dx = player.x - ball.x;
+    const dy = player.y - ball.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance >= ball.lastDistance - 0.2) {
+        ball.stuckTimer++;
+    } else {
+        ball.stuckTimer = 0;
+    }
+    ball.lastDistance = distance;
+
+    if (Math.random() < 0.02) {
+        ball.StrafeDir *= -1;
+    }
+
+    const isStuck = ball.stuckTimer > 30;
+    const strafeStrength = isStuck ? 5.0 : 1.0;
+
     if (distance > 0) {
-        ball.dx = (dx / distance) * 2 *ball.speed;
-        ball.dy = (dy / distance) * 2 *ball.speed;
+        if (ball.strafe === true || isStuck) {
+            ball.dx = (dx / distance - (dy / distance) * 0.8 * ball.StrafeDir) * 2 * strafeStrength * ball.speed;
+            ball.dy = (dy / distance + (dx / distance) * 0.8 * ball.StrafeDir) * 2 * strafeStrength * ball.speed;
+        } else {
+            ball.dx = (dx / distance) * 2 * ball.speed;
+            ball.dy = (dy / distance) * 2 * ball.speed;
+        }
     }
 }
 function startRandomMovement(ball) {
