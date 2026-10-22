@@ -16,6 +16,8 @@ const BG_COOLDOWN_MS = 1000;
 
 let gameScreen = "mainMenu";
 let gameMode = null;
+let selectedMap = "default";
+const maps = ["default", "map1"];
 // Placeholders
 let enemyCountMax=2;
 let enemyCounter=0;
@@ -68,10 +70,7 @@ let stats = {
 let currentCategory = "Guns";
 /*
 plans (not implemented yet):
-guns: rocket launcher???
 add powerups: health, speed, damage, armor
-
-add: melee
 
 for menu:
 add < > to switch between categories in shop,
@@ -79,31 +78,17 @@ also if theres more than 1 page of whatever
 
 for mobile: add touch controls and improve shooting, draggable aim?
 
-for objects: add walls (penetration, less dmg/deflect/absorb)
-
-for enemies: give them guns/weapons (melee preferably)
-
-for weapons: add rpg, then use explosion for grenade (utility)
-
 for gameplay: add random events (2x money multiGplier?)
 add sound
-add gamemode, will need a new main menu button
+
+add skill tree (upgrades)
+
 
 other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
 
-note: fix bug where player can still shoot when dead.
-*/
 
-/*
-Wave mode:
-wave 1: 1 ball
-wave 2: 2 balls
-wave 3: 5 balls
-wave 4: 10 balls
-wave 5: big ball, 3 balls
 
-important note: fix size hitbox (ball bigger than hitbox)
 */
 
 let balls =[
@@ -329,19 +314,24 @@ const modeSelectButtons = [
     new Button(300, 300, 200, 50, "Sandbox Mode + 1 FollowEnemy", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
 ]
+const mapSelectButtons = [
+    new Button(300, 200, 200, 50, "Default Map", "lightblue", 0.5),
+    new Button(300, 300, 200, 50, "Map 1", "lightblue", 0.5),
+    new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
+]
 
 const enemyStats = {
     "Katana": {
         health: 50,
         speed: 1,
-        damage: 20,
+        damage: 5,
         shootDelay: 0,
         size:1
     },
     "Nodachi": {
         health: 100,
         speed: 0.5,
-        damage: 30,
+        damage: 10,
         shootDelay: 0,
         size:1
     },
@@ -355,21 +345,21 @@ const enemyStats = {
     "Pistol": {
         health: 20,
         speed: .8,
-        damage: 10,
+        damage: 5,
         shootDelay: 500,
         size:1
     },
     "Shotgun": {
         health: 30,
         speed: 0.75,
-        damage: 40,
+        damage: 10,
         shootDelay: 1000,
         size:1
     },
     "Sniper": {
         health: 40,
         speed: 0.1,
-        damage: 100,
+        damage: 80,
         shootDelay: 1500,
         size:1
     },
@@ -418,16 +408,43 @@ function drawModeSelect() {
     }
     if(justClicked){
         if (modeSelectButtons[0].isPressed()) {
-            gameScreen = "game";
+            gameScreen = "mapSelect";
             gameMode = "sandbox";
         } else if (modeSelectButtons[1].isPressed()) {
             balls= balls.filter(ball => ball.isPlayer);
             spawnEnemy("Katana");
             spawnEnemy("Katana");
             wavestart=true;
-            gameScreen = "game";
+            gameScreen = "mapSelect";
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
+            gameScreen = "mainMenu";
+        }
+    }
+}
+
+function drawMapSelect() {
+    ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
+    ctx.font = "24px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("Select Map", canvas.width / 2, 100);
+    for (const button of mapSelectButtons) {
+        button.draw(ctx);
+    }
+
+    if(justClicked){
+        if (mapSelectButtons[0].isPressed()) {
+            selectedMap = "default";
+            gameScreen = "game";
+            Map();
+        } 
+        else if (mapSelectButtons[1].isPressed()) {
+            selectedMap = "map1";
+            gameScreen = "game";
+            Map();
+        }
+        else if (mapSelectButtons[2].isPressed()) {
             gameScreen = "mainMenu";
         }
     }
@@ -739,7 +756,7 @@ class melee {
                 const closestY = Math.max(-50, Math.min(localY, -10));  
                 const distanceSq= (localX-closestX)*(localX-closestX)+(localY-closestY)*(localY-closestY);
 
-                if (distanceSq <= enemy.radius * enemy.radius) {                    
+                if (distanceSq <= enemy.radius * enemy.size * enemy.radius * enemy.size) {                    
                     this.hitEnemies.add(enemy);
                     enemy.health -= this.damage;
                     enemy.color = "lightcoral";
@@ -866,7 +883,7 @@ function createExplosion(x, y, radius, damage) {
         const dy = enemy.y - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance <= radius + enemy.radius) {
+        if (distance <= radius + enemy.radius * enemy.size) {
             enemy.health -= damage;
             enemy.color = "orange";
 
@@ -1008,7 +1025,7 @@ function handleWallCollision() {
             let dy= ball.y - closestY;
             const distanceSq = dx * dx + dy * dy;
 
-            if (distanceSq >=ball.radius * ball.radius) continue;
+            if (distanceSq >=ball.radius * ball.radius * ball.size * ball.size) continue;
             let nx,ny;
             const distance = Math.sqrt(distanceSq);
             if(distance>0.00001){
@@ -1068,7 +1085,7 @@ function handleWallCollision() {
                     }
                 }
             }
-            const penetrationDepth = ball.radius - distance;
+            const penetrationDepth = ball.radius * ball.size - distance;
             if (distance > 0.00001) {
                 ball.x += nx * penetrationDepth;
                 ball.y += ny * penetrationDepth;
@@ -1102,17 +1119,31 @@ class Tree {
     }
 }
 //test:
-bushes.push(new Bush(150, 200));
-bushes.push(new Bush(400, 300));
-bushes.push(new Bush(600, 150));
 
-trees.push(new Tree(500, 450));
+function Map() {
+    if (selectedMap === "default") {
+        bushes.push(new Bush(150, 200));
+        bushes.push(new Bush(400, 300));
+        bushes.push(new Bush(600, 150));
 
-walls.push(new Wall(700,500, 200,20, { bulletBehavior: "deflect", solid: true }));
+        trees.push(new Tree(500, 450));
 
-walls.push(new Wall(0,500, 200,20, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(700,500, 200,20, { bulletBehavior: "deflect", solid: true }));
 
-walls.push(new Wall(700, 100, 10, 200, { bulletBehavior: "penetrate", solid: true }));
+        walls.push(new Wall(0,500, 200,20, { bulletBehavior: "destroy", solid: true }));
+
+        walls.push(new Wall(700, 100, 10, 200, { bulletBehavior: "penetrate", solid: true }));
+}
+    if (selectedMap === "map1") {
+        wallsVisible = true;
+        walls.push(new Wall(0,500, 200,20, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(0,300, 20,200, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(0,300, 200,20, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(200,300, 20,50, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(200,470, 20,50, { bulletBehavior: "destroy", solid: true }));
+    }
+}
+
 class Text {
     constructor(x, y, text, color, size) {
         this.x = x;
@@ -1514,7 +1545,11 @@ function animate(){
     }
 } else if (gameScreen === "modeSelect") {
     drawModeSelect();
-    } else if (gameScreen === "game") {
+    } 
+    else if(gameScreen === "mapSelect"){
+        drawMapSelect();
+    }
+    else if (gameScreen === "game") {
     ctx.fillStyle = isDarkMode ? "#fffefe" : "#000000";
     ctx.font = "16px Arial";
     ctx.textAlign = "left";
@@ -1581,13 +1616,9 @@ function animate(){
             spawnEnemy("Shotgun");
             spawnEnemy("Sniper");
             spawnEnemy("Pistol");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
+            for (let i = 0; i < 7; i++) {
+                spawnEnemy("Katana");
+            }
             waveStart=false;
             }, 5000);
         }
@@ -1671,19 +1702,19 @@ for (const ball of balls) {
                 startFollowing(ball);
             }
     
-    if (ball.x + ball.radius > canvas.width) {
-    ball.x = canvas.width - ball.radius;
+    if (ball.x + ball.radius * ball.size > canvas.width) {
+    ball.x = canvas.width - ball.radius * ball.size;
     ball.dx = -Math.abs(ball.dx);
-} else if (ball.x - ball.radius < 0) {
-    ball.x = ball.radius;
+} else if (ball.x - ball.radius * ball.size < 0) {
+    ball.x = ball.radius * ball.size;
     ball.dx = Math.abs(ball.dx);
 }
 
-if (ball.y + ball.radius > canvas.height) {
-    ball.y = canvas.height - ball.radius;
+if (ball.y + ball.radius * ball.size > canvas.height) {
+    ball.y = canvas.height - ball.radius * ball.size;
     ball.dy = -Math.abs(ball.dy);
-} else if (ball.y - ball.radius < 0) {
-    ball.y = ball.radius;
+} else if (ball.y - ball.radius * ball.size < 0) {
+    ball.y = ball.radius * ball.size;
     ball.dy = Math.abs(ball.dy);
 }
 
@@ -1722,7 +1753,8 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         const dy = target.y - projectile.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (correctTarget && distance < projectile.radius + target.radius) {
+
+        if (correctTarget && distance < projectile.radius + target.radius * target.size) {
             projectile.remove = true;
 
             if (target.isPlayer) {
@@ -1801,12 +1833,12 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 
        
         if (distance === 0) {
-            ball2.x += ball1.radius + ball2.radius;
+            ball2.x += ball1.radius * ball1.size + ball2.radius * ball2.size;
             continue;
         }
 
         
-        if (distance < ball1.radius + ball2.radius) {
+        if (distance < ball1.radius * ball1.size + ball2.radius * ball2.size) {
             const nx = dx / distance;
             const ny = dy / distance;
 
@@ -1834,7 +1866,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         }
 
             const overlap =
-                ball1.radius + ball2.radius - distance;
+                ball1.radius * ball1.size + ball2.radius * ball2.size - distance;
             if(ball1.isPlayer&&ball2.isEnemy&&ball1.hit==false){
                 ball1.hit=true;
                 ball1.health -= ball2.damage;
@@ -1908,7 +1940,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 let dy = player.y - obj.y;
                 let distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance < obj.radius + player.radius) {
+                if (distance < obj.radius + player.radius * player.size) {
                     createExplosion(
                         obj.x,
                         obj.y,
@@ -1927,7 +1959,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 const dy = enemy.y - obj.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
-                if (distance < obj.radius + enemy.radius) {
+                if (distance < obj.radius + enemy.radius * enemy.size) {
                     createExplosion(
                         obj.x,
                         obj.y,
@@ -1952,7 +1984,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         const dx = player.x - closestX;
         const dy = player.y - closestY;
 
-        if (dx * dx + dy * dy < player.radius * player.radius &&!player.isDead) {
+        if (dx * dx + dy * dy < player.radius * player.radius * player.size&&!player.isDead) {
             player.health = Math.max(
                 0,
                 Math.min(player.health + obj.healAmount, player.maxHealth)
@@ -2054,11 +2086,11 @@ if (player) {
     info.visible = false;
 }
 info.draw(ctx);
-if (keys['f'] && !fWasPressed && player) {
+if (keys['f'] && !fWasPressed && player && !player.isDead) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
 }
-if (keys['g'] && !gWasPressed && player) {
+if (keys['g'] && !gWasPressed && player && !player.isDead) {
     currentMelee.swing();
 }
 
@@ -2147,6 +2179,8 @@ if (menu.visible && clickedFrame === menu) {
             radius: radius,
             health: 100,
             maxHealth: 100,
+            size: 3,
+            damage: 10,
             isDead: false,
             isEnemy: true,
             following: false,
