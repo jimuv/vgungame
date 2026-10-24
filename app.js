@@ -17,7 +17,7 @@ const BG_COOLDOWN_MS = 1000;
 let gameScreen = "mainMenu";
 let gameMode = null;
 let selectedMap = "default";
-const maps = ["default", "map1"];
+const maps = ["default", "map1", "map2"];
 // Placeholders
 let enemyCountMax=2;
 let enemyCounter=0;
@@ -317,7 +317,8 @@ const modeSelectButtons = [
 const mapSelectButtons = [
     new Button(300, 200, 200, 50, "Default Map", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Map 1", "lightblue", 0.5),
-    new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
+    new Button(300, 400, 200, 50, "Map 2", "lightblue", 0.5),
+    new Button(300, 500, 200, 50, "Back", "lightblue", 0.5)
 ]
 
 const enemyStats = {
@@ -447,6 +448,11 @@ function drawMapSelect() {
             Map();
         }
         else if (mapSelectButtons[2].isPressed()) {
+            selectedMap = "map2";
+            gameScreen = "game";
+            Map();
+        }
+        else if (mapSelectButtons[3].isPressed()) {
             gameScreen = "mainMenu";
         }
     }
@@ -1163,6 +1169,21 @@ function Map() {
         trees.push(new Tree(550, 325));
         bushes.push(new Bush(250,300));
         bushes.push(new Bush(250,470));
+    }
+    if (selectedMap === "map2") {
+        wallsVisible = true;
+        //BackgroundImage.src = "assets/map2.png";
+        walls.push(new Wall(300,500, 75,20, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(450,500, 75,20, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(300,300, 20,200, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(500,300, 20,200, { bulletBehavior: "destroy", solid: true }));
+        walls.push(new Wall(300,300, 200,20, { bulletBehavior: "destroy", solid: true }));
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 5; j++) {
+                trees.push(new Tree(0 + i * 120 + Math.random() * 200, 0 + j * 120+ Math.random() * 200));
+                bushes.push(new Bush(0 + i * 120 + Math.random() * 200, 0 + j * 120+ Math.random() * 200));
+            }
+        }
     }
 }
 
