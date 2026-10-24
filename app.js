@@ -78,7 +78,7 @@ also if theres more than 1 page of whatever
 
 for mobile: add touch controls and improve shooting, draggable aim?
 
-for gameplay: add random events (2x money multiGplier?)
+for gameplay: add random events (2x money multiplier?) --> use for crates? csgo style (also maybe for skins, accessories, etc)
 add sound
 
 add skill tree (upgrades)
@@ -340,7 +340,7 @@ const enemyStats = {
         speed: 0.2,
         damage: 200,
         shootDelay: 0,
-        size:3
+        size:2.5
     },
     "Pistol": {
         health: 20,
@@ -1054,6 +1054,13 @@ function handleWallCollision() {
                 if (closestSide) {
                     nx = closestSide.x - ball.x;
                     ny = closestSide.y - ball.y;
+
+                    const sideDistance = Math.sqrt(nx * nx + ny * ny);
+
+                    if (sideDistance > 0) {
+                        nx = nx / sideDistance;
+                        ny = ny / sideDistance;
+                    }
                 }
 
 
@@ -1088,12 +1095,17 @@ function handleWallCollision() {
                 }
             }
             const penetrationDepth = ball.radius * ball.size - distance;
-            if (distance > 0.00001) {
-                ball.x += nx * penetrationDepth;
-                ball.y += ny * penetrationDepth;
-            } else{
-                ball.x += penetrationDepth;
-                ball.y += penetrationDepth;
+
+            ball.x += nx * penetrationDepth;
+            ball.y += ny * penetrationDepth;
+
+            if (!ball.isProjectile) {
+                const dot = ball.dx * nx + ball.dy * ny;
+
+                if (dot < 0) {
+                    ball.dx -= dot * nx;
+                    ball.dy -= dot * ny;
+                }
             }
             }
         }
@@ -2234,9 +2246,162 @@ if (menu.visible && clickedFrame === menu) {
     }
 }
 
+function rayHitsWall(x1, y1, x2, y2, wall, radius) {
+    const left = wall.x - radius;
+    const right = wall.x + wall.width + radius;
+    const top = wall.y - radius;
+    const bottom = wall.y + wall.height + radius;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    let tMin = 0.02;
+    let tMax = 0.98;
+
+    if(dx === 0) {
+        if(x1 <= left || x1 >= right) return false;
+    } else {
+        const t1 = (left - x1) / dx;
+        const t2 = (right - x1) / dx;
+
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+    }
+
+    if(dy === 0) {
+        if(y1 <= top || y1 >= bottom) return false;
+    } else {
+        const t1 = (top - y1) / dy;
+        const t2 = (bottom - y1) / dy;
+
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+    }
+
+    return tMin <= tMax;
+}
+
+function getWallWaypoint(ball, player) {
+    if (!wallsVisible) return null;
+    const radius = ball.radius * ball.size;
+    let directBlocked = false;
+    for (const wall of walls) {
+        if (!wall.solid) continue;
+        if (rayHitsWall(ball.x, ball.y, player.x, player.y, wall, radius - 2)) {
+            directBlocked = true;
+            break;
+        }
+    }
+    if (!directBlocked) return null;
+
+    const cellSize = 10;
+    const cols = Math.floor(canvas.width / cellSize);
+    const rows = Math.floor(canvas.height / cellSize);
+    const isCellWalkable = (col, row) => {
+        const x = col * cellSize + cellSize / 2;
+        const y = row * cellSize + cellSize / 2;
+        if (x < radius || x > canvas.width - radius || y < radius || y > canvas.height - radius) {
+            return false;
+        }
+        for (const wall of walls) {
+            if (!wall.solid) continue;
+            const closestX = Math.max(wall.x, Math.min(x, wall.x + wall.width));
+            const closestY = Math.max(wall.y, Math.min(y, wall.y + wall.height));
+            const dx = x - closestX;
+            const dy = y - closestY;
+            if (dx * dx + dy * dy < (radius + 1) * (radius + 1)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    const findNearestWalkableCell = (startCol, startRow) => {
+        const cx = Math.max(0, Math.min(cols - 1, Math.floor(startCol / cellSize)));
+        const cy = Math.max(0, Math.min(rows - 1, Math.floor(startRow / cellSize)));
+        if (isCellWalkable(cx, cy)) {
+            return { col: cx, row: cy };
+        }
+
+        for (let r = 1; r < Math.max(cols, rows); r++) {
+            for (let dx = -r; dx <= r; dx++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    const col = cx + dx;
+                    const row = cy + dy;
+                    if (col >= 0 && col < cols && row >= 0 && row < rows) {
+                        if (isCellWalkable(col, row)) {
+                            return { col, row };
+                        }
+                    }
+                }
+            }
+        }
+        return { col: cx, row: cy };
+    };
+
+    const { col: nearestCol, row: nearestRow } = findNearestWalkableCell(ball.x, ball.y);
+    const { col: playerCol, row: playerRow } = findNearestWalkableCell(player.x, player.y);
+
+    const start = nearestRow * cols + nearestCol;
+    const goal = playerRow * cols + playerCol;
+    if (start === goal) return null;
+
+    const parent = new Array(cols * rows).fill(-1);
+    const visited = new Set([start]);
+    const queue = [];
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    parent[start] = start;
+
+    const directions = [
+        { dx: -1, dy: 0 },
+        { dx: 1, dy: 0 },
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 }
+    ];
+
+    let found = false;
+    while (head < tail) {
+        const current = queue[head++];
+        const currentCol = current % cols;
+        const currentRow = Math.floor(current / cols);
+        if (current === goal) {
+            found = true;
+            break;
+        }
+
+        for (const dir of directions) {
+            const newCol = currentCol + dir.dx;
+            const newRow = currentRow + dir.dy;
+            if (newCol >= 0 && newCol < cols && newRow >= 0 && newRow < rows) {
+                const newIndex = newRow * cols + newCol;
+                if (!visited.has(newIndex) && isCellWalkable(newCol, newRow)) {
+                    visited.add(newIndex);
+                    queue[tail++] = newIndex;
+                    parent[newIndex] = current;
+                }
+            }
+        }
+    }
+
+    if (!found) return null;
+
+    const path = [];
+    let current = goal;
+    while (current !== start) {
+        path.unshift(current);
+        current = parent[current];
+    }
+    path.unshift(start);
+
+    const targetIndex = path[Math.min(2, path.length - 1)];
+    return {
+        x: (targetIndex % cols) * cellSize + cellSize / 2,
+        y: Math.floor(targetIndex / cols) * cellSize + cellSize / 2
+    };
+}
 function startFollowing(ball) {
     const player = balls.find(b => b.isPlayer);
-    if (!player) return;
+    if (!player || player.isDead) return;
 
     if (ball.stuckTimer === undefined) {
         ball.stuckTimer = 0;
@@ -2261,16 +2426,53 @@ function startFollowing(ball) {
         ball.StrafeDir *= -1;
     }
 
-    const isStuck = ball.stuckTimer > 30;
-    const strafeStrength = isStuck ? 5.0 : 1.0;
+    const isStuck = ball.stuckTimer > 10;
+    const strafeStrength = isStuck ? 5 : 1;
 
-    if (distance > 0) {
-        if (ball.strafe === true || isStuck) {
-            ball.dx = (dx / distance - (dy / distance) * 0.8 * ball.StrafeDir) * 2 * strafeStrength * ball.speed;
-            ball.dy = (dy / distance + (dx / distance) * 0.8 * ball.StrafeDir) * 2 * strafeStrength * ball.speed;
+    const waypoint = getWallWaypoint(ball, player);
+
+    if (waypoint) {
+        const wdx = waypoint.x - ball.x;
+        const wdy = waypoint.y - ball.y;
+        const wDist = Math.sqrt(wdx * wdx + wdy * wdy);
+
+        if (wDist > 0) {
+            ball.dx = (wdx / wDist) * 2 * ball.speed;
+            ball.dy = (wdy / wDist) * 2 * ball.speed;
+        }
+        return;
+    }
+
+    const targetDx = player.x - ball.x;
+    const targetDy = player.y - ball.y;
+    const targetDistance = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+
+    if (targetDistance > 0) {
+        const radius = ball.radius * ball.size;
+        let canStrafeSafely = true;
+        if (wallsVisible) {
+            for (const wall of walls) {
+                if (!wall.solid) continue;
+                if (rayHitsWall(ball.x, ball.y, player.x, player.y, wall, radius + 25)) {
+                    canStrafeSafely = false;
+                    break;
+                }
+            }
+        }
+
+        if (ball.strafe === true && canStrafeSafely && !isStuck) {
+            ball.dx = (
+                targetDx / targetDistance -
+                (targetDy / targetDistance) * 0.8 * ball.StrafeDir
+            ) * 2 * strafeStrength * ball.speed;
+
+            ball.dy = (
+                targetDy / targetDistance +
+                (targetDx / targetDistance) * 0.8 * ball.StrafeDir
+            ) * 2 * strafeStrength * ball.speed;
         } else {
-            ball.dx = (dx / distance) * 2 * ball.speed;
-            ball.dy = (dy / distance) * 2 * ball.speed;
+            ball.dx = targetDx / targetDistance * 2 * ball.speed;
+            ball.dy = targetDy / targetDistance * 2 * ball.speed;
         }
     }
 }
