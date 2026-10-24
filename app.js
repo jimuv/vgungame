@@ -30,7 +30,8 @@ let rewards = [10, 20, 30, 40, 50];
 let waveStart=false;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
 let Owned = [];
-
+let shopPage = 0;
+const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
     "Glasses": new Image(),
     "Top Hat": new Image(),
@@ -88,6 +89,7 @@ add sound
 
 add skill tree (upgrades)
 
+add tutorial (IMPORTANT!!!)
 
 other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
@@ -317,7 +319,8 @@ update() {
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Sandbox Mode + 1 FollowEnemy", "lightblue", 0.5),
-    new Button(300, 400, 200, 50, "Back", "lightblue", 0.5)
+    new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
+    new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5)
 ]
 const mapSelectButtons = [
     new Button(300, 200, 200, 50, "Default Map", "lightblue", 0.5),
@@ -427,6 +430,9 @@ function drawModeSelect() {
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
             gameScreen = "mainMenu";
+        } else if (modeSelectButtons[3].isPressed()) {
+            gameMode = "tutorial";
+            gameScreen = "mapSelect";
         }
     }
 }
@@ -1258,8 +1264,18 @@ const shopItems = {
         { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield },
         { name: "Katana", action: () => currentMelee= katana },
         { name: "Nodachi", action: () => currentMelee= nodachi },
-        { name: "Dragon Slayer", action: () => currentMelee= dragonslayer }
+        { name: "Dragon Slayer", action: () => currentMelee= dragonslayer },
+
+        { name: "testgun1", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun2", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun3", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun4", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun5", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun6", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun7", action: () => currentWeapon = weapons.Pistol },
+        { name: "testgun8", action: () => currentWeapon = weapons.Pistol },
     ],
+
     Utility: [
         { name: "Heal Package", action: () => objects.push(new Object("heal")) },
         { name: "Big Rock", action: () => objects.push(new Object("rock")) },
@@ -1504,6 +1520,17 @@ const buttonshopArmor = new Button(
     550, 650, 50, 50, "Armor", "purple", 0.5
 );
 
+const shopNextButton = new Button(
+    650, 650, 50, 50, "Next", "lightgray", 0.5
+);
+const shopPrevButton = new Button(
+    600, 650, 50, 50, "Prev", "lightgray", 0.5
+);
+
+const shopPageText = new Text(
+    475,620, "Page 1/1", "black", 14
+);
+
 const button5 = new Button(
     500, 500, 50, 50, "red ball", "red", 0.5
 );
@@ -1551,15 +1578,32 @@ shopmenu.addButton(buttonshopGun);
 shopmenu.addButton(buttonshopUtil);
 shopmenu.addButton(buttonshopSkins);
 shopmenu.addButton(buttonshopArmor);
+shopmenu.addButton(shopNextButton);
+shopmenu.addButton(shopPrevButton);
+shopmenu.addText(shopPageText);
 
 function showCategory(category) {
     currentCategory = category;
-    itemButtons = shopItems[category].map((item, index) => ({
+
+    const items = shopItems[category];
+    const totalPages = Math.ceil(items.length / SHOP_ITEMS_PER_PAGE);
+
+    shopPage = Math.max(0, Math.min(shopPage, totalPages - 1));
+
+    shopPageText.text = `Page ${shopPage + 1}/${totalPages}`;
+
+    const pageItems = items.slice(
+        shopPage * SHOP_ITEMS_PER_PAGE,
+        (shopPage + 1) * SHOP_ITEMS_PER_PAGE
+    );
+
+    itemButtons = pageItems.map((item, index) => ({
         item,
         button: new Button(
             shopmenu.x + 10 + (index % 2) * 100,
             shopmenu.y + 80 + Math.floor(index / 2) * 45,
-            90, 35,
+            90,
+            35,
             `${item.name} $${item.price ?? 0}`,
             "lightgray",
             1
@@ -2204,12 +2248,16 @@ if (skinsmenu.visible) {
 }
 if (shopmenu.visible) {
     if (buttonshopGun.isPressed()) {
+        shopPage=0;
         showCategory("Guns");
     } else if (buttonshopUtil.isPressed()) {
+        shopPage=0;
         showCategory("Utility");
     } else if (buttonshopSkins.isPressed()) {
+        shopPage=0;
         showCategory("Skins");
     } else if (buttonshopArmor.isPressed()) {
+        shopPage=0;
         showCategory("Armor");
     }
 
@@ -2218,6 +2266,21 @@ if (shopmenu.visible) {
             entry.item.action();
         }
     }
+
+    if (shopPrevButton.isPressed()) {
+    shopPage = Math.max(0, shopPage - 1);
+    showCategory(currentCategory);
+    }
+
+    if (shopNextButton.isPressed()) {
+        const totalPages = Math.ceil(
+            shopItems[currentCategory].length / SHOP_ITEMS_PER_PAGE
+        );
+
+        shopPage = Math.min(totalPages - 1, shopPage + 1);
+        showCategory(currentCategory);
+    }
+
 }
 if(settings.visible&&clickedFrame===settings){
     if(bgButton.isPressed()&& !bgCooldown){
