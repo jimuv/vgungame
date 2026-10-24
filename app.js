@@ -60,6 +60,11 @@ weaponImages["Explosive Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
 weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png"; //placeholder
+
+const floorImage = new Image();
+floorImage.src = "assets/floor.png";
+
+BackgroundImage = new Image();
 let stats = {
     speed: 1,
     health: 100,
@@ -969,7 +974,9 @@ wallImage.src = "assets/wall.png";
 const bushes = [];
 const trees = [];
 const walls = [];
+const floors = [];
 let wallsVisible = false;
+let bossFightActive = false;
 
 class Bush {
     constructor(x, y, width = 60, height = 60) {
@@ -1001,6 +1008,7 @@ class Wall {
 
         this.bulletBehavior = options.bulletBehavior || "deflect";
         this.solid = options.solid ?? true;
+        this.bosswall = options.bosswall ?? false;
     }
 
     draw(ctx) {
@@ -1023,8 +1031,8 @@ function handleWallCollision() {
             continue;
         }
 
-        for (const wall of walls) {
-            if (!wall.solid||wallsVisible===false) {
+            for (const wall of walls) {
+            if (!wall.solid||wallsVisible===false||(bossFightActive && wall.bosswall)) {
                 continue;
             }
             const closestX = Math.max(wall.x, Math.min(ball.x, wall.x + wall.width));
@@ -1118,6 +1126,7 @@ function handleWallCollision() {
     }
 
 
+
 class Tree {
     constructor(x, y, width = 60, height = 120) {
         this.x = x;
@@ -1138,6 +1147,27 @@ class Tree {
         }
     }
 }
+class Floor {
+    constructor(x, y, width = 100, height = 100) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    draw(ctx) {
+        if (floorImage.complete && floorImage.naturalWidth > 0) {
+            ctx.drawImage(
+                floorImage,
+                this.x,
+                this.y,
+                this.width,
+                this.height
+            );
+        }
+    }
+}
+
 //test:
 
 function Map() {
@@ -1163,21 +1193,27 @@ function Map() {
         walls.push(new Wall(200,470, 20,50, { bulletBehavior: "destroy", solid: true }));
         walls.push(new Wall(450,350, 20,150, { bulletBehavior: "deflect", solid: true }));
         walls.push(new Wall(550,550, 200,20, { bulletBehavior: "deflect", solid: true }));
-        walls.push(new Wall(550,200, 20,100, { bulletBehavior: "deflect", solid: true }));
-        walls.push(new Wall(550,300, 200,20, { bulletBehavior: "deflect", solid: true }));
-        walls.push(new Wall(200,125, 20,75, { bulletBehavior: "deflect", solid: true }));
+        walls.push(new Wall(550,200, 20,100, { bulletBehavior: "deflect", solid: true}));
+        walls.push(new Wall(550,300, 200,20, { bulletBehavior: "deflect", solid: true}));
+        walls.push(new Wall(200,125, 20,75, { bulletBehavior: "deflect", solid: true}));
         trees.push(new Tree(550, 325));
         bushes.push(new Bush(250,300));
         bushes.push(new Bush(250,470));
     }
     if (selectedMap === "map2") {
         wallsVisible = true;
-        //BackgroundImage.src = "assets/map2.png";
-        walls.push(new Wall(300,500, 75,20, { bulletBehavior: "destroy", solid: true }));
-        walls.push(new Wall(450,500, 75,20, { bulletBehavior: "destroy", solid: true }));
+        BackgroundImage.src = "assets/map2.png";
+        walls.push(new Wall(300,500, 75,20, { bulletBehavior: "destroy", solid: true, bosswall: true}));
+        walls.push(new Wall(450,500, 75,20, { bulletBehavior: "destroy", solid: true, bosswall: true}));
         walls.push(new Wall(300,300, 20,200, { bulletBehavior: "destroy", solid: true }));
         walls.push(new Wall(500,300, 20,200, { bulletBehavior: "destroy", solid: true }));
-        walls.push(new Wall(300,300, 200,20, { bulletBehavior: "destroy", solid: true }));
+        floors.push(new Floor(300, 300, 220, 200));
+        floors.push(new Floor(355, 250, 100, 50));
+        walls.push(new Wall(300,300, 75,20, { bulletBehavior: "destroy", solid: true, bosswall: true}));
+        walls.push(new Wall(450,300, 75,20, { bulletBehavior: "destroy", solid: true, bosswall: true}));
+        walls.push(new Wall(355,250, 20,50, { bulletBehavior: "destroy", solid: true, bosswall: true}));
+        walls.push(new Wall(450,250, 20,50, { bulletBehavior: "destroy", solid: true, bosswall: true}));
+        walls.push(new Wall(375,250, 75,20, { bulletBehavior: "destroy", solid: true, bosswall: true}));
         for (let i = 0; i < 5; i++) {
             for (let j = 0; j < 5; j++) {
                 trees.push(new Tree(0 + i * 120 + Math.random() * 200, 0 + j * 120+ Math.random() * 200));
@@ -1254,7 +1290,9 @@ function wearAccessory(accessoryName) {
         Owned.push("Crown");
         money-=10;
     } else {
+        if (accessoryName==="Crown"&&!Owned.includes("Crown")&&money<10){
         playSound();
+        }
     }
     if(Owned.includes(accessoryName)){
         player.accessory= accessoryName;
@@ -1598,6 +1636,9 @@ function animate(){
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     
+    if (BackgroundImage.complete && BackgroundImage.naturalWidth > 0) {
+        ctx.drawImage(BackgroundImage, 0, 0, canvas.width, canvas.height);
+    }
 
     /*notes: will compress this later, but for now, this is fine. I want to make sure the game works first.
     enemies still need properties (health, speed, etc.) balancing for sure needed
@@ -1680,13 +1721,12 @@ function animate(){
             spawnEnemy("Dragon Slayer");
             spawnEnemy("Sniper");
             spawnEnemy("Sniper");
+            bossFightActive=true;
             waveStart=false;
             }, 5000);
         }
         
     }
-    menubutton.draw(ctx);
-    // mobilebutton.draw(ctx);
     if (mobileW.visible) {
     mobileW.draw(ctx);
 }
@@ -1704,9 +1744,16 @@ function animate(){
 }
     bushes.forEach(bush => bush.draw(ctx));
     trees.forEach(tree => tree.draw(ctx));
-    if (wallsVisible) {
-    walls.forEach(wall => wall.draw(ctx));
-    }
+    floors.forEach(floor => floor.draw(ctx));
+
+  if (wallsVisible) {
+    walls.forEach(wall => {
+        if (bossFightActive && wall.bosswall) return;
+        wall.draw(ctx);
+    });
+}
+    menubutton.draw(ctx);
+    // mobilebutton.draw(ctx);
     handleWallCollision();
 for (const ball of balls) {
     ctx.beginPath();
@@ -2306,6 +2353,7 @@ function getWallWaypoint(ball, player) {
     let directBlocked = false;
     for (const wall of walls) {
         if (!wall.solid) continue;
+        if (bossFightActive && wall.bosswall) continue;
         if (rayHitsWall(ball.x, ball.y, player.x, player.y, wall, radius - 2)) {
             directBlocked = true;
             break;
@@ -2323,7 +2371,7 @@ function getWallWaypoint(ball, player) {
             return false;
         }
         for (const wall of walls) {
-            if (!wall.solid) continue;
+            if (!wall.solid || (bossFightActive && wall.bosswall)) continue;
             const closestX = Math.max(wall.x, Math.min(x, wall.x + wall.width));
             const closestY = Math.max(wall.y, Math.min(y, wall.y + wall.height));
             const dx = x - closestX;
