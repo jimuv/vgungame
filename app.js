@@ -36,6 +36,8 @@ let tutorialTexts = [
     "Use WASD to move your ball. Press WASD to continue.",
     "Open the menu by pressing the menu button.",
     "In the menu, you can buy accessories and weapons. \n Press the shop button to open the shop.",
+    "You can drag frames around the screen by clicking and holding the title bar. \n Drag the shop frame to continue.",
+    "You can buy accessories and weapons in the shop. \n Buy an accessory to continue (anything $0).",
     "Press 'F' to shoot your weapon. \n Shoot 3 times to continue",
     "Press 'G' to melee attack. \n Melee 3 times to continue",
     "Red balls will be the enemies, you can shoot them with your weapon. \n Kill 1 enemy to go back to main menu (finish tutorial)",
@@ -48,6 +50,10 @@ let tutorialKeysPressed = {
     "f": 0,
     "g": 0
 }
+let tutorialShopStartX = 0;
+let tutorialShopStartY = 0;
+let tutorialShopMoved = false;
+let tutorialAccessoryBought = false;
 const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
     "Glasses": new Image(),
@@ -160,26 +166,46 @@ function updateTutorial() {
     }
     else if (tutorialStep === 1) {
         if (menu.visible) {
-            setTutorialStep(tutorialStep + 1);
+            setTutorialStep(2);
         }
     }
     else if (tutorialStep === 2) {
         if (shopmenu.visible) {
-            setTutorialStep(tutorialStep + 1);
+            tutorialShopStartX = shopmenu.x;
+            tutorialShopStartY = shopmenu.y;
+            tutorialShopMoved = false;
+            setTutorialStep(3);
         }
     }
     else if (tutorialStep === 3) {
-        if (tutorialKeysPressed["f"] >= 3) {
-            setTutorialStep(tutorialStep + 1);
+        if (
+            Math.abs(shopmenu.x - tutorialShopStartX) > 30 ||
+            Math.abs(shopmenu.y - tutorialShopStartY) > 30
+        ) {
+            tutorialShopMoved = true;
+        }
+
+        if (tutorialShopMoved && !shopmenu.dragging) {
+            setTutorialStep(4);
         }
     }
     else if (tutorialStep === 4) {
-        if (tutorialKeysPressed["g"] >= 3) {
-            setTutorialStep(tutorialStep + 1);
-            spawnEnemy("Katana");
+        if (tutorialAccessoryBought) {
+            setTutorialStep(5);
         }
     }
     else if (tutorialStep === 5) {
+        if (tutorialKeysPressed.f >= 3) {
+            setTutorialStep(6);
+        }
+    }
+    else if (tutorialStep === 6) {
+        if (tutorialKeysPressed.g >= 3) {
+            setTutorialStep(7);
+            spawnEnemy("Katana");
+        }
+    }
+    else if (tutorialStep === 7) {
     if (enemyCounter === 0) {
         gameMode = null;
         gameScreen = "mainMenu";
@@ -1262,6 +1288,13 @@ class Floor {
 //test:
 
 function Map() {
+    bushes.length = 0;
+    trees.length = 0;
+    walls.length = 0;
+    floors.length = 0;
+
+    BackgroundImage = new Image();
+    bossFightActive = false;
     if (selectedMap === "default") {
         bushes.push(new Bush(150, 200));
         bushes.push(new Bush(400, 300));
@@ -1856,17 +1889,10 @@ function animate(){
         }
         
     }
-    if (gameMode === "tutorial") {
-    ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
 
-    
-    const lines = tutorialTexts[tutorialStep].split("\n");
-    lines.forEach((line, i) => {
-        ctx.fillText(line, canvas.width / 2, 50 + i * 25);
-    });
-}
+
+
+
     if (mobileW.visible) {
     mobileW.draw(ctx);
 }
@@ -1893,6 +1919,16 @@ function animate(){
     });
 }
     menubutton.draw(ctx);
+
+    if (gameMode === "tutorial") {
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    const lines = tutorialTexts[tutorialStep].split("\n");
+    lines.forEach((line, i) => {
+        ctx.fillText(line, canvas.width / 2, 50 + i * 25);
+    });
+}
     // mobilebutton.draw(ctx);
     handleWallCollision();
 for (const ball of balls) {
@@ -2360,8 +2396,21 @@ if (shopmenu.visible) {
     for (const entry of itemButtons) {
         if (entry.button.isPressed()) {
             entry.item.action();
+
+
+            if (
+            gameMode === "tutorial" &&
+            tutorialStep === 4 &&
+            currentCategory === "Skins" &&
+            accessories.includes(entry.item.name) &&
+            (entry.item.price ?? 0) === 0
+        ) {
+            tutorialAccessoryBought = true;
         }
     }
+
+    }
+    
 
     if (shopPrevButton.isPressed()) {
     shopPage = Math.max(0, shopPage - 1);
