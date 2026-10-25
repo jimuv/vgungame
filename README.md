@@ -17,6 +17,8 @@ On the website, if you scroll down, you should be able to see another "How to pl
 
 On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
 
+For gamemodes, there is sandbox, and 5 wave. "5 wave" is where the gameplay is at, and "sandbox" is to test everything out without much enemies
+
 ### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
 
