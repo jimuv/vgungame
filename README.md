@@ -22,7 +22,7 @@ For gamemodes, there is sandbox, and 5 wave. "5 wave" is where the gameplay is a
 ### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
 
-For player movement, use WASD to move in 4 directions.
+For player movement, use WASD to move in 4 directions, and "Shift" to sprint.
 
 ### Game ui
 With the game's ui, there are frames, which you can drag them, or exit them out.
