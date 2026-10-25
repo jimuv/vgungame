@@ -304,6 +304,7 @@ function updateTutorial() {
         if (tutorialMelee >= 3) {
             setTutorialStep(7);
             spawnEnemy("Katana");
+            enemyCounter = 1;
         }
     }
     else if (tutorialStep === 7) {
