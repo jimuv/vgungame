@@ -565,7 +565,7 @@ update() {
 
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
-    new Button(300, 300, 200, 50, "Sandbox Mode + 1 FollowEnemy", "lightblue", 0.5),
+    new Button(300, 300, 200, 50, "5 Waves Mode", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
     new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5)
 ]
