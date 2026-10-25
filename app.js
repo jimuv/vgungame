@@ -33,20 +33,20 @@ let Owned = [];
 let shopPage = 0;
 let tutorialStep = 0;
 let tutorialTexts = [
-    "Use WASD to move your ball.",
+    "Use WASD to move your ball. Press WASD to continue.",
     "Open the menu by pressing the menu button.",
-    "In the menu, you can buy accessories and weapons.",
-    "Press 'F' to shoot your weapon.",
-    "Press 'G' to melee attack.",
-    "Red balls will be the enemies, you can shoot them with your weapon.",
+    "In the menu, you can buy accessories and weapons. \n Press the shop button to open the shop.",
+    "Press 'F' to shoot your weapon. \n Shoot 3 times to continue",
+    "Press 'G' to melee attack. \n Melee 3 times to continue",
+    "Red balls will be the enemies, you can shoot them with your weapon. \n Kill 1 enemy to go back to main menu (finish tutorial)",
 ]
 let tutorialKeysPressed = {
-    "w": false,
-    "a": false,
-    "s": false,
-    "d": false,
-    "f": false,
-    "g": false
+    "w": 0,
+    "a": 0,
+    "s": 0,
+    "d": 0,
+    "f": 0,
+    "g": 0
 }
 const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
@@ -126,54 +126,65 @@ document.addEventListener("keydown", (event) => {
     let key = event.key.toLowerCase();
 
     if (key in tutorialKeysPressed) {
-        tutorialKeysPressed[key] = true;
+        tutorialKeysPressed[key]++;
     }
 });
+
+function setTutorialStep(step) {
+    if (tutorialStep === step) return;
+
+    tutorialStep = step;
+
+    tutorialKeysPressed = {
+        w: 0,
+        a: 0,
+        s: 0,
+        d: 0,
+        f: 0,
+        g: 0
+    };
+}
 
 function updateTutorial() {
     if (gameMode !== "tutorial") return;
 
     if (tutorialStep === 0) {
         if (
-            tutorialKeysPressed["w"] &&
-            tutorialKeysPressed["a"] &&
-            tutorialKeysPressed["s"] &&
-            tutorialKeysPressed["d"]
+            tutorialKeysPressed["w"] > 0 &&
+            tutorialKeysPressed["a"] > 0 &&
+            tutorialKeysPressed["s"] > 0 &&
+            tutorialKeysPressed["d"] > 0
         ) {
-            tutorialStep = 1;
+            setTutorialStep(1);
         }
     }
     else if (tutorialStep === 1) {
         if (menu.visible) {
-            tutorialStep = 2;
+            setTutorialStep(tutorialStep + 1);
         }
     }
     else if (tutorialStep === 2) {
         if (shopmenu.visible) {
-            tutorialStep = 3;
+            setTutorialStep(tutorialStep + 1);
         }
     }
     else if (tutorialStep === 3) {
-        if (keys["f"]) {
-            tutorialStep = 4;
+        if (tutorialKeysPressed["f"] >= 3) {
+            setTutorialStep(tutorialStep + 1);
         }
     }
     else if (tutorialStep === 4) {
-        if (keys["g"]) {
-            tutorialStep = 5;
+        if (tutorialKeysPressed["g"] >= 3) {
+            setTutorialStep(tutorialStep + 1);
             spawnEnemy("Katana");
         }
     }
     else if (tutorialStep === 5) {
-            if (enemyCounter === 0 || money >= 10) {
-                tutorialStep = 6;
-                gamemode = null;
-                gameScreen = "mainMenu";
-            }
+    if (enemyCounter === 0) {
+        gameMode = null;
+        gameScreen = "mainMenu";
     }
-    else if (tutorialStep === 6) {
-        gameMode = "sandbox";
-    }
+}
 
 }
 
@@ -863,7 +874,7 @@ class melee {
                         setTimeout(() => {
                             enemy.remove = true;
                             money+= 10;
-                            if(gameMode==="wave"){
+                            if(gameMode==="wave"||gameMode==="tutorial"){
                                 enemyCounter--;
                             }
                         }, 1000);
@@ -1850,11 +1861,11 @@ function animate(){
     ctx.font = "20px Arial";
     ctx.textAlign = "center";
 
-    ctx.fillText(
-        tutorialTexts[tutorialStep],
-        canvas.width / 2,
-        50
-    );
+    
+    const lines = tutorialTexts[tutorialStep].split("\n");
+    lines.forEach((line, i) => {
+        ctx.fillText(line, canvas.width / 2, 50 + i * 25);
+    });
 }
     if (mobileW.visible) {
     mobileW.draw(ctx);
