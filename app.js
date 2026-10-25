@@ -150,6 +150,92 @@ function setTutorialStep(step) {
         g: 0
     };
 }
+function drawTutorialArrow() {
+    if (gameMode !== "tutorial") return;
+    let targetX=null;
+    let targetY=null;
+    let txt="";
+    let txt2="";
+    if (tutorialStep === 0) {
+        const player = balls.find(ball => ball.isPlayer);
+        if (!player) return;
+        targetX = player.x;
+        targetY = player.y;
+        txt="Press WASD";
+        let remainingKeys = [];
+        if (tutorialKeysPressed["w"] === 0) remainingKeys.push("W");
+        if (tutorialKeysPressed["a"] === 0) remainingKeys.push("A");
+        if (tutorialKeysPressed["s"] === 0) remainingKeys.push("S");
+        if (tutorialKeysPressed["d"] === 0) remainingKeys.push("D");
+        txt2 = remainingKeys.join(",");
+    }
+
+    else if (tutorialStep === 1) {
+        targetX=menubutton.x+menubutton.width/2;
+        targetY=menubutton.y+menubutton.height/2;
+        txt="Click the Menu button";
+    }
+
+    else if (tutorialStep === 2) {
+        targetX=buttonshop.x+buttonshop.width/2;
+        targetY=buttonshop.y+buttonshop.height/2;
+        txt="Click the Shop button";
+    }
+    else if (tutorialStep === 3) {
+        targetX=shopmenu.x+shopmenu.width/2;
+        targetY=shopmenu.y;
+        menu.visible = false;
+        txt="Drag the Shop menu";
+    }
+    else if (tutorialStep === 4) {
+        if (currentCategory !== "Skins") {
+            targetX = buttonshopSkins.x + buttonshopSkins.width / 2;
+            targetY = buttonshopSkins.y + buttonshopSkins.height / 2;
+            txt = "Press the Skins category";
+        } else {
+            const accessoryButton = itemButtons.find(
+                entry => accessories.includes(entry.item.name) && (entry.item.price ?? 0) === 0
+            );
+            if (accessoryButton) {
+                targetX = accessoryButton.button.x + accessoryButton.button.width / 2;
+                targetY = accessoryButton.button.y + accessoryButton.button.height / 2;
+                txt = "Buy an accessory";
+                txt2 = "Press the accessory button";
+            }
+        }
+    }
+
+    else if (tutorialStep === 5) {
+        const player = balls.find(ball => ball.isPlayer);
+        if (!player) return;
+        targetX = player.x;
+        targetY = player.y;
+        txt="Press 'F' to shoot";
+        shopmenu.visible = false;
+        txt2="";
+    }
+    else if (tutorialStep === 6) {
+        const player = balls.find(ball => ball.isPlayer);
+        if (!player) return;
+        targetX = player.x;
+        targetY = player.y;
+        txt="Press 'G' to melee attack";
+    }
+
+    else if (tutorialStep === 7) {
+        const enemy = balls.find(ball => ball.isEnemy);
+        if (!enemy) return;
+        targetX = enemy.x;
+        targetY = enemy.y;
+        txt="Kill the enemy";
+    }
+
+    if(targetX === null && targetY === null){
+        return;
+    }
+
+    drawArrow(targetX+40, targetY-40, targetX, targetY, "Orange",txt,txt2);
+}
 
 function updateTutorial() {
     if (gameMode !== "tutorial") return;
@@ -492,6 +578,32 @@ const enemyStats = {
     
 
 }
+
+function drawArrow(x1, y1, x2, y2, color,txt,txt2){
+    let head = 12;
+    let angle = Math.atan2(y2 - y1, x2 - x1);
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = !isDarkMode ? "#e8c411" : "white";
+    ctx.font = "bold 24px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(txt, x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2 - 60);
+    ctx.fillText(txt2, x1 + (x2 - x1) / 2, y1 + (y2 - y1) / 2 + 60);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6));
+
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6));
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 7;
+    ctx.globalAlpha = 1;
+    ctx.stroke();
+}
+
 function spawnEnemy(weapon) {
     const stats = enemyStats[weapon] || enemyStats["Katana"];
     enemyCounter++;
@@ -535,7 +647,7 @@ function drawModeSelect() {
             balls= balls.filter(ball => ball.isPlayer);
             spawnEnemy("Katana");
             spawnEnemy("Katana");
-            wavestart=true;
+            waveStart=true;
             gameScreen = "mapSelect";
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
@@ -1030,6 +1142,9 @@ function createExplosion(x, y, radius, damage) {
                                 enemyCounter--;
                             }
                         money += 10;
+                        if (gameMode === "wave" || gameMode === "tutorial") {
+                            enemyCounter--;
+                        }
                         
                     }
                 }, 800);
@@ -2076,6 +2191,9 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                                 enemyCounter--;
                             }
                             money += 10;
+                            if (gameMode === "wave" || gameMode === "tutorial") {
+                                enemyCounter--;
+                            }
                         }
                     }, 800);
                 } else {
@@ -2478,6 +2596,7 @@ if (menu.visible && clickedFrame === menu) {
             health: 100,
             maxHealth: 100,
             size: 3,
+            speed: 1,
             damage: 10,
             isDead: false,
             isEnemy: true,
@@ -2799,7 +2918,9 @@ balls = balls.filter(ball =>
     !ball.remove &&
     (!ball.isProjectile || Date.now() - ball.createdAt < 3000)
 );
-    
+if (gameMode === "tutorial") {
+    drawTutorialArrow();
+}
 
 }
     justClicked=false;
