@@ -12,15 +12,17 @@ https://jimuv.github.io/vgungame/
 
 # How to play
 Note: This is only for PC, on the web
-
+### Website and Canvas
 On the website, if you scroll down, you should be able to see another "How to play"
 
 On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
 
+### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
 
 For player movement, use WASD to move in 4 directions.
 
+### Game ui
 With the game's ui, there are frames, which you can drag them, or exit them out.
 
 On the menu, there are 7 buttons, 
@@ -31,6 +33,7 @@ Other buttons on the menu includes the Settings and Skins, which as of now are b
 
 Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging.
 
+#### Shop
 On the shop, it is important to drag it into frame, which then you can see more buttons.
 
 There you would see 4 purple buttons, and 2 "Prev" and "Next" buttons which are for pages
