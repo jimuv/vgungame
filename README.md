@@ -19,6 +19,8 @@ On the game canvas, there is a tutorial, once you press "Start game", "Tutorial"
 
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
 
+For player movement, use WASD to move in 4 directions.
+
 With the game's ui, there are frames, which you can drag them, or exit them out.
 
 On the menu, there are 7 buttons, 
