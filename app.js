@@ -31,6 +31,23 @@ let waveStart=false;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
 let Owned = [];
 let shopPage = 0;
+let tutorialStep = 0;
+let tutorialTexts = [
+    "Use WASD to move your ball.",
+    "Open the menu by pressing the menu button.",
+    "In the menu, you can buy accessories and weapons.",
+    "Press 'F' to shoot your weapon.",
+    "Press 'G' to melee attack.",
+    "Red balls will be the enemies, you can shoot them with your weapon.",
+]
+let tutorialKeysPressed = {
+    "w": false,
+    "a": false,
+    "s": false,
+    "d": false,
+    "f": false,
+    "g": false
+}
 const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
     "Glasses": new Image(),
@@ -103,6 +120,62 @@ let balls =[
 ]
 let objects = [];
 let explosions = [];
+
+document.addEventListener("keydown", (event) => {
+    if (gameMode !== "tutorial") return;
+    let key = event.key.toLowerCase();
+
+    if (key in tutorialKeysPressed) {
+        tutorialKeysPressed[key] = true;
+    }
+});
+
+function updateTutorial() {
+    if (gameMode !== "tutorial") return;
+
+    if (tutorialStep === 0) {
+        if (
+            tutorialKeysPressed["w"] &&
+            tutorialKeysPressed["a"] &&
+            tutorialKeysPressed["s"] &&
+            tutorialKeysPressed["d"]
+        ) {
+            tutorialStep = 1;
+        }
+    }
+    else if (tutorialStep === 1) {
+        if (menu.visible) {
+            tutorialStep = 2;
+        }
+    }
+    else if (tutorialStep === 2) {
+        if (shopmenu.visible) {
+            tutorialStep = 3;
+        }
+    }
+    else if (tutorialStep === 3) {
+        if (keys["f"]) {
+            tutorialStep = 4;
+        }
+    }
+    else if (tutorialStep === 4) {
+        if (keys["g"]) {
+            tutorialStep = 5;
+            spawnEnemy("Katana");
+        }
+    }
+    else if (tutorialStep === 5) {
+            if (enemyCounter === 0 || money >= 10) {
+                tutorialStep = 6;
+                gamemode = null;
+                gameScreen = "mainMenu";
+            }
+    }
+    else if (tutorialStep === 6) {
+        gameMode = "sandbox";
+    }
+
+}
 
 window.addEventListener("keydown", (event)=>{
     keys[event.key.toLowerCase()] = true;
@@ -431,6 +504,7 @@ function drawModeSelect() {
         } else if (modeSelectButtons[2].isPressed()) {
             gameScreen = "mainMenu";
         } else if (modeSelectButtons[3].isPressed()) {
+            tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
         }
@@ -1687,7 +1761,7 @@ function animate(){
     /*notes: will compress this later, but for now, this is fine. I want to make sure the game works first.
     enemies still need properties (health, speed, etc.) balancing for sure needed
     */
-    
+    updateTutorial();
     ctx.fillText(`Money: ${money}`, 10, 10);
     if (gameMode === "wave") {
         ctx.fillText(`Wave: ${wave}`, 10, 30);
@@ -1771,6 +1845,17 @@ function animate(){
         }
         
     }
+    if (gameMode === "tutorial") {
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        tutorialTexts[tutorialStep],
+        canvas.width / 2,
+        50
+    );
+}
     if (mobileW.visible) {
     mobileW.draw(ctx);
 }
