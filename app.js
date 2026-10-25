@@ -6,6 +6,8 @@ const radius = 20;
 let keys = {};
 let fWasPressed = false;
 let gWasPressed = false;
+let mWasPressed = false;
+let nWasPressed = false;
 let mouseX=0;
 let mouseY=0;
 let mouseDown=false;
@@ -34,8 +36,8 @@ let shopPage = 0;
 let tutorialStep = 0;
 let tutorialTexts = [
     "Use WASD to move your ball. Press WASD to continue.",
-    "Open the menu by pressing the menu button.",
-    "In the menu, you can buy accessories and weapons. \n Press the shop button to open the shop.",
+    "Open the menu by pressing the menu button. \n (or you can press 'M')",
+    "In the menu, you can buy accessories and weapons. \n Press the shop button to open the shop. (or press 'N')",
     "You can drag frames around the screen by clicking and holding the title bar. \n Drag the shop frame to continue.",
     "You can buy accessories and weapons in the shop. \n Buy an accessory to continue (anything $0).",
     "Press 'F' to shoot your weapon. \n Shoot 3 times to continue",
@@ -47,13 +49,13 @@ let tutorialKeysPressed = {
     "a": 0,
     "s": 0,
     "d": 0,
-    "f": 0,
-    "g": 0
 }
 let tutorialShopStartX = 0;
 let tutorialShopStartY = 0;
 let tutorialShopMoved = false;
 let tutorialAccessoryBought = false;
+let tutorialShots = 0;
+let tutorialMelee = 0;
 const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
     "Glasses": new Image(),
@@ -75,7 +77,8 @@ const weaponImages= {
     "Explosive Sniper": new Image(),
     "Katana": new Image(),
     "Nodachi": new Image(),
-    "Dragon Slayer": new Image()
+    "Dragon Slayer": new Image(),
+    "AK47": new Image(),
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -83,10 +86,16 @@ weaponImages["Sniper"].src = "assets/Sniper.png";
 weaponImages["Explosive Sniper"].src = "assets/Sniper.png";
 weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
-weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png"; //placeholder
-
+weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png";
+weaponImages["AK47"].src = "assets/AK47.png";
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
+const sandFloorImage = new Image();
+sandFloorImage.src = "assets/sand.png";
+const sandbagImage = new Image();
+sandbagImage.src = "assets/sandbags.png";
+const greenWallImage = new Image();
+greenWallImage.src = "assets/greenwall.png";
 
 BackgroundImage = new Image();
 let stats = {
@@ -146,9 +155,15 @@ function setTutorialStep(step) {
         a: 0,
         s: 0,
         d: 0,
-        f: 0,
-        g: 0
     };
+
+    if (step === 5) {
+        tutorialShots = 0;
+    }
+
+    if (step === 6) {
+    tutorialMelee = 0;
+    }
 }
 function drawTutorialArrow() {
     if (gameMode !== "tutorial") return;
@@ -281,12 +296,12 @@ function updateTutorial() {
         }
     }
     else if (tutorialStep === 5) {
-        if (tutorialKeysPressed.f >= 3) {
+        if (tutorialShots >= 3) {
             setTutorialStep(6);
         }
     }
     else if (tutorialStep === 6) {
-        if (tutorialKeysPressed.g >= 3) {
+        if (tutorialMelee >= 3) {
             setTutorialStep(7);
             spawnEnemy("Katana");
         }
@@ -298,6 +313,42 @@ function updateTutorial() {
     }
 }
 
+}
+
+function drawTutorialShotProgress() {
+    if (gameMode !== "tutorial" || tutorialStep !== 5) return;
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Shots: ${tutorialShots}`, 10, 10);
+    
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(player.x - 50 + i * 50,player.y + 50, 12, 0, Math.PI * 2);
+        ctx.fillStyle = i < tutorialShots ? "green" : "gray";
+        ctx.fill();
+    }
+}
+
+function drawTutorialMeleeProgress() {
+    if (gameMode !== "tutorial" || tutorialStep !== 6) return;
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 10);
+    
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(player.x - 50 + i * 50,player.y + 50, 12, 0, Math.PI * 2);
+        ctx.fillStyle = i < tutorialMelee ? "green" : "gray";
+        ctx.fill();
+    }
 }
 
 window.addEventListener("keydown", (event)=>{
@@ -519,9 +570,10 @@ const modeSelectButtons = [
     new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5)
 ]
 const mapSelectButtons = [
-    new Button(300, 200, 200, 50, "Default Map", "lightblue", 0.5),
-    new Button(300, 300, 200, 50, "Map 1", "lightblue", 0.5),
-    new Button(300, 400, 200, 50, "Map 2", "lightblue", 0.5),
+    new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
+    new Button(300, 200, 200, 50, "Map 1", "lightblue", 0.5),
+    new Button(300, 300, 200, 50, "Map 2", "lightblue", 0.5),
+    new Button(300, 400, 200, 50, "Map 3", "lightblue", 0.5),
     new Button(300, 500, 200, 50, "Back", "lightblue", 0.5)
 ]
 
@@ -687,6 +739,11 @@ function drawMapSelect() {
             Map();
         }
         else if (mapSelectButtons[3].isPressed()) {
+            selectedMap = "map3";
+            gameScreen = "game";
+            Map();
+        }
+        else if (mapSelectButtons[4].isPressed()) {
             gameScreen = "mainMenu";
         }
     }
@@ -869,6 +926,16 @@ class Gun {
             this.offsetX=0;
             this.offsetY=0;
         }
+        if(this.name==="AK47"){
+            this.x=0;
+            this.y=-10;
+            this.width=60;
+            this.height=10+20;
+            this.angle=0;
+            this.lastShot=0;
+            this.offsetX=10;
+            this.offsetY=0;
+        }
     }
     translate(dx, dy) {
         this.angle=Math.atan2(dy, dx)
@@ -948,6 +1015,9 @@ class melee {
         this.swinging=true;
         this.swingStart=Date.now();
         this.hitEnemies.clear();
+        if (gameMode === "tutorial" && tutorialStep === 6) {
+            tutorialMelee++;
+        }
     }
 
     draw(ctx, player, mouseX, mouseY) {
@@ -1207,6 +1277,7 @@ const bushes = [];
 const trees = [];
 const walls = [];
 const floors = [];
+const sandbags = [];
 let wallsVisible = false;
 let bossFightActive = false;
 
@@ -1241,12 +1312,34 @@ class Wall {
         this.bulletBehavior = options.bulletBehavior || "deflect";
         this.solid = options.solid ?? true;
         this.bosswall = options.bosswall ?? false;
+        this.image = options.image || wallImage;
     }
 
     draw(ctx) {
-        if (wallImage.complete && wallImage.naturalWidth > 0) {
+        if (this.image.complete && this.image.naturalWidth > 0) {
             ctx.drawImage(
-                wallImage,
+                this.image,
+                this.x,
+                this.y,
+                this.width,
+                this.height
+            );
+        }
+    }
+}
+
+class Sandbag {
+    constructor(x,y, width =80, height = 80) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    draw(ctx) {
+        if (sandbagImage.complete && sandbagImage.naturalWidth > 0) {
+            ctx.drawImage(
+                sandbagImage,
                 this.x,
                 this.y,
                 this.width,
@@ -1380,17 +1473,18 @@ class Tree {
     }
 }
 class Floor {
-    constructor(x, y, width = 100, height = 100) {
+    constructor(x, y, width = 100, height = 100, image = floorImage) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.image = image;
     }
 
     draw(ctx) {
-        if (floorImage.complete && floorImage.naturalWidth > 0) {
+        if (this.image.complete && floorImage.naturalWidth > 0) {
             ctx.drawImage(
-                floorImage,
+                this.image,
                 this.x,
                 this.y,
                 this.width,
@@ -1407,6 +1501,7 @@ function Map() {
     trees.length = 0;
     walls.length = 0;
     floors.length = 0;
+    sandbags.length = 0;
 
     BackgroundImage = new Image();
     bossFightActive = false;
@@ -1460,6 +1555,23 @@ function Map() {
             }
         }
     }
+    if (selectedMap === "map3") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, canvas.width, canvas.height, sandFloorImage));
+        floors.push(new Floor(200, 150, 400, 300, floorImage));
+        sandbags.push(new Sandbag(360, 280, 80, 35));
+        sandbags.push(new Sandbag(100, 250, 35, 80));
+        sandbags.push(new Sandbag(665, 250, 35, 80));
+        walls.push(new Wall(200, 150, 400, 20, { bulletBehavior: "deflect", solid: true, image: greenWallImage }));
+        walls.push(new Wall(200, 150, 20, 300, { bulletBehavior: "deflect", solid: true, image: greenWallImage }));
+        walls.push(new Wall(580, 150, 20, 300, { bulletBehavior: "deflect", solid: true, image: greenWallImage }));
+        walls.push(new Wall(200, 450, 140, 20, { bulletBehavior: "deflect", solid: true, image: greenWallImage }));
+        walls.push(new Wall(460, 450, 140, 20, { bulletBehavior: "deflect", solid: true, image: greenWallImage }));
+        for (let i = 0; i < 5; i++) {
+            objects.push(new Object("mine"));
+            objects.push(new Object("rock"));
+        }
+    }
 }
 
 class Text {
@@ -1485,7 +1597,8 @@ const weapons = {
     Shotgun: new Gun("Shotgun", 15, 1, 240, 5, 5, 0.5),
     Sniper: new Gun("Sniper", 100, 0.5, 50, 10, 1),
     ExplosiveSniper: new Gun("Explosive Sniper", 100, 0.5, 50, 10, 1,0,true,120,100),
-    DualWield: new Gun("Dual Wield", 8, 5, Infinity)
+    DualWield: new Gun("Dual Wield", 8, 5, Infinity),
+    AK47: new Gun("AK47", 12, 5, 300, 7, 1, 0.1)
 };
 
 const shopItems = {
@@ -1495,6 +1608,7 @@ const shopItems = {
         { name: "Sniper", action: () => currentWeapon = weapons.Sniper },
         { name: "Explosive Sniper", action: () => currentWeapon = weapons.ExplosiveSniper },
         { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield },
+        { name: "AK47", action: () => currentWeapon = weapons.AK47 },
         { name: "Katana", action: () => currentMelee= katana },
         { name: "Nodachi", action: () => currentMelee= nodachi },
         { name: "Dragon Slayer", action: () => currentMelee= dragonslayer },
@@ -1908,14 +2022,26 @@ function animate(){
         drawMapSelect();
     }
     else if (gameScreen === "game") {
+    if (BackgroundImage.complete && BackgroundImage.naturalWidth > 0) {
+        ctx.drawImage(BackgroundImage, 0, 0, canvas.width, canvas.height);
+    }
+    bushes.forEach(bush => bush.draw(ctx));
+    trees.forEach(tree => tree.draw(ctx));
+    floors.forEach(floor => floor.draw(ctx));
+    sandbags.forEach(sandbag => sandbag.draw(ctx));
+
+    if (wallsVisible) {
+        walls.forEach(wall => {
+            if (bossFightActive && wall.bosswall) return;
+            wall.draw(ctx);
+        });
+    }
+
     ctx.fillStyle = isDarkMode ? "#fffefe" : "#000000";
     ctx.font = "16px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     
-    if (BackgroundImage.complete && BackgroundImage.naturalWidth > 0) {
-        ctx.drawImage(BackgroundImage, 0, 0, canvas.width, canvas.height);
-    }
 
     /*notes: will compress this later, but for now, this is fine. I want to make sure the game works first.
     enemies still need properties (health, speed, etc.) balancing for sure needed
@@ -2022,16 +2148,6 @@ function animate(){
 }
     if (mobileShoot.visible) {
     mobileShoot.draw(ctx);
-}
-    bushes.forEach(bush => bush.draw(ctx));
-    trees.forEach(tree => tree.draw(ctx));
-    floors.forEach(floor => floor.draw(ctx));
-
-  if (wallsVisible) {
-    walls.forEach(wall => {
-        if (bossFightActive && wall.bosswall) return;
-        wall.draw(ctx);
-    });
 }
     menubutton.draw(ctx);
 
@@ -2403,6 +2519,15 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 if (!clickedFrame && menubutton.isPressed()) {
     menu.visible = !menu.visible;
 }
+if (keys["m"] && !mWasPressed && gameScreen === "game") {
+    menu.visible = !menu.visible;
+}
+if (keys["n"] && !nWasPressed && gameScreen === "game") {
+    shopmenu.visible = !shopmenu.visible;
+}
+
+nWasPressed = keys["n"];
+mWasPressed = keys["m"];
 if (!clickedFrame && mobileShoot.isPressed() && player) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
@@ -2470,9 +2595,14 @@ if (player) {
     info.visible = false;
 }
 info.draw(ctx);
-if (keys['f'] && !fWasPressed && player && !player.isDead) {
+if (keys['f'] && player && !player.isDead) {
+    if (currentWeapon.name === "AK47" || !fWasPressed) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
+    if (newProjectiles.length > 0 && gameMode === "tutorial" && tutorialStep === 5) {
+        tutorialShots++;
+    }
+}
 }
 if (keys['g'] && !gWasPressed && player && !player.isDead) {
     currentMelee.swing();
@@ -2920,6 +3050,8 @@ balls = balls.filter(ball =>
 );
 if (gameMode === "tutorial") {
     drawTutorialArrow();
+    drawTutorialShotProgress();
+    drawTutorialMeleeProgress();
 }
 
 }
