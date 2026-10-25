@@ -10,6 +10,36 @@ So this game is displayed on the web, which is through a canvas and html. The ma
 This is a link to the web game
 https://jimuv.github.io/vgungame/
 
+# How to play
+Note: This is only for PC, on the web
+
+On the website, if you scroll down, you should be able to see another "How to play"
+
+On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
+
+The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
+
+With the game's ui, there are frames, which you can drag them, or exit them out.
+
+On the menu, there are 7 buttons, 
+
+The significant button on the menu is the "Shop" button, which allows you to equip things
+
+Other buttons on the menu includes the Settings and Skins, which as of now are basic.
+
+Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging.
+
+On the shop, it is important to drag it into frame, which then you can see more buttons.
+
+There you would see 4 purple buttons, and 2 "Prev" and "Next" buttons which are for pages
+
+The 4 purple buttons are "Guns", "Utility", "Skins", and "Armor"
+
+You could purchase in each category, and go through multiple pages if there is any (As of now, only guns have pages)
+
+In the gun section, there are different unique guns you can try out
+
+
 # description
 As of enemies, this will probably be just a target practice, zombies, or actual enemies might be later. My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
