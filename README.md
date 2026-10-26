@@ -19,6 +19,8 @@ On the game canvas, there is a tutorial, once you press "Start game", "Tutorial"
 
 For gamemodes, there is sandbox, and 5 wave. "5 wave" is where the gameplay is at, and "sandbox" is to test everything out without much enemies
 
+Note: after completing 5 Wave mode, you will need to restart in order to play again.
+
 ### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
 
@@ -58,6 +60,8 @@ Note: I am planning to make this a sandbox mode for the early stages, and will w
 Some problems I'm facing right now is actual game design, I would say that I have no idea what im planning to make, which im basically just adding stuff as I learn.
 
 # showcase
+
+note: these may be outdated gifs
 
 ![Sample](assets/487563cde1baebdc74301ae9043a83c4.gif)
 
