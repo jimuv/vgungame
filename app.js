@@ -56,6 +56,19 @@ let tutorialShopMoved = false;
 let tutorialAccessoryBought = false;
 let tutorialShots = 0;
 let tutorialMelee = 0;
+
+let hoveredShopItem = null;
+
+const weaponDescriptions = {
+    "Pistol": "Basic gun",
+    "Shotgun": "Close range gun",
+    "Sniper": "Long range gun",
+    "Explosive Sniper": "Special long range gun",
+    "Katana": "Basic melee",
+    "Nodachi": "Longer reach melee",
+    "Dragon Slayer": "Powerful melee",
+    "AK47": "Automatic gun"
+}
 const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
     "Glasses": new Image(),
@@ -130,6 +143,42 @@ map creation? (will need export/import)
 
 */
 
+/*
+future wave structure:
+Normal mode:
+1. 2 katana
+2. 3 katana
+3. 1 pistol 1 katana
+4. 2 pistol 2 katana
+5. 1 pistol 1 katana 1 shotgun
+6. 1 shotgun + nodachi
+7. 1 sniper + 5 katana
+8. 1 sniper + shotgun + pistol + katana + nodachi
+9. 2 sniper, 2 shotguns + 2 pistols
+10. dragon slayer, 5 nodachi
+11. 5 snipers, 2 pistols
+12. 15 katana, 5 pistols
+13. 1 dragon slayer, 2 snipers, 2 shotguns, 2 pistols
+14. 2 dragon slayers
+15. 3 dragon slayers, 5 snipers, 5 shotguns, 5 pistols, 10 katana
+
+Hard mode:
+1. 5 katana
+2. 2 katana, 2 pistols
+3. 2 shotgun, 2 pistols
+4. 2 snipers, 2 shotgun, 2 pistols.
+5. 2 snipers, 1 dragon slayer, 2 nodachi
+6. 5 snipers, 5 nodachi
+7. 10 shotguns
+8. 3 dragon slayers
+9. 1 dragon slayer, 5 pistol, 5 shotgun, 1 sniper
+10. 2 dragon slayers, 5 snipers, 5 shotguns
+11. 5 dragon slayers
+12. 3 dragon slayers, 5 snipers, 5 shotguns, 5 pistols, 5 nodachi, 5 katana
+13. 10 snipers
+14. 10 snipers, 10 shotguns
+15. 10 dragon slayers, 10 snipers
+*/
 let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed, size: 1}
 ]
@@ -310,6 +359,12 @@ function updateTutorial() {
     else if (tutorialStep === 7) {
     if (enemyCounter === 0) {
         gameMode = null;
+        const player = balls.find(ball => ball.isPlayer);
+        money=0;
+        player.health = getMaxHealth();
+        if (!player) return;
+        player.x=canvas.width / 2;
+        player.y=canvas.height / 2;
         gameScreen = "mainMenu";
     }
 }
@@ -1613,15 +1668,6 @@ const shopItems = {
         { name: "Katana", action: () => currentMelee= katana },
         { name: "Nodachi", action: () => currentMelee= nodachi },
         { name: "Dragon Slayer", action: () => currentMelee= dragonslayer },
-
-        { name: "testgun1", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun2", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun3", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun4", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun5", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun6", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun7", action: () => currentWeapon = weapons.Pistol },
-        { name: "testgun8", action: () => currentWeapon = weapons.Pistol },
     ],
 
     Utility: [
@@ -1901,7 +1947,7 @@ const skinsmenu = new Frame(
 );
 
 const shopmenu = new Frame(
-    400, 400, 300, 250, "lightgreen", 0.5, null, true
+    400, 400, 350, 250, "lightgreen", 0.5, null, true
 
 );
 mainmenu.addButton(mainmenuButton1);
@@ -1957,6 +2003,96 @@ function showCategory(category) {
             1
         )
     }));
+}
+
+function updateShopHover() {
+    hoveredShopItem = null;
+
+    if (!shopmenu.visible) return;
+
+    for (const entry of itemButtons) {
+        const button = entry.button;
+
+        if (
+            mouseX >= button.x &&
+            mouseX <= button.x + button.width &&
+            mouseY >= button.y &&
+            mouseY <= button.y + button.height &&
+            mouseX >= shopmenu.x &&
+            mouseX <= shopmenu.x + shopmenu.width &&
+            mouseY >= shopmenu.y &&
+            mouseY <= shopmenu.y + shopmenu.height
+        ) {
+            hoveredShopItem = entry.item;
+            break;
+        }
+    }
+}
+
+function drawShopTooltip() {
+    if (!shopmenu.visible || !hoveredShopItem) return;
+    const item = hoveredShopItem;
+    const name = item.name;
+    const gun = globalThis.Object.values(weapons).find(w => w.name === name);
+    const meleeWeapon = [katana, nodachi, dragonslayer].find(w => w.name === name);
+    const x = shopmenu.x + 225;
+    const y = shopmenu.y + 55;
+    const width = 115;
+    const height = 180;
+    ctx.save();
+    ctx.globalAlpha = .75;
+    ctx.fillStyle = isDarkMode ? "#252525" : "#f0f0f0";
+    ctx.fillRect(x, y, width, height);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    let textY = y + 8;
+    const left = x + 7;
+    ctx.font = "bold 13px Arial";
+    ctx.fillText(name, left, textY, width - 14);
+    textY = textY + 22;
+    ctx.font = "11px Arial";
+    const description = weaponDescriptions[name] || "";
+    const words = description.split(" ");
+    let line = "";
+
+    for (const word of words) {
+        const testLine = line ? line + " " + word : word;
+
+        if (ctx.measureText(testLine).width > width - 14 && line) {
+            ctx.fillText(line, left, textY);
+            textY = textY + 13;
+            line = word;
+        } else {
+            line = testLine;
+        }
+    }
+    if (line) {
+        ctx.fillText(line, left, textY);
+        textY = textY + 20;
+    }
+
+    if (gun) {
+        ctx.fillText(`Damage: ${gun.damage}`, left, textY);
+        textY = textY + 17;
+        ctx.fillText(`Rate: ${gun.fireRate}/s`, left, textY);
+        textY = textY + 17;
+        ctx.fillText(`Ammo: ${gun.ammo === Infinity ? "Inf." : gun.ammo}`, left, textY);
+        textY = textY + 17;
+
+        if (gun.projectileSpeed !== undefined) {
+            ctx.fillText(`Speed: ${gun.projectileSpeed}`, left, textY);
+            textY = textY + 17;
+        }
+        if (gun.bulletCount !== undefined) {
+            ctx.fillText(`Bullets: ${gun.bulletCount}`, left, textY);
+        }
+    } else if (meleeWeapon) {
+        ctx.fillText(`Damage: ${meleeWeapon.damage}`, left, textY);
+        textY = textY + 17;
+        ctx.fillText(`Range: ${meleeWeapon.range}`, left, textY);
+    }
+    ctx.restore();
 }
 showCategory(currentCategory);
 
@@ -3045,6 +3181,8 @@ frameOrder = frameOrder.filter(frame =>
 for (const frame of frameOrder) {
     drawFrame(frame);
 }
+updateShopHover();
+drawShopTooltip();
 balls = balls.filter(ball =>
     !ball.remove &&
     (!ball.isProjectile || Date.now() - ball.createdAt < 3000)
