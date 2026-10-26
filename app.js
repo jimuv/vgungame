@@ -29,7 +29,10 @@ let enemyVariants=["red"]
 let wave = 1;
 let waveEnemies = [5, 10, 15, 20, 25];
 let rewards = [10, 20, 30, 40, 50];
+let showUpgradePrompt = false;
 let waveStart=false;
+let waveWon = false;
+let winCountdown = 5;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
 let Owned = [];
 let shopPage = 0;
@@ -68,6 +71,18 @@ const weaponDescriptions = {
     "Nodachi": "Longer reach melee",
     "Dragon Slayer": "Powerful melee",
     "AK47": "Automatic gun"
+}
+const UtilityDescriptions = {
+    "Speed Boost": "Increases movement speed",
+    "Heal Package": "Increases health",
+    "Mine": "Places a mine that explodes when enemies are near",
+    "Big Rock": "Damage on contact"
+}
+const AccessoryDescriptions = {
+    "Glasses": "Cool factor, aura",
+    "Top Hat": "Fancy hat",
+    "Monocle": "Fancy eye",
+    "Crown": "Royalty",
 }
 const SHOP_ITEMS_PER_PAGE = 6;
 const accessoryImages = {
@@ -353,7 +368,6 @@ function updateTutorial() {
         if (tutorialMelee >= 3) {
             setTutorialStep(7);
             spawnEnemy("Katana");
-            enemyCounter = 1;
         }
     }
     else if (tutorialStep === 7) {
@@ -632,7 +646,11 @@ const mapSelectButtons = [
     new Button(300, 400, 200, 50, "Map 3", "lightblue", 0.5),
     new Button(300, 500, 200, 50, "Back", "lightblue", 0.5)
 ]
-
+let upgradeButtons = [
+    new Button( 150,300, 150, 100, "Increase HP", "lightgreen", 0.75),
+    new Button( 325,300, 150, 100, "Increase Speed", "lightgreen", 0.75),
+    new Button( 500,300, 150, 100, "Increase Damage", "lightgreen", 0.75)
+];
 const enemyStats = {
     "Katana": {
         health: 50,
@@ -738,6 +756,28 @@ function spawnEnemy(weapon) {
     });
 }
 
+const waveConfigs = [
+    ["Katana", "Katana"],
+    ["Pistol", "Katana", "Katana", "Katana"],
+    ["Pistol", "Pistol", "Pistol", "Katana", "Katana"],
+    ["Shotgun", "Sniper", "Pistol", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana"],
+    ["Dragon Slayer", "Sniper", "Sniper"]
+];
+
+function startWave(waveNumber) {
+    const config = waveConfigs[waveNumber - 1];
+    if (!config) return;
+
+    enemyCounter = 0;
+    enemyCountMax = config.length;
+    bossFightActive = (waveNumber === 5);
+
+    for (const weapon of config) {
+        spawnEnemy(weapon);
+    }
+    waveStart = false;
+}
+
 function drawModeSelect() {
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.font = "24px Arial";
@@ -752,10 +792,9 @@ function drawModeSelect() {
             gameScreen = "mapSelect";
             gameMode = "sandbox";
         } else if (modeSelectButtons[1].isPressed()) {
-            balls= balls.filter(ball => ball.isPlayer);
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            waveStart=true;
+            balls = balls.filter(ball => ball.isPlayer);
+            wave = 1;
+            startWave(1);
             gameScreen = "mapSelect";
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
@@ -1264,9 +1303,6 @@ function createExplosion(x, y, radius, damage) {
                 setTimeout(() => {
                     if (!enemy.remove) {
                         enemy.remove = true;
-                        if(gameMode==="wave"){
-                                enemyCounter--;
-                            }
                         money += 10;
                         if (gameMode === "wave" || gameMode === "tutorial") {
                             enemyCounter--;
@@ -1690,7 +1726,7 @@ const shopItems = {
 };
 
 function getMaxHealth() {
-    return 100 + stats.armor * 5;
+    return stats.health + stats.armor * 5;
 }
 
 function wearAccessory(accessoryName) {
@@ -2029,6 +2065,45 @@ function updateShopHover() {
     }
 }
 
+function drawUpgradePrompt() {
+    ctx.fillStyle = isDarkMode ? "#252525" : "#f0f0f0";
+    ctx.fillRect(150, 180, 500, 220);
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    ctx.font = "bold 22px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("Upgrade stats", canvas.width / 2, 200);
+
+    upgradeButtons[0].x = 175;
+    upgradeButtons[1].x = 325;
+    upgradeButtons[2].x = 475;
+    for (const button of upgradeButtons) {
+        button.y = 250;
+        button.width = 140;
+        button.height = 90;
+        button.draw(ctx);
+    }
+
+    if (justClicked) {
+        const player = balls.find(ball => ball.isPlayer);
+
+        if (upgradeButtons[0].isPressed()) {
+            stats.health += 25;
+            if (player) {
+                player.maxHealth = getMaxHealth();
+                player.health += 25;
+            }
+        } else if (upgradeButtons[1].isPressed()) {
+            stats.speed *= 1.15;
+            if (player) {
+                player.speed *= 1.15;
+            }
+        } else if (upgradeButtons[2].isPressed()) {
+            stats.damage *= 1.2;
+        } else return;
+        showUpgradePrompt = false;
+    }
+}
 function drawShopTooltip() {
     if (!shopmenu.visible || !hoveredShopItem) return;
     const item = hoveredShopItem;
@@ -2052,7 +2127,7 @@ function drawShopTooltip() {
     ctx.fillText(name, left, textY, width - 14);
     textY = textY + 22;
     ctx.font = "11px Arial";
-    const description = weaponDescriptions[name] || "";
+    const description = weaponDescriptions[name] || UtilityDescriptions[name] || AccessoryDescriptions[name] || "";
     const words = description.split(" ");
     let line = "";
 
@@ -2186,86 +2261,30 @@ function animate(){
     updateTutorial();
     ctx.fillText(`Money: ${money}`, 10, 10);
     if (gameMode === "wave") {
-        ctx.fillText(`Wave: ${wave}`, 10, 30);
-        ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
-        if (enemyCounter <=0 && enemyCountMax===2) {
-            wave++;
-            enemyCountMax += 2;
-            waveStart=true;
-            for (const ball of balls) {
-                if (ball === balls[0]) {
-                    ball.health=ball.maxHealth;
-                }
-            }
-            money+=rewards[wave] || 0;
-            setTimeout(() => {
-            spawnEnemy("Pistol");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            waveStart=false;
-            }, 5000);
-        }
-        else if (!waveStart && enemyCounter <=0 && enemyCountMax===4) {
-            wave++;
-            enemyCountMax++;
-            waveStart=true;
-            for (const ball of balls) {
-                if (ball === balls[0]) {
-                    ball.health=ball.maxHealth;
-                }
-            }
-            money+=rewards[wave] || 0;
-            setTimeout(() => {
-            spawnEnemy("Pistol");
-            spawnEnemy("Pistol");
-            spawnEnemy("Pistol");
-            spawnEnemy("Katana");
-            spawnEnemy("Katana");
-            waveStart=false;
-            }, 5000);
+    ctx.fillText(`Wave: ${wave}`, 10, 30);
+    ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
+
+    if (!waveStart && enemyCounter <= 0 && wave < waveConfigs.length) {
+        waveStart = true;
+        money += rewards[wave - 1] || 0;
+        wave++;
+
+        if (wave === 2) {
+            showUpgradePrompt = true;
         }
 
-        else if (!waveStart && enemyCounter <=0 && enemyCountMax===5) {
-            wave++;
-            enemyCountMax+=5;
-            waveStart=true;
-            for (const ball of balls) {
-                if (ball === balls[0]) {
-                    ball.health=ball.maxHealth;
-                }
-            }
-            money+=rewards[wave] || 0;
-            setTimeout(() => {
-            spawnEnemy("Shotgun");
-            spawnEnemy("Sniper");
-            spawnEnemy("Pistol");
-            for (let i = 0; i < 7; i++) {
-                spawnEnemy("Katana");
-            }
-            waveStart=false;
-            }, 5000);
+        const player = balls.find(ball => ball.isPlayer);
+        if (player) {
+            player.health = player.maxHealth;
         }
 
-        else if (!waveStart && enemyCounter <=0 && wave===4) {
-            wave++;
-            enemyCountMax-=7;
-            waveStart=true;
-            for (const ball of balls) {
-                if (ball === balls[0]) {
-                    ball.health=ball.maxHealth;
-                }
+        const nextWave = wave;
+        setTimeout(() => {
+            if (gameMode === "wave") {
+                startWave(nextWave);
             }
-            money+=rewards[wave] || 0;
-            setTimeout(() => {
-            spawnEnemy("Dragon Slayer");
-            spawnEnemy("Sniper");
-            spawnEnemy("Sniper");
-            bossFightActive=true;
-            waveStart=false;
-            }, 5000);
-        }
-        
+        }, 5000);
+    }
     }
 
 
@@ -2440,9 +2459,6 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                     setTimeout(() => {
                         if (!target.remove) {
                             target.remove = true;
-                            if(gameMode==="wave"){
-                                enemyCounter--;
-                            }
                             money += 10;
                             if (gameMode === "wave" || gameMode === "tutorial") {
                                 enemyCounter--;
@@ -3194,6 +3210,9 @@ if (gameMode === "tutorial") {
 }
 
 }
+    if (showUpgradePrompt) {
+        drawUpgradePrompt();
+    }
     justClicked=false;
     requestAnimationFrame(animate);
 }
