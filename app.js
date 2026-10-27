@@ -1586,7 +1586,6 @@ class Floor {
     }
 }
 
-//test:
 
 function Map() {
     bushes.length = 0;
@@ -2878,7 +2877,7 @@ if (menu.visible && clickedFrame === menu) {
             radius: radius,
             health: 100,
             maxHealth: 100,
-            size: 3,
+            size: 1,
             speed: 1,
             damage: 10,
             isDead: false,
