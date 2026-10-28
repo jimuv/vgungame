@@ -195,7 +195,7 @@ Hard mode:
 15. 10 dragon slayers, 10 snipers
 */
 let balls =[
-    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed, size: 1}
+    { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed, size: 1, dodgeCooldown: 0}
 ]
 let objects = [];
 let explosions = [];
@@ -393,7 +393,7 @@ function drawTutorialShotProgress() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Shots: ${tutorialShots}`, 10, 10);
+    ctx.fillText(`Shots: ${tutorialShots}`, 10, 30);
     
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
@@ -411,7 +411,7 @@ function drawTutorialMeleeProgress() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 10);
+    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 30);
     
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
@@ -636,6 +636,7 @@ update() {
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "5 Waves Mode", "lightblue", 0.5),
+    new Button(100, 350, 100, 50, "Endless Mode", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
     new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5)
 ]
@@ -778,6 +779,34 @@ function startWave(waveNumber) {
     waveStart = false;
 }
 
+function generateEndlessWave(waveNumber) {
+    const enemies = [];
+    const count = 3 + Math.floor(waveNumber * 1.1);
+    const types = ["Katana", "Pistol", "Shotgun", "Nodachi", "Sniper", "Dragon Slayer"];
+
+    for (let i = 0; i < count; i++) {
+        let max = Math.min(types.length - 1, Math.floor(waveNumber / 3));
+        enemies.push(types[Math.floor(Math.random() * (max + 1))]);
+    }
+
+    if (waveNumber % 5 === 0) {
+        enemies.push("Dragon Slayer");
+    }
+
+    return enemies;
+}
+
+function startEndlessWave(waveNumber) {
+    const config = generateEndlessWave(waveNumber);
+    enemyCounter = 0;
+    enemyCountMax = config.length;
+    bossFightActive = (waveNumber % 5 === 0);
+    for (const weapon of config) {
+        spawnEnemy(weapon);
+    }
+    waveStart = false;
+}
+
 function drawModeSelect() {
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.font = "24px Arial";
@@ -798,8 +827,15 @@ function drawModeSelect() {
             gameScreen = "mapSelect";
             gameMode = "wave";
         } else if (modeSelectButtons[2].isPressed()) {
+            balls = balls.filter(ball => ball.isPlayer);
+            wave = 1;
+            startEndlessWave(1);
+            gameScreen = "mapSelect";
+            gameMode = "endless";
+        }
+        else if (modeSelectButtons[3].isPressed()) {
             gameScreen = "mainMenu";
-        } else if (modeSelectButtons[3].isPressed()) {
+        } else if (modeSelectButtons[4].isPressed()) {
             tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
@@ -1177,7 +1213,7 @@ class melee {
                         setTimeout(() => {
                             enemy.remove = true;
                             money+= 10;
-                            if(gameMode==="wave"||gameMode==="tutorial"){
+                            if(gameMode==="wave"||gameMode==="tutorial"||gameMode==="endless"){
                                 enemyCounter--;
                             }
                         }, 1000);
@@ -1304,7 +1340,7 @@ function createExplosion(x, y, radius, damage) {
                     if (!enemy.remove) {
                         enemy.remove = true;
                         money += 10;
-                        if (gameMode === "wave" || gameMode === "tutorial") {
+                        if (gameMode === "wave" || gameMode === "tutorial" || gameMode === "endless") {
                             enemyCounter--;
                         }
                         
@@ -2259,12 +2295,11 @@ function animate(){
     */
     updateTutorial();
     ctx.fillText(`Money: ${money}`, 10, 10);
-    if (gameMode === "wave") {
+    if (gameMode === "wave" || gameMode === "endless") {
     ctx.fillText(`Wave: ${wave}`, 10, 30);
     ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
 
-    if (!waveStart && enemyCounter <= 0 && wave < waveConfigs.length) {
-        waveStart = true;
+    if (!waveStart && enemyCounter <= 0 && (gameMode === "endless" || wave < waveConfigs.length)) {        waveStart = true;
         money += rewards[wave - 1] || 0;
         wave++;
 
@@ -2281,6 +2316,8 @@ function animate(){
         setTimeout(() => {
             if (gameMode === "wave") {
                 startWave(nextWave);
+            } else if (gameMode === "endless") {
+                startEndlessWave(nextWave);
             }
         }, 5000);
     }
@@ -2332,6 +2369,29 @@ for (const ball of balls) {
     }
 
     if (ball === balls[0]) {
+            if (keys["control"] && ball.dodgeCooldown <= 0) {
+                const dx = mouseX - ball.x;
+                const dy = mouseY - ball.y;
+                const distance = Math.hypot(dx, dy);
+
+                if (distance > 0) {
+                    ball.dx = (dx / distance) * 6;
+                    ball.dy = (dy / distance) * 6;
+                }
+
+                ball.hit = true;
+                ball.dodgeCooldown = 30;
+
+                setTimeout(() => {
+                    ball.hit = false;
+                }, 150);
+            }
+
+            ball.dodgeCooldown = Math.max(0, ball.dodgeCooldown - 1);
+
+            ball.dx *= 0.75;
+            ball.dy *= 0.75;
+        
         const run = keys["shift"] ? 1.5 : 1;
         if (keys['w'] || (mobileW.visible && mobileW.update())) {
         ball.y -= 2 * stats.speed * run;
@@ -2409,7 +2469,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         if (correctTarget && distance < projectile.radius + target.radius * target.size) {
             projectile.remove = true;
 
-            if (target.isPlayer) {
+            if (target.isPlayer && !target.right) {
                 target.health -= projectile.damage;
                 target.health = Math.max(0, target.health);
                 target.color = "lightblue";
@@ -2459,7 +2519,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                         if (!target.remove) {
                             target.remove = true;
                             money += 10;
-                            if (gameMode === "wave" || gameMode === "tutorial") {
+                            if (gameMode === "wave" || gameMode === "tutorial" || gameMode === "endless") {
                                 enemyCounter--;
                             }
                         }
