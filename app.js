@@ -26,6 +26,7 @@ const maps = ["default", "map1", "map2"];
 let enemyCountMax=2;
 let enemyCounter=0;
 let money=0;
+let deaths=0;
 let skins = ["red", "blue", "green", "yellow", "purple"];
 let enemyVariants=["red"]
 let wave = 1;
@@ -66,6 +67,9 @@ let tutorialMelee = 0;
 let hoveredShopItem = null;
 
 let showEnemyHealthbars = true;
+
+let paused = false
+let pausedImage = null;
 
 const weaponDescriptions = {
     "Pistol": "Basic gun",
@@ -137,6 +141,10 @@ let stats = {
     damage: 10,
     fireRate: 1,
     armor: 0
+}
+const spawnProtectionMs = 1000;
+function isInvulnerable(ball) {
+    return Date.now() < (ball.invulnerableUntil || 0);
 }
 let currentCategory = "Guns";
 /*
@@ -211,6 +219,15 @@ document.addEventListener("keydown", (event) => {
 
     if (key in tutorialKeysPressed) {
         tutorialKeysPressed[key]++;
+    }
+});
+
+window.addEventListener("keydown", (e) => {
+    if (e.repeat || gameScreen !== "game") return;
+    const k = e.key.toLowerCase();
+    if (k === "escape" || k === "p") {
+        if (paused) resumeGame();
+        else pauseGame();
     }
 });
 
@@ -486,6 +503,10 @@ class Button {
         ctx.textBaseline = 'middle';
         ctx.globalAlpha = this.transparency;
         ctx.fillText(this.text, this.x + this.width / 2, this.y + this.height / 2);
+        if (mouseDown && mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
     }
     isPressed() {
         return justClicked&& mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height;
@@ -493,7 +514,8 @@ class Button {
 }
 
 class Frame {
-    constructor(x, y, width, height, color,transparency,ball,hasTitleBar=false) {
+    constructor(x, y, width, height, color,transparency,ball,hasTitleBar=false,title='Frame') {
+        this.title = title;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -538,7 +560,7 @@ class Frame {
     ctx.textBaseline = 'middle';
 
     ctx.fillText(
-        'Frame',
+        this.title,
         this.x + this.width / 2,
         this.y + this.titleBarHeight / 2
     );
@@ -2012,8 +2034,50 @@ function drawEnemyHealthBar(enemy) {
     ctx.fillRect(barX, barY, barWidth * (enemy.health / enemy.maxHealth), barHeight);
 }
 
+function pauseGame() {
+    paused = true;
+    pausedImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    pauseMenu.visible = true;
+    keys = {};
+}
+
+function resumeGame() {
+    paused = false;
+    pausedImage = null;
+    pauseMenu.visible = false;
+    keys = {};
+    clickedFrame = null;
+}
+
+function quitGame() {
+    resumeGame();
+    balls = balls.filter(ball => ball.isPlayer);
+    const player = balls[0];
+    player.health = player.maxHealth;
+    player.x = canvas.width / 2;
+    player.y = canvas.height / 2;
+    player.dx = 0;
+    player.dy = 0;
+    player.isDead = false;
+
+    objects = [];
+    explosions = [];
+    menu.visible = false;
+    shopmenu.visible = false;
+    skinsmenu.visible = false;
+    settings.visible = false;
+
+    enemyCounter = 0;
+    wave = 1;
+    money = 0;
+    waveIndicator = null;
+    showUpgradePrompt = false;
+    gameMode = null;
+    gameScreen = "mainMenu";
+}
+
 const info = new Frame(
-    50, 50, 150, 70, "lightblue", 0, null
+    50, 50, 150, 70, "lightblue", 0, null, false, "Info"
 );
 const infotext1 = new Text(
     60, 60, "Ammo: Infinity", isDarkMode ? "#fffefe" : "#000000", 14
@@ -2023,8 +2087,19 @@ const infotext2 = new Text(
 );
 info.addText(infotext1);
 info.addText(infotext2);
+const pauseMenu = new Frame(
+    250, 250, 300, 250, "lightgray", 0.5, null, false, "Pause Menu"
+);
+const pauseMenuButton1 = new Button(
+    300, 300, 200, 50, "Resume Game", "lightgreen", 0.5
+);
+const pauseMenuButton2 = new Button(
+    300, 360, 200, 50, "Quit Game", "lightcoral", 0.5
+);
+pauseMenu.addButton(pauseMenuButton2);
+pauseMenu.addButton(pauseMenuButton1);
 const mainmenu = new Frame(
-    250, 250, 300, 250, "lightgray", 0.5, null, false
+    250, 250, 300, 250, "lightgray", 0.5, null, false, "Main Menu"
 );
 const mainmenuButton1 = new Button(
     300, 300, 200, 50, "Start Game", "lightgreen", 0.5
@@ -2058,11 +2133,11 @@ mobileS.visible=false;
 mobileD.visible=false;
 mobileShoot.visible=false;
 const menu = new Frame(
-    250, 250, 300, 250, "lightgray", 0.5, null, true
+    250, 250, 300, 250, "lightgray", 0.5, null, true, "Menu"
 );
 
 const settings = new Frame(
-    400, 400, 300, 250, "darkgray", 0.5, null, true
+    400, 400, 300, 250, "darkgray", 0.5, null, true, "Settings"
 );
 const globalStopFollow = new Button(
     450, 300, 50, 50, "Stop Follow", "red", 0.5
@@ -2138,12 +2213,12 @@ const buttonSettings = new Button(
 );
 
 const skinsmenu = new Frame(
-    400, 400, 300, 250, "lightorange", 0.5, null, true
+    400, 400, 300, 250, "lightorange", 0.5, null, true, "Skins Menu"
 
 );
 
 const shopmenu = new Frame(
-    400, 400, 350, 250, "lightgreen", 0.5, null, true
+    400, 400, 350, 250, "lightgreen", 0.5, null, true, "Shop Menu"
 
 );
 mainmenu.addButton(mainmenuButton1);
@@ -2392,7 +2467,18 @@ function drawFrame(frame) {
 
 
 function animate(){
-    
+    if (paused) {
+        ctx.putImageData(pausedImage, 0, 0);
+        pauseMenu.draw(ctx);
+        ctx.globalAlpha = 1;
+
+        if (pauseMenuButton1.isPressed()) resumeGame();
+        else if (pauseMenuButton2.isPressed()) quitGame();
+
+        justClicked = false;
+        requestAnimationFrame(animate);
+        return;
+    }
     ctx.clearRect(0,0,canvas.width, canvas.height);
     ctx.globalAlpha = 1;
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
@@ -2436,6 +2522,7 @@ function animate(){
     */
     updateTutorial();
     ctx.fillText(`Money: ${money}`, 10, 10);
+    ctx.fillText(`Deaths: ${deaths}`, 10, (gameMode === "wave" || gameMode === "endless") ? 70 : 30);
     if (gameMode === "wave" || gameMode === "endless") {
     ctx.fillText(`Wave: ${wave}`, 10, 30);
     ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
@@ -2745,6 +2832,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                         ball1.health = ball1.maxHealth;
                         ball1.x = canvas.width / 2;
                         ball1.y = canvas.height / 2;
+                        ball1.invulnerableUntil = Date.now() + spawnProtectionMs;
                     }, 2000);
                 }
             }
@@ -2788,7 +2876,14 @@ if (ball1.isProjectile && !ball2.isProjectile) {
     );
       
     const player = balls.find(ball => ball.isPlayer);
+    if (player && isInvulnerable(player)) player.health = player.maxHealth;
     if (player) {
+        if (player.isDead && !player.deathCounted) {
+            deaths++;
+            player.deathCounted = true;
+        } else if (!player.isDead) {
+            player.deathCounted = false;
+        }
         for (const obj of objects) {
             if (["heal", "rock", "speedboost", "mine", "ammo"].includes(obj.type)) {
                 obj.draw(ctx);
@@ -3116,7 +3211,7 @@ if (menu.visible && clickedFrame === menu) {
         const frameX = 350 + (frameIndex % 2) * 230;
         const frameY = 100 + Math.floor(frameIndex / 2) * 140;
         const newFrame = new Frame(
-            frameX, frameY, 200, 120, "lightgray", 0.5, newBall, true
+            frameX, frameY, 200, 120, "lightgray", 0.5, newBall, true, "Ball Frame"
         );
         newFrame.visible = true;
 

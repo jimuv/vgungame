@@ -19,10 +19,10 @@ On the game canvas, there is a tutorial, once you press "Start game", "Tutorial"
 
 For gamemodes, there is sandbox, 5 wave, Normal mode, and Hard mode. Note: "5 wave" came from Week 1 and the rest is from other weeks, and "sandbox" is to test everything out without much enemies
 
-Note: after completing 5 Wave mode or other gamemodes, you will need to restart in order to play again (Endless as an exception).
+Note: after completing 5 Wave mode or other gamemodes, you will need to restart in order to play again, do this by pressing 'esc' or 'p' then pressing exit (Endless as an exception).
 
 ### Keybinds
-The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop, 'h' for toggling enemy healthbars
+The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, 'n' for shop, 'h' for toggling enemy healthbars, and 'esc' or 'p' to pause/resume the game
 
 For player movement, use WASD to move in 4 directions, "Ctrl" to dash forward, and "Shift" to sprint.
 
