@@ -33,6 +33,7 @@ let waveEnemies = [5, 10, 15, 20, 25];
 let rewards = [10, 20, 30, 40, 50];
 let showUpgradePrompt = false;
 let waveStart=false;
+let waveIndicator=null;
 let waveWon = false;
 let winCountdown = 5;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
@@ -2263,6 +2264,22 @@ function drawUpgradePrompt() {
         showUpgradePrompt = false;
     }
 }
+function drawWaveIndicator() {
+    if (!waveIndicator) return;
+    if (waveIndicator.endsAt-Date.now() <= 0) {
+        waveIndicator = null;
+        return;
+    }
+
+    const sec = Math.ceil((waveIndicator.endsAt - Date.now()) / 1000);
+    ctx.save();
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    ctx.font = "bold 22px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(`Wave ${waveIndicator.wave} - Reward: ${waveIndicator.reward} - ${sec}s`, canvas.width / 2, 100);
+    ctx.restore();
+}
 function drawShopTooltip() {
     if (!shopmenu.visible || !hoveredShopItem) return;
     const item = hoveredShopItem;
@@ -2427,8 +2444,12 @@ function animate(){
     if (!waveStart && enemyCounter <= 0 && (gameMode === "endless" || wave < maxWaves)) {        
         waveStart = true;
         money += rewards[wave - 1] || 0;
+        waveIndicator = {
+            wave: wave,
+            reward: rewards[wave - 1] || 0,
+            endsAt: Date.now() + 5000
+        };
         wave++;
-
         if (wave%2=== 0) {
             showUpgradePrompt = true;
         }
@@ -3407,6 +3428,9 @@ if (gameMode === "tutorial") {
 }
 
 }
+    if (gameScreen === "game"){
+        drawWaveIndicator();
+    }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
     }

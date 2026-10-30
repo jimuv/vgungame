@@ -24,7 +24,7 @@ Note: after completing 5 Wave mode or other gamemodes, you will need to restart 
 ### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop, 'h' for toggling enemy healthbars
 
-For player movement, use WASD to move in 4 directions, and "Shift" to sprint.
+For player movement, use WASD to move in 4 directions, "Ctrl" to dash forward, and "Shift" to sprint.
 
 ### Game ui
 With the game's ui, there are frames, which you can drag them, or exit them out.
