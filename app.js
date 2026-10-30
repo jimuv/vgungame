@@ -8,6 +8,7 @@ let fWasPressed = false;
 let gWasPressed = false;
 let mWasPressed = false;
 let nWasPressed = false;
+let hWasPressed = false;
 let mouseX=0;
 let mouseY=0;
 let mouseDown=false;
@@ -62,6 +63,8 @@ let tutorialShots = 0;
 let tutorialMelee = 0;
 
 let hoveredShopItem = null;
+
+let showEnemyHealthbars = true;
 
 const weaponDescriptions = {
     "Pistol": "Basic gun",
@@ -749,7 +752,7 @@ function spawnEnemy(weapon) {
         damage: stats.damage,
         shootDelay: stats.shootDelay,
         size: stats.size,
-        maxHealth: 100,
+        maxHealth: stats.health,
         hit: false,
         isDead: false,
         isEnemy: true,
@@ -759,7 +762,9 @@ function spawnEnemy(weapon) {
         weapon: weapon
     });
 }
-
+function repeat(item, count) {
+    return Array(count).fill(item);
+}
 const waveConfigs = {
     easy: [
         ["Katana", "Katana"],
@@ -1991,6 +1996,21 @@ function gunDraw() {
     ctx.restore();
 }
 
+function drawEnemyHealthBar(enemy) {
+    if(!showEnemyHealthbars || !enemy.isEnemy || enemy.isDead || enemy.remove) return;
+    
+    const barWidth = enemy.radius * 2;
+    const barHeight = 5;
+    const barX = enemy.x - barWidth / 2;
+    const barY = enemy.y - enemy.radius - 10;
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    ctx.fillStyle = "green";
+    ctx.fillRect(barX, barY, barWidth * (enemy.health / enemy.maxHealth), barHeight);
+}
+
 const info = new Frame(
     50, 50, 150, 70, "lightblue", 0, null
 );
@@ -2469,6 +2489,7 @@ for (const ball of balls) {
     ctx.globalAlpha = 1;
 
     drawEnemyWeapon(ball);
+    drawEnemyHealthBar(ball);
     if(ball.isEnemy){
         enemyShoot(ball);
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
@@ -2850,7 +2871,11 @@ if (keys["m"] && !mWasPressed && gameScreen === "game") {
 if (keys["n"] && !nWasPressed && gameScreen === "game") {
     shopmenu.visible = !shopmenu.visible;
 }
+if (keys["h"] && !hWasPressed && gameScreen === "game") {
+    showEnemyHealthbars = !showEnemyHealthbars;
+}
 
+hWasPressed = keys["h"];
 nWasPressed = keys["n"];
 mWasPressed = keys["m"];
 if (!clickedFrame && mobileShoot.isPressed() && player) {
