@@ -18,6 +18,7 @@ const BG_COOLDOWN_MS = 1000;
 
 let gameScreen = "mainMenu";
 let gameMode = null;
+let waveDifficulty = "easy";
 let selectedMap = "default";
 const maps = ["default", "map1", "map2"];
 // Placeholders
@@ -636,6 +637,8 @@ update() {
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "5 Waves Mode", "lightblue", 0.5),
+    new Button(100, 450, 100,50, "Normal Mode", "yellow", 0.5),
+    new Button(100, 550, 100, 50, "Hard Mode", "red", 0.5), 
     new Button(100, 350, 100, 50, "Endless Mode", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
     new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5)
@@ -757,21 +760,58 @@ function spawnEnemy(weapon) {
     });
 }
 
-const waveConfigs = [
-    ["Katana", "Katana"],
-    ["Pistol", "Katana", "Katana", "Katana"],
-    ["Pistol", "Pistol", "Pistol", "Katana", "Katana"],
-    ["Shotgun", "Sniper", "Pistol", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana"],
-    ["Dragon Slayer", "Sniper", "Sniper"]
-];
+const waveConfigs = {
+    easy: [
+        ["Katana", "Katana"],
+        ["Pistol", "Katana", "Katana", "Katana"],
+        ["Pistol", "Pistol", "Pistol", "Katana", "Katana"],
+        ["Shotgun", "Sniper", "Pistol", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana"],
+        ["Dragon Slayer", "Sniper", "Sniper"]
+    ],
+    normal: [
+        [...repeat("Katana", 2)],
+        [...repeat("Katana", 3)],
+        ["Pistol", "Katana"],
+        [...repeat("Pistol", 2), ...repeat("Katana", 2)],
+        ["Shotgun", "Nodachi"],
+        ["Sniper", ...repeat("Katana", 5)],
+        ["Sniper", "Shotgun", "Pistol", "Katana", "Nodachi"],
+        [...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
+        ["Dragon Slayer", ...repeat("Nodachi", 5)],
+        [...repeat("Sniper", 5), ...repeat("Pistol", 2)],
+        [...repeat("Katana", 15), ...repeat("Pistol", 5)],
+        ["Dragon Slayer", ...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
+        [...repeat("Dragon Slayer", 2)],
+        [...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9)]
+    ],
+    hard: [
+        [...repeat("Katana", 5)],
+        [...repeat("Katana", 2), ...repeat("Pistol", 2)],
+        [...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
+        [...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
+        [...repeat("Sniper", 2), "Dragon Slayer", ...repeat("Nodachi", 2)],
+        [...repeat("Sniper", 5), ...repeat("Nodachi", 5)],
+        [...repeat("Shotgun", 10)],
+        [...repeat("Dragon Slayer", 3)],
+        ["Dragon Slayer", ...repeat("Pistol", 5), ...repeat("Shotgun", 5), "Sniper"],
+        [...repeat("Dragon Slayer", 2), ...repeat("Sniper", 5), ...repeat("Shotgun", 5)],
+        [...repeat("Dragon Slayer", 5)],
+        [...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Nodachi", 5), ...repeat("Katana", 5)],
+        [...repeat("Sniper", 10)],
+        [...repeat("Sniper", 10), ...repeat("Shotgun", 10)],
+        [...repeat("Dragon Slayer", 10), ...repeat("Sniper", 10)]
+    ]
+};
 
 function startWave(waveNumber) {
-    const config = waveConfigs[waveNumber - 1];
+    const modeWaves = waveConfigs[waveDifficulty];
+    if (!modeWaves) return;
+    const config = modeWaves[waveNumber - 1];
     if (!config) return;
 
     enemyCounter = 0;
     enemyCountMax = config.length;
-    bossFightActive = (waveNumber === 5);
+    bossFightActive = (waveNumber === 5 || config.includes("Dragon Slayer"));
 
     for (const weapon of config) {
         spawnEnemy(weapon);
@@ -823,19 +863,37 @@ function drawModeSelect() {
         } else if (modeSelectButtons[1].isPressed()) {
             balls = balls.filter(ball => ball.isPlayer);
             wave = 1;
+            waveDifficulty = "easy";
             startWave(1);
             gameScreen = "mapSelect";
             gameMode = "wave";
-        } else if (modeSelectButtons[2].isPressed()) {
+        } 
+        else if (modeSelectButtons[2].isPressed()) {
+            balls = balls.filter(ball => ball.isPlayer);
+            wave = 1;
+            waveDifficulty = "normal";
+            startWave(1);
+            gameScreen = "mapSelect";
+            gameMode = "wave";
+        } else if (modeSelectButtons[3].isPressed()) {
+            balls = balls.filter(ball => ball.isPlayer);
+            wave = 1;
+            waveDifficulty = "hard";
+            startWave(1);
+            gameScreen = "mapSelect";
+            gameMode = "wave";
+            
+        }
+        else if (modeSelectButtons[4].isPressed()) {
             balls = balls.filter(ball => ball.isPlayer);
             wave = 1;
             startEndlessWave(1);
             gameScreen = "mapSelect";
             gameMode = "endless";
         }
-        else if (modeSelectButtons[3].isPressed()) {
+        else if (modeSelectButtons[5].isPressed()) {
             gameScreen = "mainMenu";
-        } else if (modeSelectButtons[4].isPressed()) {
+        } else if (modeSelectButtons[6].isPressed()) {
             tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
@@ -880,7 +938,7 @@ function drawMapSelect() {
     }
 }
 class Object {
-    constructor(type) {
+    constructor(type, x = null, y = null) {
         if (type === "heal") {
             this.x = Math.random() * (canvas.width - 20) + 10;
             this.y = Math.random() * (canvas.height - 20) + 10;
@@ -947,12 +1005,42 @@ class Object {
             this.startTime=performance.now();
             this.duration=1000;
         }
+        if (type === "ammo") {
+            this.x = x !== null ? x : Math.random() * (canvas.width - 20) + 10;
+            this.y = y !== null ? y : Math.random() * (canvas.height - 20) + 10;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.size = 1;
+            this.color = "green";
+            this.type = "ammo";
+            this.healAmount = 0;
+            this.ammoAmount = 10;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 3;
+            this.dx = Math.cos(angle) * speed;
+            this.dy = Math.sin(angle) * speed;
+
+            this.scale = .2;
+            this.startTime = performance.now();
+            this.duration = 1000;
+        }
     }
     update(){
         const elapsed = performance.now() - this.startTime;
         const progress = Math.min(elapsed / this.duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        this.scale= 3-eased*2;
+        if (this.type === "ammo") {
+            this.scale = 0.2 + eased * 0.8;
+            this.x += this.dx;
+            this.y += this.dy;
+            this.dx *= 0.9;
+            this.dy *= 0.9;
+            this.x = Math.max(10, Math.min(canvas.width - 10 - this.width, this.x));
+            this.y = Math.max(10, Math.min(canvas.height - 10 - this.height, this.y));
+        } else {
+            this.scale = 3 - eased * 2;
+        }
         
         
         let r, g, b;
@@ -974,23 +1062,35 @@ class Object {
             g = 0;
             b = 255;
         }
-
+        if (this.type !== "ammo") {
         this.color = `rgb(
             ${Math.round(r * eased)},
             ${Math.round(g * eased)},
             ${Math.round(b * eased)}
         )`;
+        }
     }
      draw(ctx) {
+        if (this.type !== "ammo") {
+        this.update();
+        const width = this.width * this.scale;
+        const height = this.height * this.scale;
+        const x = this.x + (this.width - width) / 2;
+        const y = this.y + (this.height - height) / 2;
+        
+        ctx.fillStyle = this.color;
+        ctx.fillRect(x, y, width, height);
+    }
+    else if (this.type === "ammo") {
         this.update();
         const width = this.width * this.scale;
         const height = this.height * this.scale;
         const x = this.x + (this.width - width) / 2;
         const y = this.y + (this.height - height) / 2;
 
-        
         ctx.fillStyle = this.color;
         ctx.fillRect(x, y, width, height);
+    }
     }
 }
 class Gun {
@@ -1209,7 +1309,9 @@ class melee {
                         enemy.transparency = 0.95;
                         enemy.dx=0;
                         enemy.dy=0;
-
+                        if (Math.random() <0.3){
+                            objects.push(new Object("ammo", enemy.x, enemy.y));
+                        }
                         setTimeout(() => {
                             enemy.remove = true;
                             money+= 10;
@@ -1335,7 +1437,9 @@ function createExplosion(x, y, radius, damage) {
                 enemy.transparency = 0.95;
                 enemy.dx = 0;
                 enemy.dy = 0;
-
+                if (Math.random() <0.3){
+                    objects.push(new Object("ammo", enemy.x, enemy.y));
+                }
                 setTimeout(() => {
                     if (!enemy.remove) {
                         enemy.remove = true;
@@ -2299,11 +2403,13 @@ function animate(){
     ctx.fillText(`Wave: ${wave}`, 10, 30);
     ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
 
-    if (!waveStart && enemyCounter <= 0 && (gameMode === "endless" || wave < waveConfigs.length)) {        waveStart = true;
+    const maxWaves = waveConfigs[waveDifficulty] ? waveConfigs[waveDifficulty].length : 5;
+    if (!waveStart && enemyCounter <= 0 && (gameMode === "endless" || wave < maxWaves)) {        
+        waveStart = true;
         money += rewards[wave - 1] || 0;
         wave++;
 
-        if (wave === 2) {
+        if (wave%2=== 0) {
             showUpgradePrompt = true;
         }
 
@@ -2514,7 +2620,9 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                     target.transparency = 0.95;
                     target.dx = projectile.dx / 15;
                     target.dy = projectile.dy / 15;
-
+                    if (Math.random() <0.3){
+                            objects.push(new Object("ammo", target.x, target.y));
+                    }
                     setTimeout(() => {
                         if (!target.remove) {
                             target.remove = true;
@@ -2640,7 +2748,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
     const player = balls.find(ball => ball.isPlayer);
     if (player) {
         for (const obj of objects) {
-            if (["heal", "rock", "speedboost", "mine"].includes(obj.type)) {                
+            if (["heal", "rock", "speedboost", "mine", "ammo"].includes(obj.type)) {
                 obj.draw(ctx);
                 const closestX = Math.max(
             obj.x,
@@ -2706,6 +2814,11 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 setTimeout(() => {
                     stats.speed -= obj.speedAmount;
                 }, obj.durationBoost);
+            }
+            if (obj.type === "ammo") {
+                if (currentWeapon.ammo !== Infinity){
+                    currentWeapon.ammo += obj.ammoAmount;
+                }
             }
 
             obj.remove = true;
