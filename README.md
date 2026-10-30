@@ -17,12 +17,12 @@ On the website, if you scroll down, you should be able to see another "How to pl
 
 On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
 
-For gamemodes, there is sandbox, and 5 wave. "5 wave" is where the gameplay is at, and "sandbox" is to test everything out without much enemies
+For gamemodes, there is sandbox, 5 wave, Normal mode, and Hard mode. Note: "5 wave" came from Week 1 and the rest is from other weeks, and "sandbox" is to test everything out without much enemies
 
-Note: after completing 5 Wave mode, you will need to restart in order to play again.
+Note: after completing 5 Wave mode or other gamemodes, you will need to restart in order to play again (Endless as an exception).
 
 ### Keybinds
-The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop
+The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, and 'n' for shop, 'h' for toggling enemy healthbars
 
 For player movement, use WASD to move in 4 directions, and "Shift" to sprint.
 
@@ -48,6 +48,10 @@ You could purchase in each category, and go through multiple pages if there is a
 
 In the gun section, there are different unique guns you can try out
 
+In the skins section, there is one hat that costs money, and that is the crown for $10, you can obtain this by killing one enemy, which you can now equip the crown once buying it and owning it.
+
+#### Enemies
+So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Demon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and gaurunteed +10 money.
 
 # description
 As of enemies, this will probably be just a target practice, zombies, or actual enemies might be later. My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
