@@ -134,6 +134,65 @@ sandbagImage.src = "assets/sandbags.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
 
+const abilities = [
+    {name: "Grenade", cooldown: 8000, lastUsed:-Infinity},
+    {name: "Speed", cooldown: 5000, lastUsed:-Infinity}
+]
+let abilityKey = [false,false];
+let grenades = [];
+let speedBoost = 0;
+
+function useAbility(index, player){
+    const ability = abilities[index];
+    if (Date.now() - ability.lastUsed >= ability.cooldown) {
+        ability.lastUsed = Date.now();
+        if (ability.name === "Grenade") {
+            const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+            grenades.push({x: player.x, y: player.y, dx: Math.cos(angle) * 5, dy: Math.sin(angle) * 5, explodeAt: Date.now() + 2000, done: false});
+        } else if (ability.name === "Speed") {
+            speedBoost = Date.now() + 5000;
+        }
+    }
+}
+
+function updateAbilities(player){
+    ctx.globalAlpha = 1;
+
+    for (const g of grenades) {
+        g.x += g.dx;
+        g.y += g.dy;
+        g.dx *= 0.92;
+        g.dy *= 0.92;
+        if (Date.now() > g.explodeAt) {
+            createExplosion(g.x, g.y,100,80);
+            g.done = true;
+        } else {
+            ctx.beginPath();
+            ctx.arc(g.x, g.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "green";
+            ctx.fill();
+        }
+    }
+    grenades = grenades.filter(g => !g.done);    
+}
+
+function drawAbilityBar() {
+    const w = 90
+    const h = 50;
+    const gap = 10;
+    const startX = canvas.width /2 - (abilities.length * w + (abilities.length - 1) * gap) / 2;
+    const y = canvas.height - 70;
+    for (let i = 0; i < abilities.length; i++) {
+        const x = startX + i * (w + gap);
+        ctx.fillStyle = "gray";
+        ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = "white";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(abilities[i].name, x + w / 2, y + h / 2);
+        ctx.fillText(i + 1, x + w / 2, y + h / 2 + 20);
+    }
+}
 BackgroundImage = new Image();
 let stats = {
     speed: 1,
@@ -142,6 +201,43 @@ let stats = {
     fireRate: 1,
     armor: 0
 }
+let binds = {
+    up: "w",
+    down: "s",
+    left: "a",
+    right: "d",
+    shoot: "f",
+    melee: "g",
+    dodge: "control",
+    speed: "shift",
+    menu: "m",
+    shop: "n",
+    health: "h",
+    ability: "t",
+    ability1: "1",
+    ability2: "2"
+}
+
+const bindNames = [
+    ["up","Move up"],
+    ["down","Move down"],
+    ["left","Move left"],
+    ["right","Move right"],
+    ["shoot","Shoot"],
+    ["melee","Melee attack"],
+    ["dodge","Dodge"],
+    ["speed","Sprint"],
+    ["menu","Open menu"],
+    ["shop","Open shop"],
+    ["health","Toggle health bars"],
+    ["ability","Use ability"],
+    ["ability1","Use ability 1"],
+    ["ability2","Use ability 2"]
+]
+let rebinding = null;
+
+const bindButtons = {};
+
 const spawnProtectionMs = 1000;
 function isInvulnerable(ball) {
     return Date.now() < (ball.invulnerableUntil || 0);
@@ -223,7 +319,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("keydown", (e) => {
-    if (e.repeat || gameScreen !== "game") return;
+    if (e.repeat || gameScreen !== "game" || rebinding) return;
     const k = e.key.toLowerCase();
     if (k === "escape" || k === "p") {
         if (paused) resumeGame();
@@ -444,6 +540,20 @@ function drawTutorialMeleeProgress() {
 }
 
 window.addEventListener("keydown", (event)=>{
+    if (rebinding) {
+        const k = event.key.toLowerCase();
+        if (k !== "escape") {
+            for (const [a] of bindNames) {
+                if (binds[a] === k) binds[a] = binds[rebinding];
+            }
+            binds[rebinding] = k;
+        }
+        rebinding = null;
+        updateBindText();
+        keys = {};
+        event.preventDefault();
+        return;
+    }
     keys[event.key.toLowerCase()] = true;
 });
 
@@ -2100,10 +2210,15 @@ function quitGame() {
 
     objects = [];
     explosions = [];
+    grenades = [];
+    rebinding = null;
+    speedBoost = 0;
+    for (const a of abilities) a.lastUsed = -Infinity;
     menu.visible = false;
     shopmenu.visible = false;
     skinsmenu.visible = false;
     settings.visible = false;
+    keybindsmenu.visible = false;
 
     enemyCounter = 0;
     wave = 1;
@@ -2112,6 +2227,16 @@ function quitGame() {
     showUpgradePrompt = false;
     gameMode = null;
     gameScreen = "mainMenu";
+}
+
+function updateBindText(){
+    for (const [key, name] of bindNames) {
+        if (rebinding === key) {
+            bindButtons[key].text = name + ": ...";
+        } else {
+            bindButtons[key].text = name + ": " + binds[key].toUpperCase();
+        }
+    }
 }
 
 const info = new Frame(
@@ -2177,6 +2302,9 @@ const menu = new Frame(
 const settings = new Frame(
     400, 400, 300, 250, "darkgray", 0.5, null, true, "Settings"
 );
+const keybindsButton = new Button(
+    610, 550, 90, 50, "Keybinds", "lightgray", 0.5
+);
 const globalStopFollow = new Button(
     450, 300, 50, 50, "Stop Follow", "red", 0.5
 );
@@ -2198,6 +2326,23 @@ const volUp = new Button(
 const volText = new Text(
     610, 460, "Vol: 100%", "black", 14
 );
+
+const keybindsmenu = new Frame(
+    200, 120, 400, 340, "lightgray", 0.5, null, true, "Keybinds"
+);
+for (let i=0; i<bindNames.length; i++) {
+    const [key, name] = bindNames[i];
+    const button = new Button(
+        keybindsmenu.x + 10 + Math.floor(i / 7) * 195,
+        keybindsmenu.y + 45 + (i % 7) * 40,
+        185, 32, name, "lightgray", 0.5
+    );
+    keybindsmenu.addButton(button);
+    bindButtons[key] = button;
+}
+updateBindText();
+
+
 const button = new Button(
     300, 300, 150, 50, "Move Ball", "darkgray", 0.5
 );
@@ -2289,6 +2434,7 @@ settings.addButton(toggleSound);
 settings.addButton(volDown);
 settings.addButton(volUp);
 settings.addText(volText);
+settings.addButton(keybindsButton);
 shopmenu.addButton(buttonshopGun);
 shopmenu.addButton(buttonshopUtil);
 shopmenu.addButton(buttonshopSkins);
@@ -2475,7 +2621,7 @@ showCategory(currentCategory);
 
 
 let ballFrames = [];
-let frameOrder = [menu, skinsmenu, shopmenu, settings];
+let frameOrder = [menu, skinsmenu, shopmenu, settings, keybindsmenu];
 let clickedFrame = null;
 
 function isInsideFrame(frame, x, y) {
@@ -2654,7 +2800,7 @@ for (const ball of balls) {
     }
 
     if (ball === balls[0]) {
-            if (keys["control"] && ball.dodgeCooldown <= 0) {
+            if (keys[binds.dodge] && ball.dodgeCooldown <= 0) {
                 const dx = mouseX - ball.x;
                 const dy = mouseY - ball.y;
                 const distance = Math.hypot(dx, dy);
@@ -2677,17 +2823,18 @@ for (const ball of balls) {
             ball.dx *= 0.75;
             ball.dy *= 0.75;
         
-        const run = keys["shift"] ? 1.5 : 1;
-        if (keys['w'] || (mobileW.visible && mobileW.update())) {
+        const sprint = keys[binds.speed] ? 1.5 : 1;        const boost = Date.now() < speedBoost ? 2 : 1;
+        const run = sprint * boost;
+        if (keys[binds.up] || (mobileW.visible && mobileW.update())) {
         ball.y -= 2 * stats.speed * run;
     }
-        if (keys['s'] || (mobileS.visible && mobileS.update())) {
+        if (keys[binds.down] || (mobileS.visible && mobileS.update())) {
         ball.y += 2*stats.speed * run;
     }
-        if (keys['a'] || (mobileA.visible && mobileA.update())) {
+        if (keys[binds.left] || (mobileA.visible && mobileA.update())) {
         ball.x -= 2*stats.speed * run;
     }
-        if (keys['d'] || (mobileD.visible && mobileD.update())) {
+        if (keys[binds.right] || (mobileD.visible && mobileD.update())) {
         ball.x += 2*stats.speed * run;
     }
     }
@@ -3033,19 +3180,19 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 if (!clickedFrame && menubutton.isPressed()) {
     menu.visible = !menu.visible;
 }
-if (keys["m"] && !mWasPressed && gameScreen === "game") {
+if (keys[binds.menu] && !mWasPressed && gameScreen === "game") {
     menu.visible = !menu.visible;
 }
-if (keys["n"] && !nWasPressed && gameScreen === "game") {
+if (keys[binds.shop] && !nWasPressed && gameScreen === "game") {
     shopmenu.visible = !shopmenu.visible;
 }
-if (keys["h"] && !hWasPressed && gameScreen === "game") {
+if (keys[binds.health] && !hWasPressed && gameScreen === "game") {
     showEnemyHealthbars = !showEnemyHealthbars;
 }
 
-hWasPressed = keys["h"];
-nWasPressed = keys["n"];
-mWasPressed = keys["m"];
+hWasPressed = keys[binds.health];
+nWasPressed = keys[binds.shop];
+mWasPressed = keys[binds.menu];
 if (!clickedFrame && mobileShoot.isPressed() && player) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
@@ -3094,6 +3241,17 @@ if (player) {
         );
     }
     getAccessory();
+    updateAbilities(player);
+    for (let i = 0; i < abilities.length; i++) {
+        const down = keys[binds["ability" + (i + 1)]];
+        if (keys[binds.ability] && down && !abilityKey[i] && !player.isDead) {
+            useAbility(i, player);
+        }
+        abilityKey[i] = down;
+    }
+    if (keys[binds.ability]) {
+        drawAbilityBar();
+    }
     info.visible = true;
     
     info.x = player.x +25 ;
@@ -3113,7 +3271,7 @@ if (player) {
     info.visible = false;
 }
 info.draw(ctx);
-if (keys['f'] && player && !player.isDead) {
+if (keys[binds.shoot] && player && !player.isDead) {
     if (currentWeapon.name === "AK47" || !fWasPressed) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
@@ -3122,12 +3280,12 @@ if (keys['f'] && player && !player.isDead) {
     }
 }
 }
-if (keys['g'] && !gWasPressed && player && !player.isDead) {
+if (keys[binds.melee] && !gWasPressed && player && !player.isDead) {
     currentMelee.swing();
 }
 
-fWasPressed = keys['f'];
-gWasPressed = keys['g'];
+fWasPressed = keys[binds.shoot];
+gWasPressed = keys[binds.melee];
 
 if (skinsmenu.visible) {
     if (clickedFrame === skinsmenu && button5.isPressed()) {
@@ -3215,6 +3373,18 @@ if(settings.visible&&clickedFrame===settings){
     if(volUp.isPressed()){
         masterVolume = Math.min(1, masterVolume + 0.1);
         volText.text = `Vol: ${Math.round(masterVolume * 100)}%`;
+    }
+    if(keybindsButton.isPressed()){
+        keybindsmenu.visible = !keybindsmenu.visible;
+    }
+}
+
+if (keybindsmenu.visible && clickedFrame === keybindsmenu) {
+    for (const [key] of bindNames) {
+        if (bindButtons[key].isPressed()) {
+            rebinding = key;
+            updateBindText();
+        }
     }
 }
 

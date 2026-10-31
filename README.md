@@ -24,7 +24,11 @@ Note: after completing 5 Wave mode or other gamemodes, you will need to restart 
 ### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, 'n' for shop, 'h' for toggling enemy healthbars, and 'esc' or 'p' to pause/resume the game
 
+For abilities, you hold 't', and press either '1' '2' '3' '4' or '5' to choose which to use, as of now there are grenade and speed
+
 For player movement, use WASD to move in 4 directions, "Ctrl" to dash forward, and "Shift" to sprint.
+
+You could rebind keys on the keybinds menu, which you can get to by going to settings then clicking keybinds (refer to Game ui section)
 
 ### Game ui
 With the game's ui, there are frames, which you can drag them, or exit them out.
@@ -36,6 +40,8 @@ The significant button on the menu is the "Shop" button, which allows you to equ
 Other buttons on the menu includes the Settings and Skins, which as of now are basic.
 
 On settings, you can change the background (only if its black/white), toggle or adjust sound, and toggle walls (for testing)
+
+There is also a button on settings called "keybinds" which opens a keybinds menu, that you can change different keybinds.
 
 Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging.
 
