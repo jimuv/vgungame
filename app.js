@@ -734,6 +734,13 @@ const enemyStats = {
     
 
 }
+const keepDistance = {
+    "Pistol": 100,
+    "Shotgun": 50,
+    "Sniper": 200,
+    "Dual Wield": 75,
+    "Explosive Sniper": 150
+}
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
     let head = 12;
@@ -1206,7 +1213,13 @@ class Gun {
         if (!this.canShoot()) return [];
 
         this.lastShot = Date.now();
-
+        if (this.name === "Shotgun") {
+            playShootSound(shootSound3);
+        } else if (this.name === "Sniper" || this.name === "Explosive Sniper") {
+            playShootSound(shootSound2);
+        } else {
+            playShootSound(shootSound);
+        }
         if (this.ammo !== Infinity) {
             this.ammo--;
         }
@@ -1243,8 +1256,28 @@ class Gun {
     
 }
 
-let soundEnabled = false;
+let soundEnabled = true;
 
+const shootSound = new Audio("assets/shot2.mp3");
+const shootSound2 = new Audio("assets/snipershot.mp3");
+const shootSound3 = new Audio("assets/shotgunshot.mp3");
+shootSound.volume = 0.15;
+shootSound2.volume = 0.15;
+shootSound3.volume = 0.15;
+const sliceSound = new Audio("assets/swing.mp3");
+sliceSound.volume = 0.35;
+function playShootSound(sound){
+    if (!soundEnabled) return;
+    const s = sound.cloneNode();
+    s.volume = sound.volume;
+    s.play().catch(() => {});
+}
+function playSliceSound(){
+    if (!soundEnabled) return;
+    const s = sliceSound.cloneNode();
+    s.volume = sliceSound.volume;
+    s.play().catch(() => {});
+}
 function playSound() {
     const audio = new AudioContext();
     const oscillator = audio.createOscillator();
@@ -1281,6 +1314,7 @@ class melee {
 
     draw(ctx, player, mouseX, mouseY) {
         if (!this.swinging) return;
+        
         const elapsed = Date.now() - this.swingStart;
         const progress = Math.min(elapsed / this.swingDuration, 1);
 
@@ -1299,6 +1333,9 @@ class melee {
             ctx.drawImage(image, 0, -50-(Slayer/2), this.range, 40+Slayer);
         }
         ctx.restore();
+        if(progress<0.1){
+            playSliceSound();
+        }
 
         if(progress>=1){
             this.swinging=false;
@@ -1382,7 +1419,6 @@ class melee {
 
         ctx.restore();
     }
-
     function enemyShoot(enemy){
         if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
             return;
@@ -1506,6 +1542,7 @@ function createExplosion(x, y, radius, damage) {
 
             setTimeout(() => {
                 player.isDead = false;
+                player.invulnerableUntil = Date.now() + spawnProtectionMs;
                 player.health = getMaxHealth();
                 player.x= canvas.width / 2;
                 player.y= canvas.height / 2;
@@ -2722,6 +2759,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 
                     setTimeout(() => {
                         target.isDead = false;
+                        target.invulnerableUntil = Date.now() + spawnProtectionMs;
                         target.health = target.maxHealth;
                         target.x = canvas.width / 2;
                         target.y = canvas.height / 2;
@@ -2965,6 +3003,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 
                 setTimeout(() => {
                     player.isDead = false;
+                    player.invulnerableUntil = Date.now() + spawnProtectionMs;
                     player.health = player.maxHealth;
                     player.x = canvas.width / 2;
                     player.y = canvas.height / 2;
@@ -3465,6 +3504,19 @@ function startFollowing(ball) {
         } else {
             ball.dx = targetDx / targetDistance * 2 * ball.speed;
             ball.dy = targetDy / targetDistance * 2 * ball.speed;
+        }
+    }
+    const weaponDistance = keepDistance[ball.weapon];
+    if (weaponDistance && targetDistance > 0) {
+        if (targetDistance < weaponDistance - 30) {
+            ball.dx = -targetDx / targetDistance * 2 * ball.speed;
+            ball.dy = -targetDy / targetDistance * 2 * ball.speed;
+            return;
+        }
+        if (targetDistance < weaponDistance + 30) {
+            ball.dx = -targetDy / targetDistance * ball.StrafeDir * 1.5;
+            ball.dy = targetDx / targetDistance * ball.StrafeDir * 1.5;
+            return;
         }
     }
 }
