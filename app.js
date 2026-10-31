@@ -167,7 +167,7 @@ add tutorial (IMPORTANT!!!)
 other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
 
-
+planned: combo key, t + 1,2,3,4,5 = ability (like grenades and stuff) and it will show [ ] [ ] [ ] [Grenade] [...] when t is held
 
 */
 
@@ -1261,6 +1261,7 @@ let soundEnabled = true;
 const shootSound = new Audio("assets/shot2.mp3");
 const shootSound2 = new Audio("assets/snipershot.mp3");
 const shootSound3 = new Audio("assets/shotgunshot.mp3");
+let masterVolume = 1;
 shootSound.volume = 0.15;
 shootSound2.volume = 0.15;
 shootSound3.volume = 0.15;
@@ -1269,13 +1270,13 @@ sliceSound.volume = 0.35;
 function playShootSound(sound){
     if (!soundEnabled) return;
     const s = sound.cloneNode();
-    s.volume = sound.volume;
+    s.volume = sound.volume*masterVolume;
     s.play().catch(() => {});
 }
 function playSliceSound(){
     if (!soundEnabled) return;
     const s = sliceSound.cloneNode();
-    s.volume = sliceSound.volume;
+    s.volume = sliceSound.volume*masterVolume;
     s.play().catch(() => {});
 }
 function playSound() {
@@ -1285,7 +1286,7 @@ function playSound() {
 
     oscillator.type = 'square';
     oscillator.frequency.value=100;
-    gain.gain.value=0.1;
+    gain.gain.value=0.1*masterVolume;
     oscillator.connect(gain);
     gain.connect(audio.destination);
     oscillator.start();
@@ -2188,6 +2189,15 @@ const toggleWall = new Button(
 const toggleSound = new Button(
     450, 550, 150, 50, "Toggle Sound", "lightgray", 0.5
 );
+const volDown = new Button(
+    610, 500, 40, 50, "-", "lightgray", 0.5
+);
+const volUp = new Button(
+    655, 500, 40, 50, "+", "lightgray", 0.5
+);
+const volText = new Text(
+    610, 460, "Vol: 100%", "black", 14
+);
 const button = new Button(
     300, 300, 150, 50, "Move Ball", "darkgray", 0.5
 );
@@ -2276,6 +2286,9 @@ skinsmenu.addButton(button8);
 settings.addButton(bgButton);
 settings.addButton(toggleWall);
 settings.addButton(toggleSound);
+settings.addButton(volDown);
+settings.addButton(volUp);
+settings.addText(volText);
 shopmenu.addButton(buttonshopGun);
 shopmenu.addButton(buttonshopUtil);
 shopmenu.addButton(buttonshopSkins);
@@ -3194,6 +3207,14 @@ if(settings.visible&&clickedFrame===settings){
     }
     if(toggleSound.isPressed()){
         soundEnabled = !soundEnabled;
+    }
+    if(volDown.isPressed()){
+        masterVolume = Math.max(0, masterVolume - 0.1);
+        volText.text = `Vol: ${Math.round(masterVolume * 100)}%`;
+    }
+    if(volUp.isPressed()){
+        masterVolume = Math.min(1, masterVolume + 0.1);
+        volText.text = `Vol: ${Math.round(masterVolume * 100)}%`;
     }
 }
 

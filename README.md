@@ -35,6 +35,8 @@ The significant button on the menu is the "Shop" button, which allows you to equ
 
 Other buttons on the menu includes the Settings and Skins, which as of now are basic.
 
+On settings, you can change the background (only if its black/white), toggle or adjust sound, and toggle walls (for testing)
+
 Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging.
 
 #### Shop
