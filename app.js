@@ -27,6 +27,8 @@ let enemyCountMax=2;
 let enemyCounter=0;
 let money=0;
 let deaths=0;
+let combo = 0;
+let comboTimer = 0;
 let skins = ["red", "blue", "green", "yellow", "purple"];
 let enemyVariants=["red"]
 let wave = 1;
@@ -135,6 +137,10 @@ sandbagImage.src = "assets/sandbags.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
 
+function addCombo(){
+    combo++;
+    comboTimer = Date.now() + 5000;
+}
 const abilities = [
     {name: "Grenade", cooldown: 8000, lastUsed:-Infinity},
     {name: "Speed", cooldown: 5000, lastUsed:-Infinity}
@@ -842,16 +848,37 @@ const enemyStats = {
         damage: 200,
         shootDelay: 2000,
         size:1
+    },
+    "Medic": {
+        health: 25,
+        speed: 0.6,
+        damage: 0,
+        size: 1
     }
     
 
+}
+
+function healEnemies(medic){
+    if (medic.isDead || medic.remove) return;
+    for (const enemy of balls) {
+        if (!enemy.isEnemy || enemy === medic || enemy.isDead || enemy.remove) continue;
+
+        const dx = enemy.x - medic.x;
+        const dy = enemy.y - medic.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 125 && enemy.health < enemy.maxHealth) {
+            enemy.health = Math.min(enemy.maxHealth, enemy.health + 0.15);
+        }
+    }
 }
 const keepDistance = {
     "Pistol": 100,
     "Shotgun": 50,
     "Sniper": 200,
     "Dual Wield": 75,
-    "Explosive Sniper": 150
+    "Explosive Sniper": 150,
+    "Medic": 125
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -887,7 +914,7 @@ function spawnEnemy(weapon) {
         y: 100,
         dx: 0,
         dy: 0,
-        color: "red",
+        color: weapon === "Medic" ? "limegreen" : "red",
         radius: radius,
         health: stats.health,
         speed: stats.speed,
@@ -913,7 +940,7 @@ const waveConfigs = {
         ["Pistol", "Katana", "Katana", "Katana"],
         ["Pistol", "Pistol", "Pistol", "Katana", "Katana"],
         ["Shotgun", "Sniper", "Pistol", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana"],
-        ["Dragon Slayer", "Sniper", "Sniper"]
+        ["Dragon Slayer", "Sniper", "Sniper", "Medic"]
     ],
     normal: [
         [...repeat("Katana", 2)],
@@ -925,11 +952,11 @@ const waveConfigs = {
         ["Sniper", "Shotgun", "Pistol", "Katana", "Nodachi"],
         [...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
         ["Dragon Slayer", ...repeat("Nodachi", 5)],
-        [...repeat("Sniper", 5), ...repeat("Pistol", 2)],
-        [...repeat("Katana", 15), ...repeat("Pistol", 5)],
-        ["Dragon Slayer", ...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
-        [...repeat("Dragon Slayer", 2)],
-        [...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9)]
+        ["Medic", ...repeat("Sniper", 5), ...repeat("Pistol", 2)],
+        ["Medic", ...repeat("Katana", 15), ...repeat("Pistol", 5)],
+        [...repeat("Medic", 2),"Dragon Slayer", ...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
+        [...repeat("Medic", 2),...repeat("Dragon Slayer", 2)],
+        [...repeat("Medic", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9)]
     ],
     hard: [
         [...repeat("Katana", 5)],
@@ -939,14 +966,14 @@ const waveConfigs = {
         [...repeat("Sniper", 2), "Dragon Slayer", ...repeat("Nodachi", 2)],
         [...repeat("Sniper", 5), ...repeat("Nodachi", 5)],
         [...repeat("Shotgun", 10)],
-        [...repeat("Dragon Slayer", 3)],
-        ["Dragon Slayer", ...repeat("Pistol", 5), ...repeat("Shotgun", 5), "Sniper"],
-        [...repeat("Dragon Slayer", 2), ...repeat("Sniper", 5), ...repeat("Shotgun", 5)],
-        [...repeat("Dragon Slayer", 5)],
-        [...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Nodachi", 5), ...repeat("Katana", 5)],
-        [...repeat("Sniper", 10)],
-        [...repeat("Sniper", 10), ...repeat("Shotgun", 10)],
-        [...repeat("Dragon Slayer", 10), ...repeat("Sniper", 10)]
+        ["Medic", ...repeat("Dragon Slayer", 3)],
+        [...repeat("Medic", 2),"Dragon Slayer", ...repeat("Pistol", 5), ...repeat("Shotgun", 5), "Sniper"],
+        [...repeat("Medic", 2),...repeat("Dragon Slayer", 2), ...repeat("Sniper", 5), ...repeat("Shotgun", 5)],
+        [...repeat("Medic", 2),...repeat("Dragon Slayer", 5)],
+        [...repeat("Medic", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Nodachi", 5), ...repeat("Katana", 5)],
+        [...repeat("Medic", 2),...repeat("Sniper", 10)],
+        [...repeat("Medic", 2),...repeat("Sniper", 10), ...repeat("Shotgun", 10)],
+        [...repeat("Medic", 3), ...repeat("Dragon Slayer", 10), ...repeat("Sniper", 10)]
     ]
 };
 
@@ -1487,9 +1514,10 @@ class melee {
                 if (distanceSq <= enemy.radius * enemy.size * enemy.radius * enemy.size) {                    
                     this.hitEnemies.add(enemy);
                     enemy.health -= this.damage * (player.isPlayer ? (stats.damage / 10) : 1);
-                    enemy.color = "lightcoral";
+                    enemy.color = enemy.weapon === "Medic" ? "lightgreen" : "lightcoral";
 
                     if(enemy.health <= 0){
+                        addCombo();
                         enemy.isDead = true;
                         enemy.transparency = 0.95;
                         enemy.dx=0;
@@ -1508,7 +1536,7 @@ class melee {
                     else {
                         setTimeout(() => {
                             if (!enemy.isDead) {
-                                enemy.color = "red";
+                                enemy.color = enemy.weapon === "Medic" ? "limegreen" : "red";
                             }
                         }, 200);
                     }
@@ -1617,6 +1645,7 @@ function createExplosion(x, y, radius, damage) {
             enemy.color = "orange";
 
             if (enemy.health <= 0) {
+                addCombo();
                 enemy.isDead = true;
                 enemy.transparency = 0.95;
                 enemy.dx = 0;
@@ -1637,7 +1666,7 @@ function createExplosion(x, y, radius, damage) {
             } else {
                 setTimeout(() => {
                     if (!enemy.isDead) {
-                        enemy.color = "red";
+                        enemy.color = enemy.weapon === "Medic" ? "limegreen" : "red";
                     }
                 }, 200);
             }
@@ -2243,6 +2272,8 @@ function quitGame() {
     grenades = [];
     rebinding = null;
     speedBoost = 0;
+    combo = 0;
+    comboTimer = 0;
     for (const a of abilities) a.lastUsed = -Infinity;
     menu.visible = false;
     shopmenu.visible = false;
@@ -2749,6 +2780,18 @@ function animate(){
     updateTutorial();
     ctx.fillText(`Money: ${money}`, 10, 10);
     ctx.fillText(`Deaths: ${deaths}`, 10, (gameMode === "wave" || gameMode === "endless") ? 70 : 30);
+    if (Date.now() > comboTimer) {
+        combo=0;
+    }
+
+    if (combo > 0) {
+    ctx.save();
+    ctx.fillStyle = "#dd8513";
+    ctx.font = `bold ${16 + Math.max(0, 150 - (Date.now() - (comboTimer)+4700)) / 15}px Arial`;
+    ctx.textAlign = "right";
+    ctx.fillText(`Combo: ${combo}`, canvas.width - 15, canvas.height - 30);
+    ctx.restore();
+    }
     if (gameMode === "wave" || gameMode === "endless") {
     ctx.fillText(`Wave: ${wave}`, 10, 30);
     ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
@@ -2825,7 +2868,11 @@ for (const ball of balls) {
     drawEnemyWeapon(ball);
     drawEnemyHealthBar(ball);
     if(ball.isEnemy){
-        enemyShoot(ball);
+        if (ball.weapon === "Medic") {
+            healEnemies(ball);
+        }else{
+        enemyShoot(ball)
+        }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
     }
 
@@ -2945,6 +2992,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 }, 200);
 
             if (target.health <= 0) {
+                    addCombo();
                     target.isDead = true;
 
                     setTimeout(() => {
@@ -2960,7 +3008,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 }
             } else {
                 target.hit = true;
-                target.color = "lightcoral";
+                target.color = target.weapon === "Medic" ? "lightgreen" : "lightcoral";
                 target.health -= projectile.damage;
                 target.health = Math.max(0, target.health);
                 if (projectile.isExplosive) {
@@ -2973,6 +3021,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 }
 
                 if (target.health <= 0) {
+                    addCombo();
                     target.isDead = true;
                     target.transparency = 0.95;
                     target.dx = projectile.dx / 15;
@@ -2992,7 +3041,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 } else {
                     setTimeout(() => {
                         if (!target.isDead && !target.remove) {
-                            target.color = "red";
+                            target.color = target.weapon === "Medic" ? "limegreen" : "red";
                         }
                         target.hit = false;
                     }, 200);

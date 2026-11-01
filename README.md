@@ -59,7 +59,7 @@ In the gun section, there are different unique guns you can try out
 In the skins section, there is many items that costs money, you can obtain these by killing enemies (the red balls), which you can now equip the item once buying it and owning it. Utilities are not one time purchase, which you can buy multiple times, costing you money each time.
 
 #### Enemies
-So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Demon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and gaurunteed +10 money.
+So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Demon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and gaurunteed +10 money. A special enemy I added (week 2) was the medic enemy, which heals its surroundings.
 
 # description
 As of enemies, this will probably be just a target practice, zombies, or actual enemies might be later. My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
