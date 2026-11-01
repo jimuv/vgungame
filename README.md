@@ -64,7 +64,10 @@ So there are a variety of enemies, they have the same weapons that are provided 
 # description
 As of enemies, this will probably be just a target practice, zombies, or actual enemies might be later. My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
-Note: I am planning to make this a sandbox mode for the early stages, and will work on playability, such as waves in the future
+# notes
+As of now, there are mutliple modes, I am currently working on the wave modes. This is a game updated on top of multiple weeks.
+
+If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
 
 <!-- This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable. -->
 
