@@ -40,6 +40,7 @@ let winCountdown = 5;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
 let Owned = [];
 let shopPage = 0;
+let shopFree = true;
 let tutorialStep = 0;
 let tutorialTexts = [
     "Use WASD to move your ball. Press WASD to continue.",
@@ -511,7 +512,7 @@ function drawTutorialShotProgress() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Shots: ${tutorialShots}`, 10, 30);
+    ctx.fillText(`Shots: ${tutorialShots}`, 10, 50);
     
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
@@ -529,7 +530,7 @@ function drawTutorialMeleeProgress() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 30);
+    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 50);
     
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
@@ -1005,10 +1006,13 @@ function drawModeSelect() {
         if (modeSelectButtons[0].isPressed()) {
             gameScreen = "mapSelect";
             gameMode = "sandbox";
+            money = 999999;
+            shopFree = true;
         } else if (modeSelectButtons[1].isPressed()) {
             balls = balls.filter(ball => ball.isPlayer);
             wave = 1;
             waveDifficulty = "easy";
+            shopFree = false;
             startWave(1);
             gameScreen = "mapSelect";
             gameMode = "wave";
@@ -1017,6 +1021,7 @@ function drawModeSelect() {
             balls = balls.filter(ball => ball.isPlayer);
             wave = 1;
             waveDifficulty = "normal";
+            shopFree = false;
             startWave(1);
             gameScreen = "mapSelect";
             gameMode = "wave";
@@ -1024,6 +1029,7 @@ function drawModeSelect() {
             balls = balls.filter(ball => ball.isPlayer);
             wave = 1;
             waveDifficulty = "hard";
+            shopFree = false;
             startWave(1);
             gameScreen = "mapSelect";
             gameMode = "wave";
@@ -1031,6 +1037,7 @@ function drawModeSelect() {
         }
         else if (modeSelectButtons[4].isPressed()) {
             balls = balls.filter(ball => ball.isPlayer);
+            shopFree = false;
             wave = 1;
             startEndlessWave(1);
             gameScreen = "mapSelect";
@@ -1039,6 +1046,7 @@ function drawModeSelect() {
         else if (modeSelectButtons[5].isPressed()) {
             gameScreen = "mainMenu";
         } else if (modeSelectButtons[6].isPressed()) {
+            shopFree = true;
             tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
@@ -1352,11 +1360,11 @@ class Gun {
                 size: 1,
                 isProjectile: true,
                 createdAt: Date.now(),
-                damage: this.damage,
+                damage: this.damage * (player.isPlayer ? (stats.damage / 10) : 1),
 
                 isExplosive: this.explosive,
                 explosionRadius: this.explosionRadius,
-                explosionDamage: this.explosionDamage,
+                explosionDamage: this.explosionDamage * (player.isPlayer ? (stats.damage / 10) : 1),
             })
         }
 
@@ -1477,7 +1485,7 @@ class melee {
 
                 if (distanceSq <= enemy.radius * enemy.size * enemy.radius * enemy.size) {                    
                     this.hitEnemies.add(enemy);
-                    enemy.health -= this.damage;
+                    enemy.health -= this.damage * (player.isPlayer ? (stats.damage / 10) : 1);
                     enemy.color = "lightcoral";
 
                     if(enemy.health <= 0){
@@ -2010,33 +2018,33 @@ const weapons = {
 
 const shopItems = {
     Guns: [
-        { name: "Pistol", action: () => currentWeapon = weapons.Pistol },
-        { name: "Shotgun", action: () => currentWeapon = weapons.Shotgun },
-        { name: "Sniper", action: () => currentWeapon = weapons.Sniper },
-        { name: "Explosive Sniper", action: () => currentWeapon = weapons.ExplosiveSniper },
-        { name: "Dual Wield", action: () => currentWeapon = weapons.DualWield },
-        { name: "AK47", action: () => currentWeapon = weapons.AK47 },
-        { name: "Katana", action: () => currentMelee= katana },
-        { name: "Nodachi", action: () => currentMelee= nodachi },
-        { name: "Dragon Slayer", action: () => currentMelee= dragonslayer },
+        { name: "Pistol", price: 0, oneTime: true,action: () => currentWeapon = weapons.Pistol },
+        { name: "Shotgun", price: 10, oneTime: true,action: () => currentWeapon = weapons.Shotgun },
+        { name: "Sniper", price: 20, oneTime: true,action: () => currentWeapon = weapons.Sniper },
+        { name: "Explosive Sniper", price: 60, oneTime: true,action: () => currentWeapon = weapons.ExplosiveSniper },
+        { name: "Dual Wield", price: 40, oneTime: true,action: () => currentWeapon = weapons.DualWield },
+        { name: "AK47", price: 50, oneTime: true,action: () => currentWeapon = weapons.AK47 },
+        { name: "Katana", price: 0, oneTime: true,action: () => currentMelee= katana },
+        { name: "Nodachi", price: 10, oneTime: true,action: () => currentMelee= nodachi },
+        { name: "Dragon Slayer", price: 20, oneTime: true,action: () => currentMelee= dragonslayer },
     ],
 
     Utility: [
-        { name: "Heal Package", action: () => objects.push(new Object("heal")) },
-        { name: "Big Rock", action: () => objects.push(new Object("rock")) },
-        { name: "Speed Boost", action: () => objects.push(new Object("speedboost")) },
-        { name: "Mine", action: () => objects.push(new Object("mine")) }
+        { name: "Heal Package", price: 1, oneTime: false, action: () => objects.push(new Object("heal")) },
+        { name: "Big Rock", price: 2, oneTime: false, action: () => objects.push(new Object("rock")) },
+        { name: "Speed Boost", price: 3, oneTime: false, action: () => objects.push(new Object("speedboost")) },
+        { name: "Mine", price: 4, oneTime: false, action: () => objects.push(new Object("mine")) }
     ],
     Skins: [
-        { name: "Red Ball", action: () => balls[0].color = "red" },
-        { name: "Blue Ball", action: () => balls[0].color = "blue" },
-        ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, action: () => wearAccessory(name)}))
+        { name: "Red Ball", price: 0, oneTime: true, action: () => balls[0].color = "red" },
+        { name: "Blue Ball", price: 0, oneTime: true, action: () => balls[0].color = "blue" },
+        ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, oneTime: true, action: () => wearAccessory(name)}))
     ],
     Armor: [
-        { name: "Leather Armor", action: () => equipArmor(5, "Leather Armor") },
-        { name: "Iron Armor", action: () => equipArmor(10, "Iron Armor") },
-        { name: "Gold Armor", action: () => equipArmor(15, "Gold Armor") },
-        { name: "Cool Armor", action: () => equipArmor(20, "Cool Armor") }
+        { name: "Leather Armor", price: 5, oneTime: true, action: () => equipArmor(5, "Leather Armor") },
+        { name: "Iron Armor", price: 10, oneTime: true, action: () => equipArmor(10, "Iron Armor") },
+        { name: "Gold Armor", price: 15, oneTime: true, action: () => equipArmor(15, "Gold Armor") },
+        { name: "Cool Armor", price: 20, oneTime: true, action: () => equipArmor(20, "Cool Armor") }
     ]
 };
 
@@ -2167,6 +2175,27 @@ function gunDraw() {
     ctx.restore();
 }
 
+
+function buyItem(item) {
+    const cost = shopFree ? 0 : item.price ?? 0;
+
+    if (item.oneTime && Owned.includes(item.name)) {
+        item.action();
+        showCategory(currentCategory);
+        return;
+    }
+
+    if (money >= cost) {
+        money -= cost;
+        if (item.oneTime) {
+            Owned.push(item.name);
+        }
+        item.action();
+        showCategory(currentCategory);
+    } else {
+        playSound();
+    }
+}
 function drawEnemyHealthBar(enemy) {
     if(!showEnemyHealthbars || !enemy.isEnemy || enemy.isDead || enemy.remove) return;
     
@@ -2465,8 +2494,8 @@ function showCategory(category) {
             shopmenu.y + 80 + Math.floor(index / 2) * 45,
             90,
             35,
-            `${item.name} $${item.price ?? 0}`,
-            "lightgray",
+            (item.oneTime && Owned.includes(item.name)) ? `${item.name} (Owned)` : `${item.name} $${shopFree ? 0 : (item.price ?? 0)}`,
+            (currentWeapon.name === item.name || currentMelee.name === item.name || balls[0].accessory === item.name) ? "lightgreen" : "lightgray",
             1
         )
     }));
@@ -2901,7 +2930,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         if (correctTarget && distance < projectile.radius + target.radius * target.size) {
             projectile.remove = true;
 
-            if (target.isPlayer && !target.right) {
+            if (target.isPlayer && !isInvulnerable(target)) {
                 target.health -= projectile.damage;
                 target.health = Math.max(0, target.health);
                 target.color = "lightblue";
@@ -3319,7 +3348,7 @@ if (shopmenu.visible) {
 
     for (const entry of itemButtons) {
         if (entry.button.isPressed()) {
-            entry.item.action();
+            buyItem(entry.item);
 
 
             if (
