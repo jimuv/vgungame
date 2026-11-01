@@ -56,7 +56,7 @@ You could purchase in each category, and go through multiple pages if there is a
 
 In the gun section, there are different unique guns you can try out
 
-In the skins section, there is one hat that costs money, and that is the crown for $10, you can obtain this by killing one enemy, which you can now equip the crown once buying it and owning it.
+In the skins section, there is many items that costs money, you can obtain these by killing enemies (the red balls), which you can now equip the item once buying it and owning it. Utilities are not one time purchase, which you can buy multiple times, costing you money each time.
 
 #### Enemies
 So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Demon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and gaurunteed +10 money.

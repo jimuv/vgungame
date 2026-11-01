@@ -455,6 +455,7 @@ function updateTutorial() {
     }
     else if (tutorialStep === 2) {
         if (shopmenu.visible) {
+            showCategory(currentCategory);
             tutorialShopStartX = shopmenu.x;
             tutorialShopStartY = shopmenu.y;
             tutorialShopMoved = false;
@@ -2508,7 +2509,6 @@ function updateShopHover() {
 
     for (const entry of itemButtons) {
         const button = entry.button;
-
         if (
             mouseX >= button.x &&
             mouseX <= button.x + button.width &&
@@ -2686,6 +2686,7 @@ function drawFrame(frame) {
     if (frame === shopmenu && shopmenu.visible) {
         for (const entry of itemButtons) {
             entry.button.draw(ctx);
+            showCategory(currentCategory);
         }
     }
 }
