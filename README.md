@@ -78,6 +78,13 @@ Some problems I'm facing right now is actual game design, I would say that I hav
 
 note: these may be outdated gifs
 
-![Sample](assets/487563cde1baebdc74301ae9043a83c4.gif)
-
-![Sample2](assets/9913ae2a6d0c38196c511a216b1ad6ea.gif)
+<table>
+  <tr>
+    <td><img src="assets/487563cde1baebdc74301ae9043a83c4.gif" alt="Sample" width="400"></td>
+    <td><img src="assets/9913ae2a6d0c38196c511a216b1ad6ea.gif" alt="Sample2" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/bc57080f50783b1b91e3fae338675cf6.gif" alt="Sample3" width="400"></td>
+    <td><img src="assets/292b7e7464e71dda0b27a6684d5f79e2.gif" alt="Sample4" width="400"></td>
+  </tr>
+</table>
