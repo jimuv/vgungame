@@ -3518,7 +3518,7 @@ if (menu.visible && clickedFrame === menu) {
 
         const frameIndex = ballFrames.length;
         const frameX = 350 + (frameIndex % 2) * 230;
-        const frameY = 100 + Math.floor(frameIndex / 2) * 140;
+        const frameY = 100 + (Math.floor(frameIndex / 4) % 3) * 140;
         const newFrame = new Frame(
             frameX, frameY, 200, 120, "lightgray", 0.5, newBall, true, "Ball Frame"
         );
