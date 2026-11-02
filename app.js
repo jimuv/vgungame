@@ -39,7 +39,12 @@ let waveStart=false;
 let waveIndicator=null;
 let waveWon = false;
 let winCountdown = 5;
-let accessories = ["Top Hat", "Glasses", "Monocle", "Crown"];
+let accessories = ["Top Hat", "Glasses", "Monocle", "Crown", "Shield"];
+const enemyAccessories = {
+    "Sniper": "Glasses",
+    "Dragon Slayer": "Crown",
+    "Shielder": "Shield"
+}
 let Owned = [];
 let shopPage = 0;
 let shopFree = true;
@@ -102,6 +107,7 @@ const accessoryImages = {
     "Top Hat": new Image(),
     "Monocle": new Image(),
     "Crown": new Image(),
+    "Shield": new Image(),
     "Cool Armor": new Image()
 }
 accessoryImages["Glasses"].src = "assets/glasses.png";
@@ -109,6 +115,7 @@ accessoryImages["Top Hat"].src = "assets/Top_Hat.png";
 accessoryImages["Monocle"].src = "assets/monocle.png";
 accessoryImages["Crown"].src = "assets/Crown.png";
 accessoryImages["Cool Armor"].src = "assets/glasses.png";
+accessoryImages["Shield"].src = "assets/Shield.png";
 
 const weaponImages= {
     "Pistol": new Image(),
@@ -854,11 +861,24 @@ const enemyStats = {
         speed: 0.6,
         damage: 0,
         size: 1
+    },
+    "Shielder": {
+        health: 300,
+        speed: 0.25,
+        damage: 10,
+        shootDelay: 0,
+        size:1
     }
-    
 
 }
-
+function checkShieldBreak(enemy) {
+    if (enemy.shielded && enemy.health <= 0) {
+        enemy.shielded = false;
+        enemy.maxHealth = 50;
+        enemy.health = 50;
+        if(enemy.accessory === "Shield") enemy.accessory=null;
+    }
+}
 function healEnemies(medic){
     if (medic.isDead || medic.remove) return;
     for (const enemy of balls) {
@@ -928,7 +948,9 @@ function spawnEnemy(weapon) {
         following: true,
         strafe: true,
         stuckTimer: 0,
-        weapon: weapon
+        weapon: weapon,
+        accessory: enemyAccessories[weapon] || null,
+        shielded: weapon === "Shielder"
     });
 }
 function repeat(item, count) {
@@ -939,7 +961,7 @@ const waveConfigs = {
         ["Katana", "Katana"],
         ["Pistol", "Katana", "Katana", "Katana"],
         ["Pistol", "Pistol", "Pistol", "Katana", "Katana"],
-        ["Shotgun", "Sniper", "Pistol", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana"],
+        ["Shotgun", "Sniper", "Pistol", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Katana", "Shielder"],
         ["Dragon Slayer", "Sniper", "Sniper", "Medic"]
     ],
     normal: [
@@ -947,33 +969,33 @@ const waveConfigs = {
         [...repeat("Katana", 3)],
         ["Pistol", "Katana"],
         [...repeat("Pistol", 2), ...repeat("Katana", 2)],
-        ["Shotgun", "Nodachi"],
+        ["Shotgun", "Nodachi", "Shielder"],
         ["Sniper", ...repeat("Katana", 5)],
         ["Sniper", "Shotgun", "Pistol", "Katana", "Nodachi"],
         [...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
         ["Dragon Slayer", ...repeat("Nodachi", 5)],
-        ["Medic", ...repeat("Sniper", 5), ...repeat("Pistol", 2)],
-        ["Medic", ...repeat("Katana", 15), ...repeat("Pistol", 5)],
-        [...repeat("Medic", 2),"Dragon Slayer", ...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
-        [...repeat("Medic", 2),...repeat("Dragon Slayer", 2)],
-        [...repeat("Medic", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9)]
+        ["Medic", ...repeat("Sniper", 5), ...repeat("Pistol", 2), "Shielder"],
+        ["Medic", ...repeat("Katana", 15), ...repeat("Pistol", 5), "Shielder"],
+        [...repeat("Medic", 2),...repeat("Shielder", 2), "Dragon Slayer", ...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 2)],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9)]
     ],
     hard: [
         [...repeat("Katana", 5)],
         [...repeat("Katana", 2), ...repeat("Pistol", 2)],
         [...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
         [...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
-        [...repeat("Sniper", 2), "Dragon Slayer", ...repeat("Nodachi", 2)],
+        [...repeat("Sniper", 2), "Dragon Slayer", ...repeat("Nodachi", 2), "Shielder"],
         [...repeat("Sniper", 5), ...repeat("Nodachi", 5)],
         [...repeat("Shotgun", 10)],
         ["Medic", ...repeat("Dragon Slayer", 3)],
-        [...repeat("Medic", 2),"Dragon Slayer", ...repeat("Pistol", 5), ...repeat("Shotgun", 5), "Sniper"],
-        [...repeat("Medic", 2),...repeat("Dragon Slayer", 2), ...repeat("Sniper", 5), ...repeat("Shotgun", 5)],
-        [...repeat("Medic", 2),...repeat("Dragon Slayer", 5)],
-        [...repeat("Medic", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Nodachi", 5), ...repeat("Katana", 5)],
-        [...repeat("Medic", 2),...repeat("Sniper", 10)],
-        [...repeat("Medic", 2),...repeat("Sniper", 10), ...repeat("Shotgun", 10)],
-        [...repeat("Medic", 3), ...repeat("Dragon Slayer", 10), ...repeat("Sniper", 10)]
+        [...repeat("Medic", 2),...repeat("Shielder", 2),"Dragon Slayer", ...repeat("Pistol", 5), ...repeat("Shotgun", 5), "Sniper"],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 2), ...repeat("Sniper", 5), ...repeat("Shotgun", 5)],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 5)],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Nodachi", 5), ...repeat("Katana", 5)],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Sniper", 10)],
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Sniper", 10), ...repeat("Shotgun", 10)],
+        [...repeat("Medic", 3),...repeat("Shielder", 3), ...repeat("Dragon Slayer", 10), ...repeat("Sniper", 10)]
     ]
 };
 
@@ -1515,7 +1537,7 @@ class melee {
                     this.hitEnemies.add(enemy);
                     enemy.health -= this.damage * (player.isPlayer ? (stats.damage / 10) : 1);
                     enemy.color = enemy.weapon === "Medic" ? "lightgreen" : "lightcoral";
-
+                    checkShieldBreak(enemy);
                     if(enemy.health <= 0){
                         addCombo();
                         enemy.isDead = true;
@@ -1643,7 +1665,7 @@ function createExplosion(x, y, radius, damage) {
         if (distance <= radius + enemy.radius * enemy.size) {
             enemy.health -= damage;
             enemy.color = "orange";
-
+            checkShieldBreak(enemy);
             if (enemy.health <= 0) {
                 addCombo();
                 enemy.isDead = true;
@@ -2085,21 +2107,42 @@ function getMaxHealth() {
 function wearAccessory(accessoryName) {
     const player = balls.find(ball => ball.isPlayer);
     if (!player) return;
-    if(accessoryName==="Crown"&&!Owned.includes("Crown")&&money>=10){
-        Owned.push("Crown");
-        money-=10;
-    } else {
-        if (accessoryName==="Crown"&&!Owned.includes("Crown")&&money<10){
-        playSound();
-        }
-    }
-    if(Owned.includes(accessoryName)){
-        player.accessory= accessoryName;
-    }
-    if(accessoryName!=="Crown"){
     player.accessory = accessoryName;
-    }
+}
 
+function drawEnemyHat(enemy) {
+    if (!enemy.isEnemy || enemy.remove || !enemy.accessory) return;
+    const image = accessoryImages[enemy.accessory];
+    if (!image || !image.complete || image.naturalWidth === 0) return;
+    
+    let width = enemy.radius * enemy.size *2;
+    let height = enemy.radius * enemy.size *2;
+    let x = enemy.x - enemy.radius * enemy.size;
+    let y = enemy.y - enemy.radius * enemy.size;
+
+    if(enemy.accessory === "Glasses"){
+        width= enemy.radius*2;
+        height= enemy.radius*2;
+    }
+    if(enemy.accessory === "Top Hat"){
+        y=enemy.y - enemy.radius-25;
+        width= enemy.radius*2;
+        height= enemy.radius*2;
+    }
+    if(enemy.accessory === "Crown"){
+        y=enemy.y - enemy.radius-90;
+        width= enemy.radius*5;
+        height= enemy.radius*5;
+    }
+    if(enemy.accessory === "Monocle"){
+        width= enemy.radius*2;
+        height= enemy.radius*2;
+    }
+    if(enemy.accessory === "Shield"){
+        width= enemy.radius*3;
+        height= enemy.radius*3;
+    }
+    ctx.drawImage(image, x, y, width, height);
 }
 function getAccessory() {
     const player = balls.find(ball => ball.isPlayer);
@@ -2237,7 +2280,7 @@ function drawEnemyHealthBar(enemy) {
     ctx.fillStyle = "red";
     ctx.fillRect(barX, barY, barWidth, barHeight);
 
-    ctx.fillStyle = "green";
+    ctx.fillStyle = enemy.shielded ? "yellow" : "green";
     ctx.fillRect(barX, barY, barWidth * (enemy.health / enemy.maxHealth), barHeight);
 }
 
@@ -2823,6 +2866,16 @@ function animate(){
                 startEndlessWave(nextWave);
             }
         }, 5000);
+    } else if (!waveStart && enemyCounter <= 0 && gameMode === "wave" && wave>= maxWaves){
+        ctx.save()
+        ctx.fillStyle = "gold";
+        ctx.font = "bold 36px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("You Won All Waves!", canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = "black";
+        ctx.font = "20px Arial";
+        ctx.fillText("Press esc or p to exit to main menu", canvas.width / 2, canvas.height / 2 + 50);
+        ctx.restore();
     }
     }
 
@@ -2866,6 +2919,7 @@ for (const ball of balls) {
     ctx.globalAlpha = 1;
 
     drawEnemyWeapon(ball);
+    drawEnemyHat(ball);
     drawEnemyHealthBar(ball);
     if(ball.isEnemy){
         if (ball.weapon === "Medic") {
@@ -3009,8 +3063,9 @@ if (ball1.isProjectile && !ball2.isProjectile) {
             } else {
                 target.hit = true;
                 target.color = target.weapon === "Medic" ? "lightgreen" : "lightcoral";
-                target.health -= projectile.damage;
+                target.health -= projectile.damage * (target.shielded ? 0.3 : 1);
                 target.health = Math.max(0, target.health);
+                checkShieldBreak(target);
                 if (projectile.isExplosive) {
                     createExplosion(
                         projectile.x,
@@ -3518,7 +3573,7 @@ if (menu.visible && clickedFrame === menu) {
 
         const frameIndex = ballFrames.length;
         const frameX = 350 + (frameIndex % 2) * 230;
-        const frameY = 100 + (Math.floor(frameIndex / 4) % 3) * 140;
+        const frameY = 100 + (Math.floor(frameIndex / 2) % 3) * 140;
         const newFrame = new Frame(
             frameX, frameY, 200, 120, "lightgray", 0.5, newBall, true, "Ball Frame"
         );
