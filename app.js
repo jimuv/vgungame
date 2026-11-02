@@ -1228,12 +1228,33 @@ class Object {
             this.startTime = performance.now();
             this.duration = 1000;
         }
+        if (type === "coin") {
+            this.x = x !== null ? x : Math.random() * (canvas.width - 20) + 10;
+            this.y = y !== null ? y : Math.random() * (canvas.height - 20) + 10;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.size = 1;
+            this.color = "yellow";
+            this.type = "coin";
+            this.healAmount = 0;
+            this.ammoAmount = 0;
+            this.coinAmount = 1;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3 + Math.random() * 3;
+            this.dx = Math.cos(angle) * speed;
+            this.dy = Math.sin(angle) * speed;
+
+            this.scale = .2;
+            this.startTime = performance.now();
+            this.duration = 1000;
+        }
     }
     update(){
         const elapsed = performance.now() - this.startTime;
         const progress = Math.min(elapsed / this.duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        if (this.type === "ammo") {
+        if (this.type === "ammo" || this.type ==="coin") {
             this.scale = 0.2 + eased * 0.8;
             this.x += this.dx;
             this.y += this.dy;
@@ -1265,7 +1286,7 @@ class Object {
             g = 0;
             b = 255;
         }
-        if (this.type !== "ammo") {
+        if (this.type !== "ammo" && this.type !== "coin") {
         this.color = `rgb(
             ${Math.round(r * eased)},
             ${Math.round(g * eased)},
@@ -1274,7 +1295,7 @@ class Object {
         }
     }
      draw(ctx) {
-        if (this.type !== "ammo") {
+        if (this.type !== "ammo" && this.type !== "coin") {
         this.update();
         const width = this.width * this.scale;
         const height = this.height * this.scale;
@@ -1284,7 +1305,7 @@ class Object {
         ctx.fillStyle = this.color;
         ctx.fillRect(x, y, width, height);
     }
-    else if (this.type === "ammo") {
+    else if (this.type === "ammo" || this.type === "coin") {
         this.update();
         const width = this.width * this.scale;
         const height = this.height * this.scale;
@@ -1546,6 +1567,8 @@ class melee {
                         enemy.dy=0;
                         if (Math.random() <0.3){
                             objects.push(new Object("ammo", enemy.x, enemy.y));
+                        } else if (Math.random() > 0.5){
+                            objects.push(new Object("coin", enemy.x, enemy.y));
                         }
                         setTimeout(() => {
                             enemy.remove = true;
@@ -3217,7 +3240,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
             player.deathCounted = false;
         }
         for (const obj of objects) {
-            if (["heal", "rock", "speedboost", "mine", "ammo"].includes(obj.type)) {
+            if (["heal", "rock", "speedboost", "mine", "ammo", "coin"].includes(obj.type)) {
                 obj.draw(ctx);
                 const closestX = Math.max(
             obj.x,
@@ -3288,6 +3311,9 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 if (currentWeapon.ammo !== Infinity){
                     currentWeapon.ammo += obj.ammoAmount;
                 }
+            }
+            if(obj.type === "coin") {
+                money += obj.coinAmount;
             }
 
             obj.remove = true;
@@ -3566,7 +3592,7 @@ if (menu.visible && clickedFrame === menu) {
             weapon: null, //weaponslist[Math.floor(Math.random() * weaponslist.length)]
             shootCooldown: 0,
             shootDelay: 1000,
-            accessory: accessories[Math.floor(Math.random() * accessories.length)],
+            accessory: null,
         };
 
         balls.push(newBall);
