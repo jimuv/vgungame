@@ -72,6 +72,11 @@ let tutorialAccessoryBought = false;
 let tutorialShots = 0;
 let tutorialMelee = 0;
 
+let dialogueQueue = [];
+let currentDialogue = null;
+let dialogueCharIndex = 0;
+let lastCharTime = 0;
+
 let hoveredShopItem = null;
 
 let showEnemyHealthbars = true;
@@ -144,6 +149,69 @@ sandbagImage.src = "assets/sandbags.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
 
+const commanderImage = new Image();
+commanderImage.src = "assets/commander.png";
+
+function showDialogue(text, speaker = "", image = null, canSkip = true){
+    dialogueQueue.push({text, speaker, image, canSkip});
+    if(!currentDialogue){
+        nextDialogue();
+    }
+}
+function nextDialogue(){
+    currentDialogue = dialogueQueue.shift() || null;
+    dialogueCharIndex = 0;
+    lastCharTime = Date.now();
+}
+function drawDialogue(){
+    if(!currentDialogue) return;
+    if(dialogueCharIndex < currentDialogue.text.length){
+        if(Date.now() - lastCharTime > 30){
+            dialogueCharIndex++;
+            lastCharTime = Date.now();
+        }
+    }
+
+    if(justClicked || keys[" "]){
+        keys[" "] = false;
+        if(dialogueCharIndex < currentDialogue.text.length){
+            dialogueCharIndex = currentDialogue.text.length;
+        } else if(currentDialogue.canSkip){
+            nextDialogue();
+            return;
+        }
+    }
+    ctx.save();
+    ctx.globalAlpha = .5;
+    ctx.fillStyle = isDarkMode ? "black" : "white";
+    ctx.fillRect(80, canvas.height - 75, canvas.width - 160, 75);
+    ctx.strokeStyle = "#30302d";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(80, canvas.height - 75, canvas.width - 160, 75);
+    ctx.globalAlpha = .8;
+    const img = currentDialogue.image;
+    if(img && img.complete && img.naturalWidth > 0){
+        ctx.drawImage(img, 100, canvas.height - 75, 50, 50);
+    }
+
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+
+    ctx.font = "bold 18px Arial";
+    ctx.fillText(currentDialogue.speaker, 160, canvas.height - 70);
+
+    ctx.font = "16px Arial";
+    const lines = currentDialogue.text.slice(0, dialogueCharIndex).split("\n");
+    for(let i = 0; i < lines.length; i++){
+        ctx.fillText(lines[i], 160, canvas.height - 40 + i * 20);
+    }
+    ctx.restore();
+}
+function clearDialogue(){
+    dialogueQueue = [];
+    currentDialogue = null;
+}
 function addCombo(){
     combo++;
     comboTimer = Date.now() + 5000;
@@ -345,7 +413,8 @@ function setTutorialStep(step) {
     if (tutorialStep === step) return;
 
     tutorialStep = step;
-
+    clearDialogue();
+    showDialogue(tutorialTexts[step], "Commander", commanderImage, false);
     tutorialKeysPressed = {
         w: 0,
         a: 0,
@@ -2354,6 +2423,7 @@ function quitGame() {
     showUpgradePrompt = false;
     gameMode = null;
     gameScreen = "mainMenu";
+    clearDialogue();
 }
 
 function updateBindText(){
@@ -2481,7 +2551,7 @@ const button2 = new Button(
 const button3 = new Button(
     300, 400, 150, 50, "Add Moving Ball", "darkblue", 0.5
 );
-
+//plan: remodel this into inventory/clothing/wardrobe type
 const button4 = new Button(
     450, 400, 50, 50, "Skins", "lightyellow", 0.5
 );
@@ -2807,6 +2877,7 @@ function animate(){
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (gameScreen === "mainMenu") {
+        clearDialogue();
         mainmenu.draw(ctx);
 
     if (mainmenuButton1.isPressed()) {
@@ -3928,6 +3999,7 @@ if (gameMode === "tutorial") {
 }
     if (gameScreen === "game"){
         drawWaveIndicator();
+        drawDialogue();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
