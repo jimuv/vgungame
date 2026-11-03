@@ -7,8 +7,8 @@ This project will be about a basic shooter game, this is going to rely on a mous
 So this game is displayed on the web, which is through a canvas and html. The main part of this project is the actual game, which is through javascript.
 
 # Game
-This is a link to the web game
-https://jimuv.github.io/vgungame/
+This is a link to the web game (for week 3)
+https://jimuv.github.io/vgungame/week-3/
 
 # How to play
 Note: This is only for PC, on the web
@@ -72,6 +72,8 @@ As of enemies, this will probably be just a target practice, zombies, or actual 
 As of now, there are mutliple modes, I am currently working on the wave modes. This is a game updated on top of multiple weeks.
 
 If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
+
+Right here should be within a week-3 folder, so it should be separate from the main as of now which is was used for week 2
 
 <!-- This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable. -->
 
