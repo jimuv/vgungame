@@ -39,6 +39,9 @@ let waveStart=false;
 let waveIndicator=null;
 let waveWon = false;
 let winCountdown = 5;
+let storyChapter = 0;
+let storyStage = 0;
+let storyPhase = null;
 let accessories = ["Top Hat", "Glasses", "Monocle", "Crown", "Shield"];
 const enemyAccessories = {
     "Sniper": "Glasses",
@@ -77,6 +80,32 @@ let currentDialogue = null;
 let dialogueCharIndex = 0;
 let lastCharTime = 0;
 
+const storyChapters = {
+    1: {
+        title: "Chapter 1: The Beginning",
+        map: "map3",
+        stages: [{
+            dialogue: [
+                ["Commander", "Welcome to the game!"]
+            ],
+            enemies: ["Katana", "Katana"],
+            reward: 10
+        },
+        {
+            dialogue: [
+                ["Commander", "They have guns!?!?"]
+            ],
+            enemies: ["Pistol", "Pistol"],
+            reward: 15
+        }
+        
+    ],
+    outro: [
+        ["Commander", "Congrats, you've made it"],
+        ["Commander", "Your next mission will be given soon."]
+    ]
+    }
+}
 let hoveredShopItem = null;
 
 let showEnemyHealthbars = true;
@@ -171,7 +200,14 @@ function drawDialogue(){
             lastCharTime = Date.now();
         }
     }
-
+    if(Date.now() - lastCharTime > 3000){
+        if(dialogueCharIndex < currentDialogue.text.length){
+            dialogueCharIndex = currentDialogue.text.length;
+        } else if(currentDialogue.canSkip){
+            nextDialogue();
+            return;
+        }
+    }
     if(justClicked || keys[" "]){
         keys[" "] = false;
         if(dialogueCharIndex < currentDialogue.text.length){
@@ -212,6 +248,82 @@ function clearDialogue(){
     dialogueQueue = [];
     currentDialogue = null;
 }
+function startStoryChapter(n){
+    const chapter = storyChapters[n];
+    if(!chapter) return;
+    balls = balls.filter(b => b.isPlayer);
+    objects = [];
+    explosions = [];
+    grenades = [];
+
+    const player = balls[0];
+    player.health = player.maxHealth;
+    player.x = canvas.width / 2;
+    player.y = canvas.height / 2;
+    player.dx = 0;
+    player.dy = 0;
+
+    gameMode = "story";
+    shopFree = false;
+    storyChapter = n;
+    storyStage = 0;
+    enemyCounter = 0;
+    enemyCountMax = 0;
+    selectedMap = chapter.map;
+    gameScreen = "game";
+    Map();
+    beginStoryStage();
+}
+function beginStoryStage() {
+    const stage = storyChapters[storyChapter].stages[storyStage];
+    clearDialogue();
+    for (const [speaker, text] of stage.dialogue) {
+        showDialogue(text, speaker, commanderImage, true);
+    }
+    const player = balls.find(b => b.isPlayer);
+    if (player) player.health = player.maxHealth;
+    storyPhase = "dialogue";
+}
+function finishStoryChapter(){
+    quitGame();
+    gameScreen = "chapterSelect";
+}
+function updateStory(){
+    if (gameMode !== "story") return;
+    const chapter = storyChapters[storyChapter];
+    const stage = chapter.stages[storyStage];
+    const dialogueDone = !currentDialogue && dialogueQueue.length === 0;
+
+    if (storyPhase === "dialogue" && dialogueDone) {
+        enemyCounter = 0;
+        enemyCountMax = stage.enemies.length;
+        storyPhase = "fight";
+
+        for (const weapon of stage.enemies) {
+            spawnEnemy(weapon);
+        }
+    }
+        else if (storyPhase === "fight" && enemyCounter <= 0){
+            money+= stage.reward;
+            storyStage++;
+            if(storyStage >= chapter.stages.length){
+                clearDialogue();
+                for (const [speaker, text] of chapter.outro) {
+                    showDialogue(text, speaker, commanderImage, true);
+                }
+                storyPhase = "outro";
+            }
+            else{
+                beginStoryStage();
+            }
+        }
+            else if (storyPhase === "outro" && dialogueDone){
+                finishStoryChapter();
+                return;
+            }
+        }
+    
+
 function addCombo(){
     combo++;
     comboTimer = Date.now() + 5000;
@@ -853,6 +965,23 @@ update() {
         this.buttons.push(button);
     }
 }
+function drawChapterSelect() {
+    ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
+    ctx.font = "24px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("Story Mode", canvas.width / 2, 80);
+    for (const b of chapterSelectButtons) b.draw(ctx);
+
+    if (justClicked) {
+        if (chapterSelectButtons[0].isPressed()) {
+            startStoryChapter(1);
+        } else if (chapterSelectButtons[1].isPressed()) {
+            gameScreen = "modeSelect";
+        }
+        justClicked = false;
+    }
+}
 
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
@@ -861,8 +990,12 @@ const modeSelectButtons = [
     new Button(100, 550, 100, 50, "Hard Mode", "red", 0.5), 
     new Button(100, 350, 100, 50, "Endless Mode", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
-    new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5)
+    new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5),
+    new Button(550, 400, 100, 100, "Story Mode", "orange", 0.5)
 ]
+const chapterSelectButtons = [
+    new Button(300,150, 200, 50, "Chapter 1", "lightblue", 0.5),
+    new Button(300, 250, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
     new Button(300, 200, 200, 50, "Map 1", "lightblue", 0.5),
@@ -1169,6 +1302,9 @@ function drawModeSelect() {
             tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
+        }
+        else if (modeSelectButtons[7].isPressed()) {
+            gameScreen = "chapterSelect";
         }
     }
 }
@@ -1642,7 +1778,7 @@ class melee {
                         setTimeout(() => {
                             enemy.remove = true;
                             money+= 10;
-                            if(gameMode==="wave"||gameMode==="tutorial"||gameMode==="endless"){
+                            if(gameMode==="wave"||gameMode==="tutorial"||gameMode==="endless"||gameMode==="story"){
                                 enemyCounter--;
                             }
                         }, 1000);
@@ -1771,7 +1907,7 @@ function createExplosion(x, y, radius, damage) {
                     if (!enemy.remove) {
                         enemy.remove = true;
                         money += 10;
-                        if (gameMode === "wave" || gameMode === "tutorial" || gameMode === "endless") {
+                        if (gameMode === "wave" || gameMode === "tutorial" || gameMode === "endless"|| gameMode === "story") {
                             enemyCounter--;
                         }
                         
@@ -2888,6 +3024,9 @@ function animate(){
     } 
     else if(gameScreen === "mapSelect"){
         drawMapSelect();
+    } 
+    else if (gameScreen === "chapterSelect") {
+        drawChapterSelect();
     }
     else if (gameScreen === "game") {
     if (BackgroundImage.complete && BackgroundImage.naturalWidth > 0) {
@@ -2915,6 +3054,7 @@ function animate(){
     enemies still need properties (health, speed, etc.) balancing for sure needed
     */
     updateTutorial();
+    updateStory();
     ctx.fillText(`Money: ${money}`, 10, 10);
     ctx.fillText(`Deaths: ${deaths}`, 10, (gameMode === "wave" || gameMode === "endless") ? 70 : 30);
     if (Date.now() > comboTimer) {
