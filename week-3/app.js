@@ -83,16 +83,21 @@ let lastCharTime = 0;
 const storyChapters = {
     1: {
         title: "Chapter 1: The Beginning",
-        map: "map3",
+        map: "map4",
         stages: [{
             dialogue: [
-                ["Commander", "Welcome to the game!"]
+                ["Commander", "Welcome to the game!"],
+                ["Commander", "Our mission today is to arrive at the enemy base."],
+                ["Commander", "Prepare yourself for the battle ahead."],
+                ["Commander", "There are 2 melee guys ahead!"]
             ],
+            
             enemies: ["Katana", "Katana"],
             reward: 10
         },
         {
             dialogue: [
+                ["Commander", "Perfect job... there are more coming"],
                 ["Commander", "They have guns!?!?"]
             ],
             enemies: ["Pistol", "Pistol"],
@@ -100,10 +105,13 @@ const storyChapters = {
         }
         
     ],
-    outro: [
-        ["Commander", "Congrats, you've made it"],
-        ["Commander", "Your next mission will be given soon."]
-    ]
+    outro: [{
+        dialogue: [
+            ["Commander", "Congrats, you've made it to their base."],
+            ["Commander", "Your next mission will be given soon."]
+        ],
+        map: "map4p2"
+    }]
     }
 }
 let hoveredShopItem = null;
@@ -308,9 +316,11 @@ function updateStory(){
             storyStage++;
             if(storyStage >= chapter.stages.length){
                 clearDialogue();
-                for (const [speaker, text] of chapter.outro) {
+                for (const [speaker, text] of chapter.outro[0].dialogue) {
                     showDialogue(text, speaker, commanderImage, true);
                 }
+                selectedMap = chapter.outro[0].map;
+                Map();
                 storyPhase = "outro";
             }
             else{
@@ -522,7 +532,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 function setTutorialStep(step) {
-    if (tutorialStep === step) return;
+    if (tutorialStep === step && tutorialStep != 0) return;
 
     tutorialStep = step;
     clearDialogue();
@@ -1302,6 +1312,7 @@ function drawModeSelect() {
             tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
+            setTutorialStep(0)
         }
         else if (modeSelectButtons[7].isPressed()) {
             gameScreen = "chapterSelect";
@@ -2266,6 +2277,23 @@ function Map() {
             objects.push(new Object("mine"));
             objects.push(new Object("rock"));
         }
+    }
+    if (selectedMap === "map4") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, canvas.width, canvas.height, sandFloorImage));
+        sandbags.push(new Sandbag(360, 280, 80, 35));
+        sandbags.push(new Sandbag(100, 250, 35, 80));
+        sandbags.push(new Sandbag(665, 250, 35, 80));
+    }
+    if (selectedMap === "map4p2") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, canvas.width, canvas.height, sandFloorImage));
+        floors.push(new Floor(200, 0, 400, 300, floorImage));
+        sandbags.push(new Sandbag(360, 280, 80, 35));
+        sandbags.push(new Sandbag(100, 250, 35, 80));
+        sandbags.push(new Sandbag(665, 250, 35, 80));
+        walls.push(new Wall(200, 0, 400, 300, {bulletBehavior: "deflect", solid: true}));
+
     }
 }
 
@@ -3322,7 +3350,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                         if (!target.remove) {
                             target.remove = true;
                             money += 10;
-                            if (gameMode === "wave" || gameMode === "tutorial" || gameMode === "endless") {
+                            if (gameMode === "wave" || gameMode === "tutorial" || gameMode === "endless" || gameMode === "story") {
                                 enemyCounter--;
                             }
                         }
