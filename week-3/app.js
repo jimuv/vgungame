@@ -112,6 +112,47 @@ const storyChapters = {
         ],
         map: "map4p2"
     }]
+    },
+
+    2: {
+        title: "Chapter 2: Enemy territory",
+        map: "map5",
+        stages: [{
+            dialogue: [
+                ["Commander", "We are now inside enemy territory"],
+                ["Commander", "Your objective is to reach their main base"],
+                ["Commander", "Be careful, there are enemies everywhere."],
+                ["Commander", "There are multiple melee guys ahead!"]
+            ],
+            
+            enemies: ["Katana", "Katana","Katana","Katana"],
+            reward: 15
+        },
+        {
+            dialogue: [
+                ["Commander", "More incoming enemies"],
+                ["Commander", "Beware, they are heavily armed!"]
+            ],
+            enemies: ["Pistol", "Shotgun","Shotgun"],
+            reward: 15
+        },
+        {
+            dialogue: [
+                ["Commander", "Take cover, theres a sniper nearby!"]
+            ],
+            enemies: ["Sniper", "Katana","Katana"],
+            reward: 15
+        },
+
+        
+    ],
+    outro: [{
+        dialogue: [
+            ["Commander", "Nice, work, we are almost there!"],
+            ["Commander", "Your next mission will be given soon."]
+        ],
+        map: "map5"
+    }]
     }
 }
 let hoveredShopItem = null;
@@ -987,6 +1028,8 @@ function drawChapterSelect() {
         if (chapterSelectButtons[0].isPressed()) {
             startStoryChapter(1);
         } else if (chapterSelectButtons[1].isPressed()) {
+            startStoryChapter(2);
+        } else if (chapterSelectButtons[2].isPressed()) {
             gameScreen = "modeSelect";
         }
         justClicked = false;
@@ -1005,6 +1048,7 @@ const modeSelectButtons = [
 ]
 const chapterSelectButtons = [
     new Button(300,150, 200, 50, "Chapter 1", "lightblue", 0.5),
+    new Button(300, 200, 200, 50, "Chapter 2", "lightblue", 0.5),
     new Button(300, 250, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
@@ -2294,6 +2338,20 @@ function Map() {
         sandbags.push(new Sandbag(665, 250, 35, 80));
         walls.push(new Wall(200, 0, 400, 300, {bulletBehavior: "deflect", solid: true}));
 
+    }
+    if (selectedMap === "map5") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, canvas.width, canvas.height, floorImage));
+        walls.push(new Wall(200, 150, 400, 20, { bulletBehavior: "deflect", solid: true }));
+        walls.push(new Wall(200, 150, 20, 300, { bulletBehavior: "deflect", solid: true}));
+        walls.push(new Wall(580, 150, 20, 300, { bulletBehavior: "deflect", solid: true}));
+        walls.push(new Wall(0, 450, 50, 20, { bulletBehavior: "deflect", solid: true}));
+        walls.push(new Wall(150, 450, 190, 20, { bulletBehavior: "deflect", solid: true}));
+        walls.push(new Wall(580, 450, 140, 20, { bulletBehavior: "deflect", solid: true}));
+    }
+    if (selectedMap === "map5p2") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, canvas.width, canvas.height, floorImage));
     }
 }
 
