@@ -387,6 +387,12 @@ function beginStoryStage() {
     if (stage.map && selectedMap !== stage.map) {
         selectedMap = stage.map;
         Map();
+        const player = balls.find(b => b.isPlayer);
+        if (!player) return;
+        player.x = canvas.width / 2;
+        player.y = canvas.height / 2;
+        player.dx = 0;
+        player.dy = 0;
     }
     for (const [speaker, text] of stage.dialogue) {
         showDialogue(text, speaker, commanderImage, true);
@@ -447,6 +453,12 @@ function updateStory(){
                 }
                 selectedMap = chapter.outro[0].map;
                 Map();
+                const player = balls.find(b => b.isPlayer);
+                if (!player) return;
+                player.x = canvas.width / 2;
+                player.y = canvas.height / 2;
+                player.dx = 0;
+                player.dy = 0;
                 storyPhase = "outro";
             }
             else{
