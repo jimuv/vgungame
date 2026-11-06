@@ -513,40 +513,17 @@ planned: combo key, t + 1,2,3,4,5 = ability (like grenades and stuff) and it wil
 */
 
 /*
-future wave structure:
-Normal mode:
-1. 2 katana
-2. 3 katana
-3. 1 pistol 1 katana
-4. 2 pistol 2 katana
-5. 1 pistol 1 katana 1 shotgun
-6. 1 shotgun + nodachi
-7. 1 sniper + 5 katana
-8. 1 sniper + shotgun + pistol + katana + nodachi
-9. 2 sniper, 2 shotguns + 2 pistols
-10. dragon slayer, 5 nodachi
-11. 5 snipers, 2 pistols
-12. 15 katana, 5 pistols
-13. 1 dragon slayer, 2 snipers, 2 shotguns, 2 pistols
-14. 2 dragon slayers
-15. 3 dragon slayers, 5 snipers, 5 shotguns, 5 pistols, 10 katana
+future story structure:
+Raid into enemy base,
+find key to room,
+open door,
+at the end, is the boss, after winning, cutscene (maybe) airstrike the enemy base
 
-Hard mode:
-1. 5 katana
-2. 2 katana, 2 pistols
-3. 2 shotgun, 2 pistols
-4. 2 snipers, 2 shotgun, 2 pistols.
-5. 2 snipers, 1 dragon slayer, 2 nodachi
-6. 5 snipers, 5 nodachi
-7. 10 shotguns
-8. 3 dragon slayers
-9. 1 dragon slayer, 5 pistol, 5 shotgun, 1 sniper
-10. 2 dragon slayers, 5 snipers, 5 shotguns
-11. 5 dragon slayers
-12. 3 dragon slayers, 5 snipers, 5 shotguns, 5 pistols, 5 nodachi, 5 katana
-13. 10 snipers
-14. 10 snipers, 10 shotguns
-15. 10 dragon slayers, 10 snipers
+story addons:
+-Objectives (key, position, doors)
+-Enemy spawn positions
+-pre shop
+-Save data, new currency, story coins?
 */
 let balls =[
     { x: canvas.width / 2, y: canvas.height / 2, dx: 0, dy: 0 ,color: "blue",radius: radius,isPlayer: true, health: getMaxHealth(), maxHealth: getMaxHealth(),hit: false, isDead: false, weapon: null, remove: false, ammo: Infinity, isProjectile: false, createdAt: null, following: false, speed: stats.speed, size: 1, dodgeCooldown: 0}

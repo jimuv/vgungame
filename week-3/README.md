@@ -66,10 +66,10 @@ There are special enemies I added (week 2) which are: the medic enemy, which hea
 Tip: for shielder, it is vulnerable to melee attacks, so it is easier to break its shield using a melee (press 'g' to melee)
 
 # description
-As of enemies, this will probably be just a target practice, zombies, or actual enemies might be later. My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
+This game will evolve to a story based shooter game, where there will be plenty of chapters a player can play in, progressing through the story . My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
 # notes
-As of now, there are mutliple modes, I am currently working on the wave modes. This is a game updated on top of multiple weeks.
+As of now, there are mutliple modes, I am currently working on the Story modes. This is a game updated on top of multiple weeks.
 
 If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
 
