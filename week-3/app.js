@@ -266,6 +266,20 @@ const sandFloorImage = new Image();
 sandFloorImage.src = "assets/sand.png";
 const sandbagImage = new Image();
 sandbagImage.src = "assets/sandbags.png";
+const concrete = new Image();
+concrete.src = "assets/concrete.png";
+const door = new Image();
+door.src = "assets/door.png";
+const crate = new Image();
+crate.src = "assets/crate.png";
+const metal = new Image();
+metal.src = "assets/metal.png";
+const road = new Image();
+road.src = "assets/road.png";
+const fence = new Image();
+fence.src = "assets/fence.png";
+const server = new Image();
+server.src = "assets/server.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
 
@@ -2100,7 +2114,28 @@ class Bush {
         }
     }
 }
+function drawTiled(ctx, image, x, y, width, height) {
+    if (!image.complete || image.naturalWidth === 0) return;
+    const tile = Math.min(100, width, height);
+    const s = tile / 100;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.fillStyle = ctx.createPattern(image, "repeat");
+    ctx.fillRect(0, 0, width / s, height / s);
+    ctx.restore();
+}
 
+function addWall(img, x, y, width, height, bullets = "deflect") {
+    walls.push(new Wall(x, y, width, height, {
+        bulletBehavior: bullets, solid: true, image: img, tile: true
+    }));
+}
+function addProp(img, x, y, w, h, bullets = "destroy") {
+    walls.push(new Wall(x, y, w, h, {
+        bulletBehavior: bullets, solid: true, image: img, tile: false
+    }));
+}
 class Wall {
     constructor(x, y, width = 100, height = 20, options = {}) {
         this.x = x;
@@ -2112,10 +2147,13 @@ class Wall {
         this.solid = options.solid ?? true;
         this.bosswall = options.bosswall ?? false;
         this.image = options.image || wallImage;
+        this.tile = options.tile ?? false;
     }
 
     draw(ctx) {
         if (this.image.complete && this.image.naturalWidth > 0) {
+            if (this.tile) drawTiled(ctx, this.image, this.x, this.y, this.width, this.height);
+            else {}
             ctx.drawImage(
                 this.image,
                 this.x,
@@ -2124,8 +2162,9 @@ class Wall {
                 this.height
             );
         }
+        }
     }
-}
+
 
 class Sandbag {
     constructor(x,y, width =80, height = 80) {
@@ -2373,6 +2412,10 @@ function Map() {
     if (selectedMap === "map4") {
         wallsVisible = true;
         floors.push(new Floor(0, 0, canvas.width, canvas.height, sandFloorImage));
+        floors.push(new Floor(340, 0, 120, 600, road));
+        addProp(crate,650, 300, 50, 50);
+        addWall(fence, 230, 120, 80, 20, "penetrate");
+        addWall(fence, 490, 120, 80, 20, "penetrate");
         sandbags.push(new Sandbag(360, 280, 80, 35));
         sandbags.push(new Sandbag(100, 250, 35, 80));
         sandbags.push(new Sandbag(665, 250, 35, 80));
@@ -2380,26 +2423,53 @@ function Map() {
     if (selectedMap === "map4p2") {
         wallsVisible = true;
         floors.push(new Floor(0, 0, canvas.width, canvas.height, sandFloorImage));
-        floors.push(new Floor(200, 0, 400, 300, floorImage));
+        floors.push(new Floor(340, 300, 120, 300, road));
+        addWall(concrete, 200, 0, 400, 300);
+        addProp(door, 350, 200, 100, 100, "deflect");
+        addWall(fence, 0, 200, 200, 20, "penetrate");
+        addWall(fence, 600, 200, 200, 20, "penetrate");
+        addProp(crate, 130, 420, 50, 50);
+        addProp(crate, 620, 430, 50, 50);
         sandbags.push(new Sandbag(360, 280, 80, 35));
         sandbags.push(new Sandbag(100, 250, 35, 80));
         sandbags.push(new Sandbag(665, 250, 35, 80));
-        walls.push(new Wall(200, 0, 400, 300, {bulletBehavior: "deflect", solid: true}));
 
     }
     if (selectedMap === "map5") {
         wallsVisible = true;
-        floors.push(new Floor(0, 0, canvas.width, canvas.height, floorImage));
-        walls.push(new Wall(200, 150, 400, 20, { bulletBehavior: "deflect", solid: true }));
-        walls.push(new Wall(200, 150, 20, 300, { bulletBehavior: "deflect", solid: true}));
-        walls.push(new Wall(580, 150, 20, 300, { bulletBehavior: "deflect", solid: true}));
-        walls.push(new Wall(0, 450, 50, 20, { bulletBehavior: "deflect", solid: true}));
-        walls.push(new Wall(150, 450, 190, 20, { bulletBehavior: "deflect", solid: true}));
-        walls.push(new Wall(580, 450, 140, 20, { bulletBehavior: "deflect", solid: true}));
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 200, 150, 400, 20);
+        addWall(concrete, 200, 150, 20, 300);
+        addWall(concrete, 580, 150, 20, 300);
+        addWall(concrete, 0, 450, 50, 20);
+        addWall(concrete, 150, 450, 190, 20);
+        addWall(concrete, 580, 450, 140, 20);
+        addProp(crate, 235, 185, 50, 50);
+        addProp(crate, 515, 185, 50, 50);
+        addProp(crate, 235, 385, 50, 50);
+        addProp(crate, 515, 385, 50, 50);
+        addProp(crate, 60, 300, 50, 50);
+        addProp(crate, 700, 250, 50, 50);
+        addProp(server, 330, 175, 60, 60);
+        addProp(server, 430, 175, 60, 60);
     }
     if (selectedMap === "map5p2") {
         wallsVisible = true;
-        floors.push(new Floor(0, 0, canvas.width, canvas.height, floorImage));
+        addFloor(metal, 0, 0, 800, 600);
+        addWall(concrete, 150, 100, 20, 140);
+        addWall(concrete, 150, 360, 20, 140);
+        addWall(concrete, 630, 100, 20, 140);
+        addWall(concrete, 630, 360, 20, 140);
+        addWall(fence, 150, 240, 20, 120, "penetrate");
+        addWall(fence, 630, 240, 20, 120, "penetrate");
+        addProp(server, 660, 120, 60, 60);
+        addProp(server, 720, 120, 60, 60);
+        addProp(server, 660, 410, 60, 60);
+        addProp(server, 720, 410, 60, 60);
+        addProp(crate, 250, 100, 50, 50);
+        addProp(crate, 500, 100, 50, 50);
+        addProp(crate, 250, 450, 50, 50);
+        addProp(crate, 500, 450, 50, 50);
     }
 }
 
