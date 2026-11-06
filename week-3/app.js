@@ -143,7 +143,47 @@ const storyChapters = {
             enemies: ["Sniper", "Katana","Katana"],
             reward: 15
         },
-
+        {
+            dialogue: [
+                ["Commander", "We've secured the entrance, now we need to hold this position while we open this gate."]
+            ],
+            enemies: [],
+            reward: 20,
+            objective: {
+                type: "capture",
+                x: 400,
+                y: 300,
+                radius: 65,
+                duration: 5
+            }
+        },
+        {
+            map: "map5p2",
+            dialogue: [
+                ["Commander", "We are now in the upper floor."],
+                ["Commander", "Be careful, there are enemies here too."],
+                ["Commander", "We will move towards the command center."]
+            ],
+            enemies: ["Pistol", "Pistol","Shotgun", "Katana"],
+            reward: 25
+        },
+        {
+            map: "map5p2",
+            dialogue: [
+                ["Commander", "We are now in the command center"],
+                ["Commander", "It seems like they had evacuated."],
+                ["Commander", "Continue to disable their communication systems, hold the area."]
+            ],
+            enemies: [],
+            reward: 30,
+            objective: {
+                type: "capture",
+                x: 400,
+                y: 300,
+                radius: 65,
+                duration: 7,
+            }
+        }
         
     ],
     outro: [{
@@ -155,6 +195,8 @@ const storyChapters = {
     }]
     }
 }
+let captureProgress = 0;
+let captureLastUpdate = Date.now();
 let hoveredShopItem = null;
 
 let showEnemyHealthbars = true;
@@ -326,6 +368,12 @@ function startStoryChapter(n){
 function beginStoryStage() {
     const stage = storyChapters[storyChapter].stages[storyStage];
     clearDialogue();
+    captureProgress = 0;
+    captureLastUpdate = Date.now();
+    if (stage.map && selectedMap !== stage.map) {
+        selectedMap = stage.map;
+        Map();
+    }
     for (const [speaker, text] of stage.dialogue) {
         showDialogue(text, speaker, commanderImage, true);
     }
@@ -344,12 +392,35 @@ function updateStory(){
     const dialogueDone = !currentDialogue && dialogueQueue.length === 0;
 
     if (storyPhase === "dialogue" && dialogueDone) {
+        if(stage.objective?.type === "capture") {
+            storyPhase = "capture";
+        } else {
         enemyCounter = 0;
         enemyCountMax = stage.enemies.length;
         storyPhase = "fight";
 
         for (const weapon of stage.enemies) {
             spawnEnemy(weapon);
+        }
+    }
+    } else if (storyPhase === "capture") {
+        const player = balls.find(b => b.isPlayer);
+        const now = Date.now();
+        if(player){
+            const distance = Math.hypot(
+                player.x - stage.objective.x,
+                player.y - stage.objective.y
+            );
+            if (distance <= stage.objective.radius) {
+                captureProgress += Math.min((now - captureLastUpdate) / 1000, 0.05);
+            } else {
+                captureProgress = 0
+            }
+            captureLastUpdate = now;
+            if(captureProgress >= stage.objective.duration) {
+                storyPhase = "fight";
+                enemyCounter = 0;
+            }
         }
     }
         else if (storyPhase === "fight" && enemyCounter <= 0){
@@ -2946,6 +3017,60 @@ function drawWaveIndicator() {
     ctx.fillText(`Wave ${waveIndicator.wave} - Reward: ${waveIndicator.reward} - ${sec}s`, canvas.width / 2, 100);
     ctx.restore();
 }
+function drawCaptureProgress(){
+        if (gameMode !== "story" || storyPhase !== "capture") return;
+
+    const stage = storyChapters[storyChapter].stages[storyStage];
+    if (!stage.objective || stage.objective.type !== "capture") return;
+
+    const progress = Math.min(
+        captureProgress / stage.objective.duration,
+        1
+    );
+
+    const width = 260;
+    const height = 18;
+    const x = (canvas.width - width) / 2;
+    const y = 55;
+
+    ctx.save();
+    ctx.fillStyle = "black";
+    ctx.fillRect(x, y, width, height);
+    ctx.fillStyle = "green";
+    ctx.fillRect(x, y, width * progress, height);
+    ctx.fillStyle = "white";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText("Progress", canvas.width / 2, y - 5);
+
+    ctx.restore();
+}
+function drawCaptureZone(){
+    if(gameMode !== "story") return;
+    if(storyPhase !== "dialogue" && storyPhase !== "capture") return;
+
+    const stage = storyChapters[storyChapter].stages[storyStage];
+    if(!stage.objective) return;
+
+    const player = balls.find(b => b.isPlayer);
+    const distance = Math.hypot(player.x - stage.objective.x, player.y - stage.objective.y);
+    const inside = distance <= stage.objective.radius;
+
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = inside ? "green" : "red";
+    ctx.beginPath();
+    ctx.arc(stage.objective.x, stage.objective.y, stage.objective.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "black";
+    ctx.font = "18px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText("Stand in the circle", stage.objective.x, stage.objective.y - stage.objective.radius - 10);
+    ctx.restore();
+}
 function drawShopTooltip() {
     if (!shopmenu.visible || !hoveredShopItem) return;
     const item = hoveredShopItem;
@@ -4203,6 +4328,8 @@ if (gameMode === "tutorial") {
     if (gameScreen === "game"){
         drawWaveIndicator();
         drawDialogue();
+        drawCaptureZone();
+        drawCaptureProgress();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
