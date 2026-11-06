@@ -182,9 +182,8 @@ const storyChapters = {
                 y: 300,
                 radius: 65,
                 duration: 7,
-            }
-        }
-        
+            },
+    },
     ],
     outro: [{
         dialogue: [
@@ -193,7 +192,37 @@ const storyChapters = {
         ],
         map: "map5"
     }]
-    }
+},
+3: {
+        title: "Chapter 3: The Exit",
+        map: "map5p2",
+        stages: [{
+            dialogue: [
+                ["Commander", "A!"],
+                ["Commander", "B"],
+            ],
+            
+            enemies: ["Katana", "Katana"],
+            reward: 10
+        },
+        {
+            dialogue: [
+                ["Commander", "C"],
+            ],
+            enemies: ["Dragon Slayer"],
+            reward: 35
+        }
+        
+    ],
+    outro: [{
+        dialogue: [
+            ["Commander", "D"],
+            ["Commander", "E"]
+        ],
+        map: "map4p2"
+    }]
+}
+    
 }
 let captureProgress = 0;
 let captureLastUpdate = Date.now();
@@ -1104,6 +1133,9 @@ function drawChapterSelect() {
         } else if (chapterSelectButtons[1].isPressed()) {
             startStoryChapter(2);
         } else if (chapterSelectButtons[2].isPressed()) {
+            startStoryChapter(3);
+    }
+    else if (chapterSelectButtons[3].isPressed()) {
             gameScreen = "modeSelect";
         }
         justClicked = false;
@@ -1123,7 +1155,8 @@ const modeSelectButtons = [
 const chapterSelectButtons = [
     new Button(300,150, 200, 50, "Chapter 1", "lightblue", 0.5),
     new Button(300, 200, 200, 50, "Chapter 2", "lightblue", 0.5),
-    new Button(300, 250, 200, 50, "Back", "lightblue", 0.5),]
+    new Button(300, 250, 200, 50, "Chapter 3", "lightblue", 0.5),
+    new Button(300, 300, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
     new Button(300, 200, 200, 50, "Map 1", "lightblue", 0.5),
@@ -2467,7 +2500,7 @@ function Map() {
     }
     if (selectedMap === "map5p2") {
         wallsVisible = true;
-        addFloor(metal, 0, 0, 800, 600);
+        floors.push(new Floor(0, 0, 800, 600, metal));
         addWall(concrete, 150, 100, 20, 140);
         addWall(concrete, 150, 360, 20, 140);
         addWall(concrete, 630, 100, 20, 140);
