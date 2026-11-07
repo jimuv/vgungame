@@ -158,7 +158,7 @@ const storyChapters = {
             }
         },
         {
-            map: "map5p2",
+            map: "map5u",
             dialogue: [
                 ["Commander", "We are now in the upper floor."],
                 ["Commander", "Be careful, there are enemies here too."],
@@ -230,36 +230,73 @@ const storyChapters = {
             ["Commander", "Nice, work, we are almost there."],
             ["Commander", "Your next mission will be continued in the next chapter."]
         ],
-        map: "map5"
+        map: "map5p6"
     }]
 },
 3: {
         title: "Chapter 3: The Exit",
-        map: "map5p2",
+        map: "map5p6",
         stages: [{
+            map: "map5p6",
             dialogue: [
-                ["Commander", "A!"],
-                ["Commander", "B"],
+                ["Commander", "Alright, the communications are down, but the area is already alerted"],
+                ["Commander", "We need to get out of here fast!"],
             ],
             
-            enemies: ["Katana", "Katana"],
+            enemies: ["Katana", "Katana", "Katana", "Katana", "Katana"],
             reward: 10
         },
         {
+            map: "map5p5",
             dialogue: [
-                ["Commander", "C"],
+                ["Commander", "Can you see that? There is somebody big blocking..."],
             ],
             enemies: ["Dragon Slayer"],
             reward: 35
+        },
+        {
+            map: "map5p4",
+            dialogue: [
+                ["Commander", "That was tough, lets head out"],
+            ],
+            enemies: [],
+            reward: 0
+        },
+        {
+            map: "map5u",
+            dialogue: [
+                ["Commander", "Uhhh, there seems to be backup..."],
+                ["Commander", "Pistol guys are coming in"]
+            ],
+            enemies: [...repeat("Pistol", 5)],
+            reward: 10
+        },
+        {
+            map: "map5",
+            dialogue: [
+                ["Commander", "Keep holding on"],
+            ],
+            enemies: [...repeat("Shotgun", 5)],
+            reward: 20
+        },
+        {
+            map: "map4p2",
+            dialogue: [
+                ["Commander", "Final stretch, there is just a few snipers on the other side..."],
+                ["Commander", "Get behind cover!!!"]
+            ],
+            enemies: [...repeat("Sniper", 3)],
+            reward: 20
         }
         
     ],
+    
     outro: [{
         dialogue: [
-            ["Commander", "D"],
-            ["Commander", "E"]
+            ["Commander", "That was too close. But you made it."],
+            ["Commander", "We are extracting now, your next mission will be given shortly."]
         ],
-        map: "map4p2"
+        map: "map4"
     }]
 }
     
@@ -460,6 +497,7 @@ function startStoryChapter(n){
     enemyCountMax = 0;
     selectedMap = chapter.map;
     gameScreen = "game";
+    storyObjectiveComplete = false;
     Map();
     beginStoryStage();
 }
@@ -509,7 +547,7 @@ function updateStory(){
         storyPhase = "fight";
 
         for (const weapon of stage.enemies) {
-            spawnEnemy(weapon);
+            spawnEnemy(weapon, pickEnemySpawn());
         }
     }
     } else if (storyPhase === "capture") {
@@ -1367,12 +1405,12 @@ function drawArrow(x1, y1, x2, y2, color,txt,txt2){
     ctx.stroke();
 }
 
-function spawnEnemy(weapon) {
+function spawnEnemy(weapon, pos=null) {
     const stats = enemyStats[weapon] || enemyStats["Katana"];
     enemyCounter++;
     balls.push({
-        x: 100,
-        y: 100,
+        x: pos ? pos[0] : 100,
+        y: pos ? pos[1] : 100,
         dx: 0,
         dy: 0,
         color: weapon === "Medic" ? "limegreen" : "red",
@@ -2606,6 +2644,14 @@ function Map() {
         addProp(server, 330, 175, 60, 60);
         addProp(server, 430, 175, 60, 60);
     }
+    if (selectedMap === "map5u") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0, 190, 800, 20);
+        addWall(concrete, 0, 390, 800, 20);
+        addProp(crate, 320, 230, 50, 50);
+        addProp(crate, 480, 320, 50, 50);
+    }
     if (selectedMap === "map5p2") {
         wallsVisible = true;
         floors.push(new Floor(0, 0, 800, 600, metal));
@@ -2628,11 +2674,17 @@ function Map() {
         wallsVisible = true;
         floors.push(new Floor(0, 0, 800, 600, metal));
 
-        addWall(concrete, 200, 100, 20, 400);
-        addWall(concrete, 580, 100, 20, 400);
+        addWall(concrete, 150, 100, 500, 20);
+        addWall(concrete, 150, 100, 20, 400);
+        addWall(concrete, 630, 100, 20, 400);
+        addWall(concrete, 150, 480, 200, 20);
+        addWall(concrete, 450, 480, 200, 20);
+        addWall(concrete, 480, 120, 20, 60);
+        addWall(concrete, 500, 260, 130, 20);
 
-        addProp(crate, 300, 200, 50, 50);
-        addProp(crate, 500, 400, 50, 50);
+        addProp(crate, 220, 180, 50, 50);
+        addProp(crate, 300, 380, 50, 50);
+        addProp(crate, 540, 380, 50, 50);
     }
 
     if (selectedMap === "map5p4") {
@@ -2661,14 +2713,29 @@ function Map() {
         wallsVisible = true;
         floors.push(new Floor(0, 0, 800, 600, metal));
 
-        addWall(concrete, 150, 150, 20, 300);
-        addWall(concrete, 630, 150, 20, 300);
+        addWall(concrete, 380, 100, 40, 170);
+        addWall(concrete, 380, 330, 40, 170);
 
         addProp(server, 250, 200, 60, 60);
         addProp(server, 500, 350, 60, 60);
     }
 }
 
+const mapSpawns = {
+    map4: { player: [400,540], enemies: [[300,50], [400, 50], [500, 50]]},
+    map4p2: { player: [400,540], enemies: [[60,540], [740, 540], [400, 570]]},
+    map5u: { player: [400,540], enemies: [[700,250], [800, 250], [600, 250]]},
+    map5p3:{ player: [80,300], enemies: [[700,200], [700, 400], [700, 300]]},
+    map5p4: { player: [400, 540]},
+    map5p5: { player: [400, 540], enemies: [[300,50], [400, 50], [500, 50]]},
+    map5p6: { player: [80, 300], enemies: [[700,200], [700, 400], [700, 300]]}
+}
+function pickEnemySpawn() {
+    const list = mapSpawns[selectedMap]?.enemies;
+    if (!list || list.length === 0) return null;
+    const [x, y] = list[Math.floor(Math.random() * list.length)];
+    return [x + (Math.random() - 0.5) * 24, y + (Math.random() - 0.5) * 24];
+}
 class Text {
     constructor(x, y, text, color, size) {
         this.x = x;
