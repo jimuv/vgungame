@@ -182,13 +182,53 @@ const storyChapters = {
                 y: 300,
                 radius: 65,
                 duration: 7,
-            },
+            }
+        },
+                    {
+        map: "map5p3",
+        dialogue: [
+            ["Commander", "The main security door is locked."],
+            ["Commander", "Find an access card nearby."]
+        ],
+        enemies: [],
+        reward: 30,
+        objective: {
+            type: "collect"
+        }
     },
-    ],
+    {
+        map: "map5p4",
+        dialogue: [
+            ["Commander", "We're inside the security room."],
+            ["Commander", "Look around for anything useful."]
+        ],
+        enemies: ["Pistol", "Shotgun"],
+        reward: 10
+    },
+    {
+        map: "map5p5",
+        dialogue: [
+            ["Commander", "Uh oh. We must have triggered an alarm!"],
+            ["Commander", "Get moving! More enemies are coming."]
+        ],
+        enemies: ["Pistol", "Pistol", "Katana", "Shotgun"],
+        reward: 15,
+        alarm: true
+    },
+    {
+        map: "map5p6",
+        dialogue: [
+            ["Commander", "Enemies ahead! This looks like their final security team."]
+        ],
+        enemies: ["Sniper", "Shotgun", "Pistol", "Katana"],
+        reward: 25,
+        alarm: true
+    }
+],
     outro: [{
         dialogue: [
-            ["Commander", "Nice, work, we are almost there!"],
-            ["Commander", "Your next mission will be given soon."]
+            ["Commander", "Nice, work, we are almost there."],
+            ["Commander", "Your next mission will be continued in the next chapter."]
         ],
         map: "map5"
     }]
@@ -224,8 +264,23 @@ const storyChapters = {
 }
     
 }
+function drawAlarm() {
+    if (gameMode !== "story") return;
+    const stage = storyChapters[storyChapter]?.stages[storyStage];
+    if (!stage || !stage.alarm) return;
+    if (storyPhase !== "dialogue" && storyPhase !== "fight") return;
+
+    const alpha = Math.floor(Date.now() / 500) % 2 === 0 ? 0.1 : 0.2;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "red";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+}
+
 let captureProgress = 0;
 let captureLastUpdate = Date.now();
+let storyObjectiveComplete = false;
 let hoveredShopItem = null;
 
 let showEnemyHealthbars = true;
@@ -443,7 +498,12 @@ function updateStory(){
     if (storyPhase === "dialogue" && dialogueDone) {
         if(stage.objective?.type === "capture") {
             storyPhase = "capture";
-        } else {
+        } else if (stage.objective?.type === "collect") {
+            objects = objects.filter(obj => obj.type !== "keycard");
+            objects.push(new Object("keycard", 650, 500));
+            storyPhase = "collect";
+        } 
+        else {
         enemyCounter = 0;
         enemyCountMax = stage.enemies.length;
         storyPhase = "fight";
@@ -472,6 +532,24 @@ function updateStory(){
             }
         }
     }
+        else if (storyPhase === "collect" && storyObjectiveComplete) {
+    money += stage.reward;
+    storyStage++;
+
+    if (storyStage >= chapter.stages.length) {
+        storyPhase = "outro";
+        clearDialogue();
+
+        for (const [speaker, text] of chapter.outro[0].dialogue) {
+            showDialogue(text, speaker, commanderImage, true);
+        }
+
+        selectedMap = chapter.outro[0].map;
+        Map();
+    } else {
+        beginStoryStage();
+    }
+}
         else if (storyPhase === "fight" && enemyCounter <= 0){
             money+= stage.reward;
             storyStage++;
@@ -1616,6 +1694,21 @@ class Object {
             this.startTime = performance.now();
             this.duration = 1000;
         }
+        if (type === "keycard") {
+            this.x = x;
+            this.y = y;
+            this.width = 20;
+            this.height = 20;
+            this.radius = 10;
+            this.size = 1;
+            this.color = "cyan";
+            this.type = "keycard";
+            this.healAmount = 0;
+
+            this.scale = 1;
+            this.startTime = performance.now();
+            this.duration = 1000;
+        }
     }
     update(){
         const elapsed = performance.now() - this.startTime;
@@ -1652,8 +1745,12 @@ class Object {
             r = 0;
             g = 0;
             b = 255;
+        } else if (this.type === "keycard") {
+            r = 100;
+            g = 100;
+            b = 255;
         }
-        if (this.type !== "ammo" && this.type !== "coin") {
+        if (this.type !== "ammo" && this.type !== "coin" && this.type !== "keycard") {
         this.color = `rgb(
             ${Math.round(r * eased)},
             ${Math.round(g * eased)},
@@ -1662,7 +1759,7 @@ class Object {
         }
     }
      draw(ctx) {
-        if (this.type !== "ammo" && this.type !== "coin") {
+        if (this.type !== "ammo" && this.type !== "coin" && this.type !== "keycard") {
         this.update();
         const width = this.width * this.scale;
         const height = this.height * this.scale;
@@ -1681,8 +1778,19 @@ class Object {
 
         ctx.fillStyle = this.color;
         ctx.fillRect(x, y, width, height);
+    }   
+        else if (this.type === "keycard") {
+            this.update();
+            const width = this.width * this.scale;
+            const height = this.height * this.scale;
+            const x = this.x + (this.width - width) / 2;
+            const y = this.y + (this.height - height) / 2;
+
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(x, y, width, height);
     }
-    }
+}
 }
 class Gun {
     constructor(name, damage, fireRate, ammo, projectileSpeed = 5, bulletCount = 1, spread = 0, explosive=false, explosionRadius=90, explosionDamage=damage) {
@@ -2515,6 +2623,49 @@ function Map() {
         addProp(crate, 500, 100, 50, 50);
         addProp(crate, 250, 450, 50, 50);
         addProp(crate, 500, 450, 50, 50);
+    }
+    if (selectedMap === "map5p3") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+
+        addWall(concrete, 200, 100, 20, 400);
+        addWall(concrete, 580, 100, 20, 400);
+
+        addProp(crate, 300, 200, 50, 50);
+        addProp(crate, 500, 400, 50, 50);
+    }
+
+    if (selectedMap === "map5p4") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+
+        addWall(concrete, 150, 150, 500, 20);
+        addWall(concrete, 150, 430, 500, 20);
+
+        addProp(server, 250, 250, 60, 60);
+        addProp(server, 500, 250, 60, 60);
+    }
+
+    if (selectedMap === "map5p5") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+
+        addWall(concrete, 200, 100, 20, 400);
+        addWall(concrete, 580, 100, 20, 400);
+
+        addProp(crate, 300, 200, 50, 50);
+        addProp(crate, 450, 350, 50, 50);
+    }
+
+    if (selectedMap === "map5p6") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+
+        addWall(concrete, 150, 150, 20, 300);
+        addWall(concrete, 630, 150, 20, 300);
+
+        addProp(server, 250, 200, 60, 60);
+        addProp(server, 500, 350, 60, 60);
     }
 }
 
@@ -3583,7 +3734,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 }, 200);
 
             if (target.health <= 0) {
-                    addCombo();
+                    combo = 0;
                     target.isDead = true;
 
                     setTimeout(() => {
@@ -3754,7 +3905,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
             player.deathCounted = false;
         }
         for (const obj of objects) {
-            if (["heal", "rock", "speedboost", "mine", "ammo", "coin"].includes(obj.type)) {
+            if (["heal", "rock", "speedboost", "mine", "ammo", "coin", "keycard"].includes(obj.type)) {
                 obj.draw(ctx);
                 const closestX = Math.max(
             obj.x,
@@ -3811,6 +3962,11 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         const dy = player.y - closestY;
 
         if (dx * dx + dy * dy < player.radius * player.radius * player.size&&!player.isDead) {
+            if (obj.type === "keycard") {
+                storyObjectiveComplete = true;
+                obj.remove = true;
+                continue;
+            }
             player.health = Math.max(
                 0,
                 Math.min(player.health + obj.healAmount, player.maxHealth)
@@ -4445,6 +4601,7 @@ if (gameMode === "tutorial") {
         drawDialogue();
         drawCaptureZone();
         drawCaptureProgress();
+        drawAlarm();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
