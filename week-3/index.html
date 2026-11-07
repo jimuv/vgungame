@@ -16,6 +16,17 @@
         border: 1px solid #ccc;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
+
+    .tabs {
+        display: none;
+    }
+    .tabs.active {
+        display: block;
+    }
+    .tab-button.active {
+    background-color: #333;
+    color: white;
+    }
     </style>
 </head>
 <body>
@@ -23,27 +34,53 @@
     <h3>Welcome to My Game</h3>
 </body>
 <canvas id="myCanvas"></canvas>
+ <div class="info">
+      <div class="tab-header">
+        <button class="tab-button" onclick="openTab('overview', this)">Overview</button>
+        <button class="tab-button" onclick="openTab('controls', this)">Basic Controls</button>
+        <button class="tab-button" onclick="openTab('ui', this)">UI</button>
+        <button class="tab-button" onclick="openTab('notes', this)">Notes</button>
+     </div>
+</div>
+<script>
+    function openTab(id, button) {
+    document.querySelectorAll('.tabs').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    button.classList.add('active');
+    }
+</script>
 <body>
+    <p>Press these tabs below for information on the game</p>
+    <div id="overview" class="tabs active">
     <h2>How to Play</h2>
     <p>Welcome to the game! You can play in different modes, first you will need to click "Start Game", select the mode, and now you can play. (tutorial highly recommended)</p>
     <p>As of now there are 7 main modes: 5 Wave, Normal Mode, Hard Mode, Endless, Story, Sandbox, and the tutorial. Note: after completing any wave modes, you will need to restart in order to play again.</p>
-    <p>Use the WASD keys to move the ball. Click the "Menu" button to open the menu and control the ball.</p>
-    <p>There will be a shop where you can buy new weapons and items. Some items are free while some cost money, which you can obtain these by getting $10 from 1 enemy</p>
-    <p>The "frames" will be draggable through holding the topbar and dragging it around.</p>
-    <p>In settings, you can toggle dark mode for the background, as well as walls that bullets can interact with, and you can toggle sound or adjust the volume.</p>
-    <p>You could also rebind the keys in the keybinds menu. You can get here by clicking the "Keybinds" button in the settings menu.</p>
-    <p>More notes: beware that there will be ALOT of ui clutter if you do not exit certain frames.</p>
+    </div>
+    <div id="controls" class="tabs">
+    <p>Use the WASD keys to move the ball. </p>
     <!-- , and as of now (removed now), there is a mobile control panel, though it is very limited to play. -->
     <p>Press 'F' to shoot a yellow ball from the center of the player ball.</p>
     <p>Press 'G' to melee attack.</p>
     <p>Hold 'T' and press '1', '2', '3', '4', '5' to use abilities.</p>
     <p>Hold 'Shift' to sprint.</p>
     <p>Press 'Ctrl' to dash.</p>
+    </div>
+    <div id="ui" class="tabs">
+    <p>Use the "Menu" button to open the menu and control the ball.</p>
+    <p>There will be a shop where you can buy new weapons and items. Some items are free while some cost money, which you can obtain these by getting $10 from 1 enemy</p>
+    <p>The "frames" will be draggable through holding the topbar and dragging it around.</p>
+    <p>In settings, you can toggle dark mode for the background, as well as walls that bullets can interact with, and you can toggle sound or adjust the volume.</p>
+    <p>You could also rebind the keys in the keybinds menu. You can get here by clicking the "Keybinds" button in the settings menu.</p>
+    <p>More notes: beware that there will be ALOT of ui clutter if you do not exit certain frames.</p>
     <p>Press 'M' to open the menu and 'N' to open the shop.</p>
     <p>Press 'H' to toggle enemy health bars.</p>
     <p>Press 'Esc' or 'P' to pause the game or resume.</p>
+    </div>
+    <div id="notes" class="tabs">
     <p>I will be working on this game through multiple weeks probably, so this wont be a full game yet. (As of week 3, there is now a story mode)</p>
-     <p>Note: some features may be hidden, due to it not being fully implemented/ready for use.</p>
+    <p>Note: some features may be hidden, due to it not being fully implemented/ready for use.</p>
+    </div>
 </body>
 <img src="assets/9913ae2a6d0c38196c511a216b1ad6ea.gif"
          alt="Demonstration of player movement"
