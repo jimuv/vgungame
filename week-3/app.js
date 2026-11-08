@@ -48,7 +48,7 @@ const enemyAccessories = {
     "Dragon Slayer": "Crown",
     "Shielder": "Shield"
 }
-let Owned = [];
+let Owned = ["Blue Ball"];
 let shopPage = 0;
 let shopFree = true;
 let tutorialStep = 0;
@@ -673,11 +673,16 @@ function drawAbilityBar() {
         const x = startX + i * (w + gap);
         ctx.fillStyle = "gray";
         ctx.fillRect(x, y, w, h);
+        const left = abilities[i].cooldown - (Date.now() - abilities[i].lastUsed);
+        if (left > 0) {
+            ctx.fillStyle = "rgba(0,0,0,0.6)";
+            ctx.fillRect(x + w - w * left / abilities[i].cooldown, y, w * left / abilities[i].cooldown, h);
+        }
         ctx.fillStyle = "white";
         ctx.font = "16px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(abilities[i].name, x + w / 2, y + h / 2);
-        ctx.fillText(i + 1, x + w / 2, y + h / 2 + 20);
+        ctx.fillText(abilities[i].name, x + w / 2, y + h / 2 - 10);
+        ctx.fillText(i + 1, x + w / 2, y + h / 2 + 10);
     }
 }
 BackgroundImage = new Image();
@@ -786,6 +791,7 @@ window.addEventListener("keydown", (e) => {
     if (e.repeat || gameScreen !== "game" || rebinding) return;
     const k = e.key.toLowerCase();
     if (k === "escape" || k === "p") {
+        canvas.style.cursor = "default"
         if (paused) resumeGame();
         else pauseGame();
     }
@@ -1078,18 +1084,29 @@ class Button {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.fillStyle = 'black';
-        ctx.font = '16px Arial';
+        let size = 16;
+        do { ctx.font = `${size--}px Arial`; }
+        while (ctx.measureText(this.text).width > this.width - 10 && size > 9);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.globalAlpha = this.transparency;
         ctx.fillText(this.text, this.x + this.width / 2, this.y + this.height / 2);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = .5;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
         if (mouseDown && mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height) {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = 'rgba(189, 180, 180, 0.68)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
         if (mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height) {
             ctx.fillStyle = 'rgba(130, 124, 124, 0.1)';
             ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = 'rgba(233, 226, 226, 0.88)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
         ctx.restore();
     }
@@ -1300,6 +1317,25 @@ function drawChapterSelect() {
         }
         justClicked = false;
     }
+}
+function drawCrossHair() {
+    const overUI = getTopFrameAtMouse() !== null ||
+        (mouseX >= menubutton.x && mouseX <= menubutton.x + menubutton.width &&
+         mouseY >= menubutton.y && mouseY <= menubutton.y + menubutton.height);
+    if (overUI) return;
+    canvas.style.cursor = "none";
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 2;
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 2;
+    ctx.beginPath();
+    for (const [dx, dy] of [[1,0], [-1,0], [0,1], [0,-1]]) {
+        ctx.moveTo(mouseX + dx * 10, mouseY + dy * 10);
+        ctx.lineTo(mouseX + dx * 20, mouseY + dy * 20);
+    }
+    ctx.stroke();
+    ctx.restore();
 }
 
 const modeSelectButtons = [
@@ -2830,7 +2866,9 @@ const shopItems = {
     Skins: [
         { name: "Red Ball", price: 0, oneTime: true, action: () => balls[0].color = "red" },
         { name: "Blue Ball", price: 0, oneTime: true, action: () => balls[0].color = "blue" },
-        ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, oneTime: true, action: () => wearAccessory(name)}))
+        ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, oneTime: true, action: () => wearAccessory(name)})),
+        { name: "Green Ball", price: 0, oneTime: true, action: () => balls[0].color = "green" },
+        { name: "Yellow Ball", price: 0, oneTime: true, action: () => balls[0].color = "yellow" },
     ],
     Armor: [
         { name: "Leather Armor", price: 5, oneTime: true, action: () => equipArmor(5, "Leather Armor") },
@@ -3201,7 +3239,7 @@ const button3 = new Button(
 );
 //plan: remodel this into inventory/clothing/wardrobe type
 const button4 = new Button(
-    265, 395, 130, 40, "Skins", "lightyellow", 0.5
+    265, 395, 130, 40, "Skins inventory", "lightyellow", 0.5
 );
 
 const buttonshop = new Button(
@@ -3233,18 +3271,18 @@ const shopPageText = new Text(
     475,620, "Page 1/1", "black", 14
 );
 
-const button5 = new Button(
-    500, 500, 50, 50, "red ball", "red", 0.5
-);
-const button6 = new Button(
-    550, 500, 50, 50, "blue ball", "blue", 0.5
-);
-const button7 = new Button(
-    500, 550, 50, 50, "green ball", "green", 0.5
-);
-const button8 = new Button(
-    550, 550, 50, 50, "yellow ball", "yellow", 0.5
-);
+// const button5 = new Button(
+//     500, 500, 50, 50, "red ball", "red", 0.5
+// );
+// const button6 = new Button(
+//     550, 500, 50, 50, "blue ball", "blue", 0.5
+// );
+// const button7 = new Button(
+//     500, 550, 50, 50, "green ball", "green", 0.5
+// );
+// const button8 = new Button(
+//     550, 550, 50, 50, "yellow ball", "yellow", 0.5
+// );
 const buttonSettings = new Button(
     405, 345, 130, 40, "Settings", "lightgray", 0.5
 );
@@ -3268,11 +3306,11 @@ menu.addButton(button4);
 menu.addButton(buttonshop);
 menu.addButton(buttonSettings);
 menu.addButton(globalStopFollow);
-skinsmenu.addButton(button5);
-skinsmenu.addButton(button6);
-skinsmenu.addButton(button7);
-skinsmenu.addButton(button8);
-
+// skinsmenu.addButton(button5);
+// skinsmenu.addButton(button6);
+// skinsmenu.addButton(button7);
+// skinsmenu.addButton(button8);
+let inventoryButtons = [];
 settings.addButton(bgButton);
 settings.addButton(toggleWall);
 settings.addButton(toggleSound);
@@ -3459,6 +3497,8 @@ function drawShopTooltip() {
     const y = shopmenu.y + 55;
     const width = 115;
     const height = 180;
+    const img = weaponImages[name] || accessoryImages[name];
+    const hasImg = img && img.complete && img.naturalWidth > 0;
     ctx.save();
     ctx.globalAlpha = .75;
     ctx.fillStyle = isDarkMode ? "#252525" : "#f0f0f0";
@@ -3471,6 +3511,11 @@ function drawShopTooltip() {
     ctx.font = "bold 13px Arial";
     ctx.fillText(name, left, textY, width - 14);
     textY = textY + 22;
+    if(hasImg){
+        const scale = Math.min(width - 7 / img.naturalWidth, 50 / img.naturalHeight);
+        ctx.drawImage(img, left + (width - 14 - img.naturalWidth * scale) / 2, textY + (32 - img.naturalHeight * scale) / 2, img.naturalWidth * scale, img.naturalHeight * scale);
+        textY = textY + 32 + 4;
+    }
     ctx.font = "11px Arial";
     const description = weaponDescriptions[name] || UtilityDescriptions[name] || AccessoryDescriptions[name] || "";
     const words = description.split(" ");
@@ -3558,6 +3603,27 @@ function drawFrame(frame) {
             showCategory(currentCategory);
         }
     }
+
+    if (frame === skinsmenu && skinsmenu.visible) {
+        const ownedSkins = shopItems.Skins.filter(item => Owned.includes(item.name));
+
+        ctx.save();
+        ownedSkins.forEach((item, index) => {
+            const button = new Button(
+                skinsmenu.x + 20 + (index % 3) * 90,
+                skinsmenu.y + 50 + Math.floor(index / 3) * 60,
+                80, 50,
+                item.name,
+                balls[0].accessory === item.name ? "lightgreen" : "lightgray",
+                1
+            );
+            button.draw(ctx);
+            if (clickedFrame === skinsmenu && button.isPressed()) {
+                item.action();
+            }
+        });
+        ctx.restore();
+    }
 }
 
 
@@ -3634,8 +3700,7 @@ function animate(){
     ctx.restore();
     }
     if (gameMode === "wave" || gameMode === "endless") {
-    ctx.fillText(`Wave: ${wave}`, 10, 30);
-    ctx.fillText(`Enemies: ${enemyCounter}/${enemyCountMax}`, 10, 50);
+
 
     const maxWaves = waveConfigs[waveDifficulty] ? waveConfigs[waveDifficulty].length : 5;
     if (!waveStart && enemyCounter <= 0 && (gameMode === "endless" || wave < maxWaves)) {        
@@ -4229,19 +4294,19 @@ fWasPressed = keys[binds.shoot];
 gWasPressed = keys[binds.melee];
 
 if (skinsmenu.visible) {
-    if (clickedFrame === skinsmenu && button5.isPressed()) {
-        balls[0].color = "red";
-    }
+    // if (clickedFrame === skinsmenu && button5.isPressed()) {
+    //     balls[0].color = "red";
+    // }
 
-    if (clickedFrame === skinsmenu && button6.isPressed()) {
-        balls[0].color = "blue";
-    }
-    if (clickedFrame === skinsmenu && button7.isPressed()) {
-        balls[0].color = "green";
-    }
-    if (clickedFrame === skinsmenu && button8.isPressed()) {
-        balls[0].color = "yellow";
-    }
+    // if (clickedFrame === skinsmenu && button6.isPressed()) {
+    //     balls[0].color = "blue";
+    // }
+    // if (clickedFrame === skinsmenu && button7.isPressed()) {
+    //     balls[0].color = "green";
+    // }
+    // if (clickedFrame === skinsmenu && button8.isPressed()) {
+    //     balls[0].color = "yellow";
+    // }
 }
 if (shopmenu.visible) {
     if (buttonshopGun.isPressed()) {
@@ -4705,17 +4770,19 @@ if (gameMode === "tutorial") {
     drawTutorialShotProgress();
     drawTutorialMeleeProgress();
 }
-
+canvas.style.cursor = "default"
 }
     if (gameScreen === "game"){
         drawWaveIndicator();
         drawDialogue();
         drawCaptureZone();
         drawCaptureProgress();
+        drawCrossHair();
         drawAlarm();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
+        canvas.style.cursor = "default"
     }
     justClicked=false;
     requestAnimationFrame(animate);

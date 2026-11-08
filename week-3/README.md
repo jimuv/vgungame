@@ -13,7 +13,7 @@ https://jimuv.github.io/vgungame/week-3/
 # How to play
 Note: This is only for PC, on the web
 ### Website and Canvas
-On the website, if you scroll down, you should be able to see another "How to play"
+On the website, if you scroll down, you should be able to see another "How to play", there are interactive tab buttons where you can further click for details on certain information.
 
 On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
 
