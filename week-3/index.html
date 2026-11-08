@@ -63,6 +63,23 @@
     margin: 8px auto 4px;
     border-radius: 6px;
     }
+    .githubLink {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        color: #333;
+        margin-top: 10px;
+        border: 2px solid #333;
+        padding: 4px 8px;
+        background-color: #f0f0f0;
+    }
+    details ul {
+        margin: 8px 0 4px 0;
+        padding-left: 25px;
+    }
+    details li {
+        margin: 6px 0;
+    }
     </style>
 </head>
 <body>
@@ -185,46 +202,53 @@
     <h2>Features to look over for specific weeks</h2>
     <details>
         <summary>Week 1</summary>
-        <p>Enemy weapons</p>
-        <p>Mode selection, map selection, main menu</p>
-        <p>5 wave mode</p>
-        <p>Maps</p>
-        <p>Enemy Movement/pathfinding</p>
-        <p>Shop pages</p>
-        <p>Tutorial</p>
-        <p>Ak47</p>
+        <ul class="features">
+        <li>Enemy weapons</li>
+        <li>Mode selection, map selection, main menu</li>
+        <li>5 wave mode</li>
+        <li>Maps</li>
+        <li>Enemy Movement/pathfinding</li>
+        <li>Shop pages</li>
+        <li>Tutorial</li>
+        <li>Ak47</li>
+        </ul>
     </details>
     <details>
         <summary>Week 2</summary>
-        <p>Shop mouseover descriptions</p>
-        <p>Gamemodes: Hard mode, Normal Mode, Endless</p>
-        <p>Ammo drop from enemies</p>
-        <p>Healthbars for enemies</p>
-        <p>Dashing</p>
-        <p>Game pausing</p>
-        <p>Keybinding</p>
-        <p>Abilities</p>
-        <p>Sounds/Volume control</p>
-        <p>Game economy/prices</p>
-        <p>Combo system</p>
-        <p>Medic enemy</p>
-        <p>Shielder enemy</p>
+        <ul class="features">
+        <li>Shop mouseover descriptions</li>
+        <li>Gamemodes: Hard mode, Normal Mode, Endless</li>
+        <li>Ammo drop from enemies</li>
+        <li>Healthbars for enemies</li>
+        <li>Dashing</li>
+        <li>Game pausing</li>
+        <li>Keybinding</li>
+        <li>Abilities</li>
+        <li>Sounds/Volume control</li>
+        <li>Game economy/prices</li>
+        <li>Combo system</li>
+        <li>Medic enemy</li>
+        <li>Shielder enemy</li>
+        </ul>
     </details>
     <details>
         <summary>Week 3</summary>
-        <p>Dialogue system</p>
-        <p>Story progression (Chapter 1,2,3)</p>
-        <p>Story objectives (access card, holdout)</p>
-        <p>Props and different materials (metal, fence, concrete, etc.)</p>
-        <p>Enemy/Player spawn locations</p>
-        <p>Index tabs and details interactions</p>
-        <p>Player HUD corner</p>
-        <p>UI improvements</p>
-        <p>Player crosshair</p>
-        <p>Skins inventory outline</p>
+        <ul class="features">
+        <li>Dialogue system</li>
+        <li>Story progression (Chapter 1,2,3)</li>
+        <li>Story objectives (access card, holdout)</li>
+        <li>Props and different materials (metal, fence, concrete, etc.)</li>
+        <li>Enemy/Player spawn locations</li>
+        <li>Index tabs and details interactions</li>
+        <li>Player HUD corner</li>
+        <li>UI improvements</li>
+        <li>Player crosshair</li>
+        <li>Skins inventory outline</li>
+        </ul>
     </details>
     <p>Made by jimuv</p>
-    <a href="https://github.com/jimuv" target="_blank">My GitHub</a>
+    <a class = "githubLink"href="https://github.com/jimuv" target="_blank">My GitHub</a>
+    <img src="assets/github.png" alt="GitHub Logo" width="20" height="20">
 <script src="app.js"></script>
 </body>
 </html>
