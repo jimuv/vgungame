@@ -28,7 +28,15 @@
     color: white;
     }
     summary { list-style: none; cursor: pointer; }
-    summary::after { content: " >"; }
+    summary::after { 
+        content: " >"; 
+        display: inline-block;
+        margin-left: 8px;
+        transition: transform 0.2s;
+    }
+    details[open] summary::after {
+        transform: rotate(90deg);
+    }
     details {
     margin: 8px 0;
     }
@@ -39,6 +47,15 @@
         margin: 0 4px 12px;
         padding: 6px 12px;
     }
+    details {
+        background-color: white;
+        border: 1px solid #433e3e;
+        margin: 8px auto;
+        padding: 10px 15 px;
+        max-width: 500px;
+        text-align: left;
+        box-shadow: 0 2px 4px rgba(0,0,0, 0.05);
+    }
     </style>
 </head>
 <body>
@@ -48,7 +65,7 @@
 <canvas id="myCanvas"></canvas>
  <div class="info">
       <div class="tab-header">
-        <button class="tab-button" onclick="openTab('overview', this)">Overview</button>
+        <button class="tab-button active" onclick="openTab('overview', this)">Overview</button>
         <button class="tab-button" onclick="openTab('controls', this)">Basic Controls</button>
         <button class="tab-button" onclick="openTab('ui', this)">UI</button>
         <button class="tab-button" onclick="openTab('notes', this)">Notes</button>
@@ -63,7 +80,7 @@
     }
 </script>
 <body>
-    <p>Press these tabs below for information on the game</p>
+    <p>Press these tabs for information on the game</p>
     <div id="overview" class="tabs active">
     <h2>Overview</h2>
     <p>Welcome to the game! You can play in different modes, first you will need to click "Start Game", select the mode, and now you can play. (tutorial highly recommended)</p>

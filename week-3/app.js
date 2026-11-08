@@ -1128,6 +1128,7 @@ class Frame {
     }   
     
     draw(ctx) {
+        ctx.save();
         if (this.visible) {
             
             ctx.fillStyle = this.color;
@@ -1163,6 +1164,7 @@ class Frame {
             text.draw(ctx);
             }
         }
+        ctx.restore();
     }
     
 update() {
@@ -3248,7 +3250,7 @@ const buttonSettings = new Button(
 );
 
 const skinsmenu = new Frame(
-    400, 400, 300, 250, "lightorange", 0.5, null, true, "Skins Menu"
+    400, 400, 300, 250, "orange", 0.5, null, true, "Skins Menu"
 
 );
 
