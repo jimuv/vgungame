@@ -27,6 +27,18 @@
     background-color: #333;
     color: white;
     }
+    summary { list-style: none; cursor: pointer; }
+    summary::after { content: " >"; }
+    details {
+    margin: 8px 0;
+    }
+    details p {
+        margin: 4px 0 4px 20px;
+    }
+    .tab-button {
+        margin: 0 4px 12px;
+        padding: 6px 12px;
+    }
     </style>
 </head>
 <body>
@@ -53,31 +65,70 @@
 <body>
     <p>Press these tabs below for information on the game</p>
     <div id="overview" class="tabs active">
-    <h2>How to Play</h2>
+    <h2>Overview</h2>
     <p>Welcome to the game! You can play in different modes, first you will need to click "Start Game", select the mode, and now you can play. (tutorial highly recommended)</p>
     <p>As of now there are 7 main modes: 5 Wave, Normal Mode, Hard Mode, Endless, Story, Sandbox, and the tutorial. Note: after completing any wave modes, you will need to restart in order to play again.</p>
     </div>
     <div id="controls" class="tabs">
-    <p>Use the WASD keys to move the ball. </p>
+    <h2>Basic Controls</h2>
+    <details>
+    <summary>WASD - Move ball</summary>
+    <p>Use the WASD keys to move the ball.</p>
+    </details>
     <!-- , and as of now (removed now), there is a mobile control panel, though it is very limited to play. -->
+    <details>
+    <summary>F - Shoot</summary>
     <p>Press 'F' to shoot a yellow ball from the center of the player ball.</p>
+    </details>
+    <details>
+    <summary>G - Melee Attack</summary>
     <p>Press 'G' to melee attack.</p>
+    </details>
+    <details>
+    <summary>T + 1-5 - Use Abilities</summary>
     <p>Hold 'T' and press '1', '2', '3', '4', '5' to use abilities.</p>
+    </details>
+    <details>
+    <summary>Shift - Sprint</summary>
     <p>Hold 'Shift' to sprint.</p>
+    </details>
+    <details>
+    <summary>Ctrl - Dash</summary>
     <p>Press 'Ctrl' to dash.</p>
+    </details>
     </div>
     <div id="ui" class="tabs">
+    <h2>UI</h2>
+    <details>
+    <summary>Menu</summary>
     <p>Use the "Menu" button to open the menu and control the ball.</p>
+    </details>
+    <details>
+    <summary>Shop</summary>
     <p>There will be a shop where you can buy new weapons and items. Some items are free while some cost money, which you can obtain these by getting $10 from 1 enemy</p>
+    </details>
+    <details>
+    <summary>Frames</summary>
     <p>The "frames" will be draggable through holding the topbar and dragging it around.</p>
+    </details>
+    <details>
+    <summary>Settings</summary>
     <p>In settings, you can toggle dark mode for the background, as well as walls that bullets can interact with, and you can toggle sound or adjust the volume.</p>
+    </details>
+    <details>
+    <summary>Keybinding</summary>
     <p>You could also rebind the keys in the keybinds menu. You can get here by clicking the "Keybinds" button in the settings menu.</p>
+    </details>
+    <details>
+    <summary>UI Shortcuts</summary>
     <p>More notes: beware that there will be ALOT of ui clutter if you do not exit certain frames.</p>
     <p>Press 'M' to open the menu and 'N' to open the shop.</p>
     <p>Press 'H' to toggle enemy health bars.</p>
     <p>Press 'Esc' or 'P' to pause the game or resume.</p>
+    </details>
     </div>
     <div id="notes" class="tabs">
+    <h2>Notes</h2>
     <p>I will be working on this game through multiple weeks probably, so this wont be a full game yet. (As of week 3, there is now a story mode)</p>
     <p>Note: some features may be hidden, due to it not being fully implemented/ready for use.</p>
     </div>

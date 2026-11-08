@@ -977,13 +977,15 @@ function drawTutorialShotProgress() {
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Shots: ${tutorialShots}`, 10, 50);
+    ctx.fillText(`Shots: ${tutorialShots}`, 10, 130);
     
     for (let i = 0; i < 3; i++) {
+        ctx.save();
         ctx.beginPath();
         ctx.arc(player.x - 50 + i * 50,player.y + 50, 12, 0, Math.PI * 2);
         ctx.fillStyle = i < tutorialShots ? "green" : "gray";
         ctx.fill();
+        ctx.restore();
     }
 }
 
@@ -991,18 +993,19 @@ function drawTutorialMeleeProgress() {
     if (gameMode !== "tutorial" || tutorialStep !== 6) return;
     const player = balls.find(ball => ball.isPlayer);
     if (!player) return;
+    ctx.save();
     ctx.fillStyle = isDarkMode ? "white" : "black";
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 50);
-    
+    ctx.fillText(`Melee: ${tutorialMelee}`, 10, 130);
     for (let i = 0; i < 3; i++) {
         ctx.beginPath();
         ctx.arc(player.x - 50 + i * 50,player.y + 50, 12, 0, Math.PI * 2);
         ctx.fillStyle = i < tutorialMelee ? "green" : "gray";
         ctx.fill();
     }
+    ctx.restore();
 }
 
 window.addEventListener("keydown", (event)=>{
@@ -1070,6 +1073,7 @@ class Button {
         return false;
     }
     draw(ctx) {
+        ctx.save();
         ctx.globalAlpha = this.transparency;
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -1083,6 +1087,11 @@ class Button {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(this.x, this.y, this.width, this.height);
         }
+        if (mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height) {
+            ctx.fillStyle = 'rgba(130, 124, 124, 0.1)';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+        ctx.restore();
     }
     isPressed() {
         return justClicked&& mouseX >= this.x && mouseX <= this.x + this.width && mouseY >= this.y && mouseY <= this.y + this.height;
@@ -1235,6 +1244,39 @@ update() {
         this.buttons.push(button);
     }
 }
+function drawHUD(player) {
+    const x = 10, y = 10, w = 180, h = 16;
+    const ratio = Math.max(0, player.health / player.maxHealth);
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = ratio > 0.5 ? '#4caf50' : ratio > 0.25 ? '#e0a800' : '#d32f2f';
+    ctx.fillRect(x, y, w * ratio, h);
+    ctx.strokeStyle = isDarkMode ? 'white' : 'black';
+    ctx.strokeRect(x, y, w, h);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = isDarkMode ? '#fffefe' : '#000000';
+    ctx.font = '14px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    const lines = [`Money: ${money}`, `Deaths: ${deaths}`];
+    if (gameMode === 'wave' || gameMode === 'endless') {
+        lines.push(`Wave: ${wave}`);
+        lines.push(`Enemies: ${enemyCounter}/${enemyCountMax}`);
+    }
+    const ammo = currentWeapon.ammo === Infinity ? 'Inf' : currentWeapon.ammo;
+    lines.push(`${currentWeapon.name} equipped`);
+    lines.push(`Ammo: ${ammo}`);
+    lines.forEach((text, i) => ctx.fillText(text, x, y + h + 8 + i * 18));
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${Math.ceil(player.health)}/${player.maxHealth}`, x + w / 2, y + h / 2);
+    ctx.restore();
+}
 function drawChapterSelect() {
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.font = "24px Arial";
@@ -1383,7 +1425,7 @@ const keepDistance = {
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
     let head = 12;
     let angle = Math.atan2(y2 - y1, x2 - x1);
-
+    ctx.save();
     ctx.globalAlpha = 1;
     ctx.fillStyle = !isDarkMode ? "#e8c411" : "white";
     ctx.font = "bold 24px Arial";
@@ -1403,6 +1445,7 @@ function drawArrow(x1, y1, x2, y2, color,txt,txt2){
     ctx.lineWidth = 7;
     ctx.globalAlpha = 1;
     ctx.stroke();
+    ctx.restore();
 }
 
 function spawnEnemy(weapon, pos=null) {
@@ -3070,7 +3113,7 @@ const mainmenuButton1 = new Button(
 
 
 const menubutton = new Button(
-    100, 300, 50, 50, "Menu", "lightgreen", 1
+    25, 300, 50, 50, "Menu", "lightgreen", 1
 );
 const mobilebutton = new Button(
     canvas.width-50, canvas.height-50, 50, 50, "Mobile", "lightblue", 1
@@ -3106,7 +3149,7 @@ const keybindsButton = new Button(
     610, 550, 90, 50, "Keybinds", "lightgray", 0.5
 );
 const globalStopFollow = new Button(
-    450, 300, 50, 50, "Stop Follow", "red", 0.5
+    265, 345, 130, 40, "Stop Follow", "red", 0.5
 );
 const bgButton = new Button(
     450, 450, 150, 50, "Change Background", "lightgray", 0.5
@@ -3144,23 +3187,23 @@ updateBindText();
 
 
 const button = new Button(
-    300, 300, 150, 50, "Move Ball", "darkgray", 0.5
+    265, 295, 130, 40, "Move Ball", "darkgray", 0.5
 );
 
 const button2 = new Button(
-    300, 350, 150, 50, "Stop Ball", "darkgray", 0.5
+    405, 295, 130, 40, "Stop Ball", "darkgray", 0.5
 );
 
 const button3 = new Button(
-    300, 400, 150, 50, "Add Moving Ball", "darkblue", 0.5
+    265, 445, 270, 40, "Add Moving Ball", "darkblue", 0.5
 );
 //plan: remodel this into inventory/clothing/wardrobe type
 const button4 = new Button(
-    450, 400, 50, 50, "Skins", "lightyellow", 0.5
+    265, 395, 130, 40, "Skins", "lightyellow", 0.5
 );
 
 const buttonshop = new Button(
-    450, 450, 50, 50, "Shop", "lightgreen", 0.5
+    405, 395, 130, 40, "Shop", "lightgreen", 0.5
 );
 
 
@@ -3201,7 +3244,7 @@ const button8 = new Button(
     550, 550, 50, 50, "yellow ball", "yellow", 0.5
 );
 const buttonSettings = new Button(
-    450, 350, 50, 50, "Settings", "lightgray", 0.5
+    405, 345, 130, 40, "Settings", "lightgray", 0.5
 );
 
 const skinsmenu = new Frame(
@@ -3576,8 +3619,6 @@ function animate(){
     */
     updateTutorial();
     updateStory();
-    ctx.fillText(`Money: ${money}`, 10, 10);
-    ctx.fillText(`Deaths: ${deaths}`, 10, (gameMode === "wave" || gameMode === "endless") ? 70 : 30);
     if (Date.now() > comboTimer) {
         combo=0;
     }
@@ -4167,7 +4208,8 @@ if (player) {
 } else {
     info.visible = false;
 }
-info.draw(ctx);
+//info.draw(ctx);
+drawHUD(player);
 if (keys[binds.shoot] && player && !player.isDead) {
     if (currentWeapon.name === "AK47" || !fWasPressed) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
