@@ -484,8 +484,8 @@ function startStoryChapter(n){
 
     const player = balls[0];
     player.health = player.maxHealth;
-    player.x = canvas.width / 2;
-    player.y = canvas.height / 2;
+    player.x = mapSpawns[selectedMap]?.player[0] || canvas.width / 2;
+    player.y = mapSpawns[selectedMap]?.player[1] || canvas.height / 2;
     player.dx = 0;
     player.dy = 0;
 
@@ -511,8 +511,8 @@ function beginStoryStage() {
         Map();
         const player = balls.find(b => b.isPlayer);
         if (!player) return;
-        player.x = canvas.width / 2;
-        player.y = canvas.height / 2;
+        player.x = mapSpawns[selectedMap]?.player[0] || canvas.width / 2;
+        player.y = mapSpawns[selectedMap]?.player[1] || canvas.height / 2;
         player.dx = 0;
         player.dy = 0;
     }
@@ -600,8 +600,8 @@ function updateStory(){
                 Map();
                 const player = balls.find(b => b.isPlayer);
                 if (!player) return;
-                player.x = canvas.width / 2;
-                player.y = canvas.height / 2;
+                player.x = mapSpawns[selectedMap]?.player[0] || canvas.width / 2;
+                player.y = mapSpawns[selectedMap]?.player[1] || canvas.height / 2;
                 player.dx = 0;
                 player.dy = 0;
                 storyPhase = "outro";
@@ -2188,7 +2188,64 @@ class melee {
 
         }
     }
+function enemyMelee(enemy){
+    const enemyMeleeWeapons = {
+        "Katana": 55,
+        "Nodachi": 95,
+        "Dragon Slayer": 140
+    };
+    const range = enemyMeleeWeapons[enemy.weapon];
+    if (!range|| !enemy.isEnemy || enemy.isDead || enemy.remove) {
+        return;
+    }
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player || player.isDead || player.remove) {
+        return;
+    }
+    const now = Date.now();
+    const dx = player.x - enemy.x;
+    const dy = player.y - enemy.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
+    if (!enemy.meleeSwinging && distance <= range) {
+        enemy.meleeSwinging = true;
+        enemy.meleeStart = now;
+        enemy.hitPlayer = false;
+        playSliceSound();
+    }
+    if (enemy.swinging) {
+        if (!enemy.hitPlayer && distance <= range && !enemy.hitPlayer && progress >= 0.2) {
+            enemy.hitPlayer = true;
+            if (!isInvulnerable(player)) {
+                player.health = Math.max(0, player.health - enemy.damage);
+                player.color = "lightblue";
+                setTimeout(() => {
+                    if (!player.isDead) player.color = "blue";
+                }, 200);
+
+                if (player.health <= 0) {
+                    combo = 0;
+                    player.isDead = true;
+                    player.transparency = 0.95;
+                    setTimeout(() => {
+                        player.isDead = false;
+                        player.health = player.maxHealth;
+                        player.x = canvas.width / 2;
+                        player.y = canvas.height / 2;
+                        player.dx = 0;
+                        player.dy = 0;
+                        player.color = "blue";
+                        player.invulnerableUntil = Date.now() + spawnProtectionMs;
+                    }, 2000);
+                }
+            }
+        }
+        if (progress >= 1) {
+            enemy.meleeSwinging = false;
+            enemy.nextSwing = now + (enemy.weapon === "Dragon Slayer" ? 1100 : 600);
+        }
+    }
+}
  function drawEnemyWeapon(enemy){
         if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
             return;
@@ -2201,7 +2258,20 @@ class melee {
         }
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
-        ctx.rotate(Math.atan2(balls[0].y - enemy.y, balls[0].x - enemy.x));
+        const player = balls.find(ball => ball.isPlayer);
+        if (player.isDead) enemy.swingStart = 0;
+        else if (["Katana", "Nodachi", "Dragon Slayer"].includes(enemy.weapon)) {
+            if (!enemy.swingStart && Math.hypot(player.x - enemy.x, player.y - enemy.y) <= 100) {
+                enemy.swingStart = Date.now();
+                playSliceSound();
+            }
+            if (enemy.swingStart) {
+                const progress = (Date.now() - enemy.swingStart) / 300;
+                if (progress < 1) ctx.rotate((Math.PI / 3) * (1 - progress * 2));
+                else if (progress > 2) enemy.swingStart = 0;
+            }
+        }
+        ctx.rotate(Math.atan2(player.y - enemy.y, player.x - enemy.x));
         ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
 
         ctx.restore();
@@ -2803,10 +2873,10 @@ function Map() {
 }
 
 const mapSpawns = {
-    map4: { player: [400,540], enemies: [[300,50], [400, 50], [500, 50]]},
-    map4p2: { player: [400,540], enemies: [[60,540], [740, 540], [400, 570]]},
-    map5u: { player: [400,540], enemies: [[700,250], [800, 250], [600, 250]]},
-    map5p3:{ player: [80,300], enemies: [[700,200], [700, 400], [700, 300]]},
+    map4: { player: [canvas.width/2, canvas.height/2], enemies: [[300,50], [400, 50], [500, 50]]},
+    map4p2: { player: [400,350], enemies: [[60,540], [740, 540], [400, 570]]},
+    map5u: { player: [400,250], enemies: [[700,250], [800, 250], [600, 250]]},
+    map5p3:{ player: [575,130], enemies: [[700,200], [700, 400], [700, 300]]},
     map5p4: { player: [400, 540]},
     map5p5: { player: [400, 540], enemies: [[300,50], [400, 50], [500, 50]]},
     map5p6: { player: [80, 300], enemies: [[700,200], [700, 400], [700, 300]]}
@@ -3788,7 +3858,8 @@ for (const ball of balls) {
         if (ball.weapon === "Medic") {
             healEnemies(ball);
         }else{
-        enemyShoot(ball)
+        enemyShoot(ball);
+        enemyMelee(ball);
         }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
     }
