@@ -1,0 +1,256 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Game</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+    
+    
+    canvas{
+        border: 1px solid #ccc;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .tabs {
+        display: none;
+    }
+    .tabs.active {
+        display: block;
+    }
+    .tab-button.active {
+    background-color: #333;
+    color: white;
+    }
+    summary { list-style: none; cursor: pointer; }
+    summary::after { 
+        content: " >"; 
+        display: inline-block;
+        margin-left: 8px;
+        transition: transform 0.2s;
+    }
+    details[open] summary::after {
+        transform: rotate(90deg);
+    }
+    details {
+    margin: 8px 0;
+    }
+    details p {
+        margin: 4px 0 4px 20px;
+    }
+    .tab-button {
+        margin: 0 4px 12px;
+        padding: 6px 12px;
+    }
+    details {
+        background-color: white;
+        border: 1px solid #433e3e;
+        margin: 8px auto;
+        padding: 10px 15 px;
+        max-width: 500px;
+        text-align: left;
+        box-shadow: 0 2px 4px rgba(0,0,0, 0.05);
+    }
+    details img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 8px auto 4px;
+    border-radius: 6px;
+    }
+    .githubLink {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        color: #333;
+        margin-top: 10px;
+        border: 2px solid #333;
+        padding: 4px 8px;
+        background-color: #f0f0f0;
+    }
+    details ul {
+        margin: 8px 0 4px 0;
+        padding-left: 25px;
+    }
+    details li {
+        margin: 6px 0;
+    }
+    </style>
+</head>
+<body>
+    <h1>VGunGame Week 4</h1>
+    <h3>Welcome to My Game</h3>
+</body>
+<canvas id="myCanvas"></canvas>
+ <div class="info">
+      <div class="tab-header">
+        <button class="tab-button active" onclick="openTab('overview', this)">Overview</button>
+        <button class="tab-button" onclick="openTab('controls', this)">Basic Controls</button>
+        <button class="tab-button" onclick="openTab('ui', this)">UI</button>
+        <button class="tab-button" onclick="openTab('notes', this)">Notes</button>
+     </div>
+</div>
+<script>
+    function openTab(id, button) {
+    document.querySelectorAll('.tabs').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    button.classList.add('active');
+    }
+</script>
+<body>
+    <p>Press these tabs for information on the game</p>
+    <div id="overview" class="tabs active">
+    <h2>Overview</h2>
+    <p>Welcome to the game! You can play in different modes, first you will need to click "Start Game", select the mode, and now you can play. (tutorial highly recommended)</p>
+    <p>As of now there are 7 main modes: 5 Wave, Normal Mode, Hard Mode, Endless, Story, Sandbox, and the tutorial. Note: after completing any wave modes, you will need to restart in order to play again.</p>
+    </div>
+    <div id="controls" class="tabs">
+    <h2>Basic Controls</h2>
+    <details>
+    <summary>WASD - Move ball</summary>
+    <p>Use the WASD keys to move the ball.</p>
+    <img src="assets/walk.gif" alt="Walking demo" loading="lazy">
+    </details>
+    <!-- , and as of now (removed now), there is a mobile control panel, though it is very limited to play. -->
+    <details>
+    <summary>F - Shoot</summary>
+    <p>Press 'F' to shoot a yellow ball from the center of the player ball.</p>
+    <img src="assets/shoot.gif" alt="Shooting demo" loading="lazy">
+    </details>
+    <details>
+    <summary>G - Melee Attack</summary>
+    <p>Press 'G' to melee attack.</p>
+    <img src="assets/melee.gif" alt="Melee demo" loading="lazy">
+    </details>
+    <details>
+    <summary>T + 1-5 - Use Abilities</summary>
+    <p>Hold 'T' and press '1', '2', '3', '4', '5' to use abilities.</p>
+    <img src="assets/ability.gif" alt="Ability demo" loading="lazy">
+    </details>
+    <details>
+    <summary>Shift - Sprint</summary>
+    <p>Hold 'Shift' to sprint.</p>
+    <img src="assets/sprint.gif" alt="Sprint demo" loading="lazy">
+    </details>
+    <details>
+    <summary>Ctrl - Dash</summary>
+    <p>Press 'Ctrl' to dash.</p>
+    <img src="assets/dash.gif" alt="Dash demo" loading="lazy">
+    </details>
+    </div>
+    <div id="ui" class="tabs">
+    <h2>UI</h2>
+    <details>
+    <summary>Menu</summary>
+    <p>Use the "Menu" button to open the menu and control the ball.</p>
+    <img src="assets/menu.gif" alt="Menu demo" loading="lazy">
+    </details>
+    <details>
+    <summary>Shop</summary>
+    <p>There will be a shop where you can buy new weapons and items. Some items are free while some cost money, which you can obtain these by getting $10 from 1 enemy</p>
+    <img src="assets/shop.gif" alt="Shop demo" loading="lazy">
+    </details>
+    <details>
+    <summary>Frames</summary>
+    <p>The "frames" will be draggable through holding the topbar and dragging it around.</p>
+    <img src="assets/frames.gif" alt="Frames demo" loading="lazy">
+    </details>
+    <details>
+    <summary>Settings</summary>
+    <p>In settings, you can toggle dark mode for the background, as well as walls that bullets can interact with, and you can toggle sound or adjust the volume.</p>
+    <img src="assets/settings.gif" alt="Settings demo" loading="lazy">
+    </details>
+    <details>
+    <summary>Keybinding</summary>
+    <p>You could also rebind the keys in the keybinds menu. You can get here by clicking the "Keybinds" button in the settings menu.</p>
+    <img src="assets/keybinds.gif" alt="Keybinding demo" loading="lazy">
+    </details>
+    <details>
+    <summary>UI Shortcuts</summary>
+    <p>More notes: beware that there will be ALOT of ui clutter if you do not exit certain frames.</p>
+    <p>Press 'M' to open the menu and 'N' to open the shop.</p>
+    <p>Press 'H' to toggle enemy health bars.</p>
+    <p>Press 'Esc' or 'P' to pause the game or resume.</p>
+    <img src="assets/shortcut.gif" alt="Shortcuts demo" loading="lazy">
+    <img src="assets/pause.gif" alt="Pause demo" loading="lazy">
+    </details>
+    </div>
+    <div id="notes" class="tabs">
+    <h2>Notes</h2>
+    <p>I will be working on this game through multiple weeks probably, so this wont be a full game yet. (As of week 3, there is now a story mode)</p>
+    <p>For debugging or testing purposes, you can use toggling walls in the settings menu if you ever encounter issues with being stuck.</p>
+    <p>Note: some features may be hidden, due to it not being fully implemented/ready for use.</p>
+    </div>
+</body>
+<img src="assets/9913ae2a6d0c38196c511a216b1ad6ea.gif"
+         alt="Demonstration of player movement"
+         width="400">
+
+    <details>
+        <summary>Shop items available</summary>
+        <p>Weapons: Pistol, Shotgun, Sniper, Dual Wield, Explosive Sniper, AK47, Katana, Nodachi, Dragon Slayer</p>
+        <p>Items: Heal, Rock, Speed Boost, Mine</p>
+        <p>Armor: Leather Armor, Iron Armor, Gold Armor, Cool Armor</p>
+        <p>Accessories: Crown, Glasses, Monocle, Top hat, Shield (visual only)</p>
+    </details>
+    
+    <h2>Features to look over for specific weeks</h2>
+    <details>
+        <summary>Week 1</summary>
+        <ul class="features">
+        <li>Enemy weapons</li>
+        <li>Mode selection, map selection, main menu</li>
+        <li>5 wave mode</li>
+        <li>Maps</li>
+        <li>Enemy Movement/pathfinding</li>
+        <li>Shop pages</li>
+        <li>Tutorial</li>
+        <li>Ak47</li>
+        </ul>
+    </details>
+    <details>
+        <summary>Week 2</summary>
+        <ul class="features">
+        <li>Shop mouseover descriptions</li>
+        <li>Gamemodes: Hard mode, Normal Mode, Endless</li>
+        <li>Ammo drop from enemies</li>
+        <li>Healthbars for enemies</li>
+        <li>Dashing</li>
+        <li>Game pausing</li>
+        <li>Keybinding</li>
+        <li>Abilities</li>
+        <li>Sounds/Volume control</li>
+        <li>Game economy/prices</li>
+        <li>Combo system</li>
+        <li>Medic enemy</li>
+        <li>Shielder enemy</li>
+        </ul>
+    </details>
+    <details>
+        <summary>Week 3</summary>
+        <ul class="features">
+        <li>Dialogue system</li>
+        <li>Story progression (Chapter 1,2,3)</li>
+        <li>Story objectives (access card, holdout)</li>
+        <li>Props and different materials (metal, fence, concrete, etc.)</li>
+        <li>Enemy/Player spawn locations</li>
+        <li>Index tabs and details interactions</li>
+        <li>Player HUD corner</li>
+        <li>UI improvements</li>
+        <li>Player crosshair</li>
+        <li>Skins inventory outline</li>
+        <li>Enemy melee attack animation</li>
+        </ul>
+    </details>
+    <p>Made by jimuv</p>
+    <a class = "githubLink"href="https://github.com/jimuv" target="_blank">My GitHub</a>
+    <img src="assets/github.png" alt="GitHub Logo" width="20" height="20">
+<script src="app.js"></script>
+</body>
+</html>
