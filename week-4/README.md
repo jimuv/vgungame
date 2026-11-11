@@ -7,8 +7,8 @@ This project will be about a basic shooter game, this is going to rely on a mous
 So this game is displayed on the web, which is through a canvas and html. The main part of this project is the actual game, which is through javascript.
 
 # Game
-This is a link to the web game (for week 3)
-https://jimuv.github.io/vgungame/week-3/
+This is a link to the web game (for week 4)
+https://jimuv.github.io/vgungame/week-4/
 
 # How to play
 Note: This is only for PC, on the web

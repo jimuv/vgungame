@@ -298,7 +298,114 @@ const storyChapters = {
         ],
         map: "map4"
     }]
-}
+},
+4: {
+        title: "Chapter 4: Aftermath",
+        map: "map5p6",
+        stages: [{
+            map: "map5p6",
+            dialogue: [
+                ["Commander", "Alright, their base has been destroyed now, but the area is still uncertain."],
+                ["Commander", "Lets go back to base and report our findings."],
+                ["Commander", "Theres a straggler enemy ahead, be careful!"],
+            ],
+            
+            enemies: ["Katana"],
+            reward: 5
+        },
+        {
+            map: "map5p5",
+            dialogue: [
+                ["Commander", "Okay, there is just rubble here, but lets keep moving."],
+            ],
+            enemies: [],
+            reward: 0
+        },
+        {
+            map: "map5p4",
+            dialogue: [
+                ["Commander", "Hey, there is a basement ahead, lets check it out."],
+                ["Commander", "There seems to be a lock to it, we need to find a keycard nearby."],
+            ],
+            enemies: [],
+            reward: 30,
+            objective: {
+            type: "collect"
+        }
+        },
+        {
+            map: "map5u",
+            dialogue: [
+                ["Commander", "Nice, we got access to the basement, but this place seems unharmed..."],
+                ["Commander", "They must've heard us, Pistol guys are coming in"]
+            ],
+            enemies: [...repeat("Pistol", 5)],
+            reward: 10
+        },
+        {
+            map: "map5",
+            dialogue: [
+                ["Commander", "This seems to be an underground research facility, there are still many enemies here!"],
+            ],
+            enemies: [...repeat("Shotgun", 5)],
+            reward: 20
+        },
+        {
+            map: "map4p2",
+            dialogue: [
+                ["Commander", "Warning! There are many units ahead"],
+                ["Commander", "Behind it is a door, we need to get through it fast!"]
+            ],
+            enemies: [...repeat("Katana", 10)],
+            reward: 20,
+            objective: {
+                type: "capture",
+            }
+        },
+        {
+            map: "map4p2",
+            dialogue: [
+                ["Commander", "It seems like we've reached a hallway, there seems to be a sniper ahead."],
+                ["Commander", "Take cover and eliminate it."]
+            ],
+            reward: 30,
+            enemies: ["Sniper"]
+        },
+        {
+            map: "map4p2",
+            dialogue: [
+                ["Commander", "Nice, lets go clear out the research section."],
+                ["Commander", "It should be in one of the doors ahead."]
+            ],
+            reward: 0,
+            enemies: [],
+            objective: {
+                type: "capture",
+            }
+        },
+        {
+            map: "map4p2",
+            dialogue: [
+                ["Commander", "Hey... It looks like they've been experimenting on something here..."],
+                ["Commander", "There is a monster ahead, it seems to be a mutated version of the Dragon Slayer."],
+            ],
+            reward: 0,
+            enemies: [],
+            objective: {
+                type: "capture",
+            }
+        }
+        
+    ],
+    
+    outro: [{
+        dialogue: [
+            ["Commander", "Alright, we're done here."],
+            ["Commander", "We will be continuing the mission in a later chapter."]
+        ],
+        map: "map4"
+    }]
+},
     
 }
 function drawAlarm() {
@@ -1311,8 +1418,10 @@ function drawChapterSelect() {
             startStoryChapter(2);
         } else if (chapterSelectButtons[2].isPressed()) {
             startStoryChapter(3);
-    }
-    else if (chapterSelectButtons[3].isPressed()) {
+        } else if (chapterSelectButtons[3].isPressed()) {
+            startStoryChapter(4);
+        }
+    else if (chapterSelectButtons[4].isPressed()) {
             gameScreen = "modeSelect";
         }
         justClicked = false;
@@ -1352,6 +1461,7 @@ const chapterSelectButtons = [
     new Button(300,150, 200, 50, "Chapter 1", "lightblue", 0.5),
     new Button(300, 200, 200, 50, "Chapter 2", "lightblue", 0.5),
     new Button(300, 250, 200, 50, "Chapter 3", "lightblue", 0.5),
+    new Button(550, 150, 200, 50, "Chapter 4", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
