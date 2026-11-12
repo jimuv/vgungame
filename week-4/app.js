@@ -301,8 +301,18 @@ const storyChapters = {
 },
 4: {
         title: "Chapter 4: Aftermath",
-        map: "map5p6",
+        map: "map4p2",
         stages: [{
+            map: "map4p2",
+            dialogue: [["Commander", "Alright, we are sending airstrikes to the area"]],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "airstrike", duration: 6
+            }
+        },
+            
+            {
             map: "map5p6",
             dialogue: [
                 ["Commander", "Alright, their base has been destroyed now, but the area is still uncertain."],
@@ -408,6 +418,80 @@ const storyChapters = {
 },
     
 }
+let airstrike = null;
+
+function startAirstrike(duration) {
+    airstrike = {
+        start: Date.now(),
+        duration: duration * 1000,
+        bombs: [],
+        nextBomb: 0,
+        jet: null,
+        nextJetAt: 0,
+        passCount: 0
+    }
+}
+function updateAirstrike() {
+    if (!airstrike) return true;
+    keys = {};
+    const now = Date.now();
+    const elapsed = now - airstrike.start;
+
+    if (!airstrike.jet && elapsed < airstrike.duration && now>= airstrike.nextJetAt) {
+        airstrike.jet = {
+            x: (airstrike.passCount % 2 === 0 ? -100 : canvas.width + 100),
+            y: 80 + Math.random() * 440,
+            dir: airstrike.passCount % 2 === 0 ? 1 : -1,
+            speed: 9
+        };
+        airstrike.passCount++;
+    }
+    const jet = airstrike.jet;
+    if (jet) {
+        jet.x += jet.dir * jet.speed;
+
+        if(jet.x > 0 && jet.x < canvas.width && now>= airstrike.nextBomb) {
+            airstrike.bombs.push({x: jet.x, y: jet.y + 20, explodeAt: now + 1000});
+            airstrike.nextBomb = now + 120;
+    }
+    if ((jet.dir === 1 && jet.x > canvas.width + 100) || (jet.dir === -1 && jet.x < -100)) {
+        airstrike.jet = null;
+        airstrike.nextJetAt = now + 1000;
+    }
+    }
+    for (const b of airstrike.bombs) {
+        if (!b.done && now >= b.explodeAt) {
+            b.done = true;
+            createExplosion(b.x, b.y, 100, 80);
+        }
+    }
+    const allBombsDone = airstrike.bombs.every(b => b.done);
+    return elapsed >= airstrike.duration && allBombsDone && !airstrike.jet;
+}
+function endAirstrike() {
+    airstrike = null;
+}
+function drawAirstrike() {
+    if(!airstrike) return;
+    const now = Date.now();
+    ctx.save();
+    for (const b of airstrike.bombs) {
+        if (!b.done) {
+            ctx.fillStyle = "red";
+            ctx.fillRect(b.x - 5, b.y - 5, 10, 10);
+        }
+    }
+
+    const jet = airstrike.jet;
+    if (jet) {
+        const img = weaponImages["Explosive Sniper"];
+        ctx.translate(jet.x, jet.y);
+        ctx.scale(jet.dir, 1);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    }
+    ctx.restore();
+}
+
 function drawAlarm() {
     if (gameMode !== "story") return;
     const stage = storyChapters[storyChapter]?.stages[storyStage];
@@ -647,7 +731,10 @@ function updateStory(){
             objects = objects.filter(obj => obj.type !== "keycard");
             objects.push(new Object("keycard", 650, 500));
             storyPhase = "collect";
-        } 
+        } else if (stage.objective?.type === "airstrike") {
+            storyPhase = "airstrike";
+            startAirstrike(stage.objective.duration);
+        }
         else {
         enemyCounter = 0;
         enemyCountMax = stage.enemies.length;
@@ -691,8 +778,32 @@ function updateStory(){
 
         selectedMap = chapter.outro[0].map;
         Map();
-    } else {
+    } 
+    else {
         beginStoryStage();
+    }
+} else if (storyPhase === "airstrike") {
+        if (updateAirstrike()) {
+            endAirstrike();
+            money+= stage.reward;
+            storyStage++;
+            if (storyStage >= chapter.stages.length) {
+                clearDialogue();
+                for (const [speaker, text] of chapter.outro[0].dialogue) {
+                    showDialogue(text, speaker, commanderImage, true);
+                }
+                selectedMap = chapter.outro[0].map;
+                Map();
+                const player = balls.find(b => b.isPlayer);
+                if (!player) return;
+                player.x = mapSpawns[selectedMap]?.player[0] || canvas.width / 2;
+                player.y = mapSpawns[selectedMap]?.player[1] || canvas.height / 2;
+                player.dx = 0;
+                player.dy = 0;
+                storyPhase = "outro";
+            } else {
+                beginStoryStage();
+            }
     }
 }
         else if (storyPhase === "fight" && enemyCounter <= 0){
@@ -3647,7 +3758,7 @@ function drawCaptureZone(){
     if(storyPhase !== "dialogue" && storyPhase !== "capture") return;
 
     const stage = storyChapters[storyChapter].stages[storyStage];
-    if(!stage.objective) return;
+    if(!stage.objective|| stage.objective.type !== "capture") return;
 
     const player = balls.find(b => b.isPlayer);
     const distance = Math.hypot(player.x - stage.objective.x, player.y - stage.objective.y);
@@ -4960,6 +5071,7 @@ canvas.style.cursor = "default"
         drawCaptureProgress();
         drawCrossHair();
         drawAlarm();
+        drawAirstrike();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
