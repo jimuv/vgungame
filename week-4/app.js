@@ -311,9 +311,18 @@ const storyChapters = {
                 type: "airstrike", duration: 6
             }
         },
+        {
+            map: "map6",
+            dialogue: [
+                ["Commander", "Nice, the airstrikes are done"],
+                ["Commander", "Lets move on.."]
+            ],
+            enemies: [],
+            reward: 0
+        },
             
             {
-            map: "map5p6",
+            map: "map6p2",
             dialogue: [
                 ["Commander", "Alright, their base has been destroyed now, but the area is still uncertain."],
                 ["Commander", "Lets go back to base and report our findings."],
@@ -324,7 +333,7 @@ const storyChapters = {
             reward: 5
         },
         {
-            map: "map5p5",
+            map: "map6p3",
             dialogue: [
                 ["Commander", "Okay, there is just rubble here, but lets keep moving."],
             ],
@@ -332,7 +341,7 @@ const storyChapters = {
             reward: 0
         },
         {
-            map: "map5p4",
+            map: "map6p4",
             dialogue: [
                 ["Commander", "Hey, there is a basement ahead, lets check it out."],
                 ["Commander", "There seems to be a lock to it, we need to find a keycard nearby."],
@@ -344,7 +353,7 @@ const storyChapters = {
         }
         },
         {
-            map: "map5u",
+            map: "map7",
             dialogue: [
                 ["Commander", "Nice, we got access to the basement, but this place seems unharmed..."],
                 ["Commander", "They must've heard us, Pistol guys are coming in"]
@@ -353,7 +362,7 @@ const storyChapters = {
             reward: 10
         },
         {
-            map: "map5",
+            map: "map7p2",
             dialogue: [
                 ["Commander", "This seems to be an underground research facility, there are still many enemies here!"],
             ],
@@ -361,7 +370,7 @@ const storyChapters = {
             reward: 20
         },
         {
-            map: "map4p2",
+            map: "map7p3",
             dialogue: [
                 ["Commander", "Warning! There are many units ahead"],
                 ["Commander", "Behind it is a door, we need to get through it fast!"]
@@ -369,11 +378,15 @@ const storyChapters = {
             enemies: [...repeat("Katana", 10)],
             reward: 20,
             objective: {
-                type: "capture",
+                type: "capture", 
+                x: 400, 
+                y: 300, 
+                radius: 65, 
+                duration: 6 
             }
         },
         {
-            map: "map4p2",
+            map: "map7p4",
             dialogue: [
                 ["Commander", "It seems like we've reached a hallway, there seems to be a sniper ahead."],
                 ["Commander", "Take cover and eliminate it."]
@@ -382,7 +395,7 @@ const storyChapters = {
             enemies: ["Sniper"]
         },
         {
-            map: "map4p2",
+            map: "map7p5",
             dialogue: [
                 ["Commander", "Nice, lets go clear out the research section."],
                 ["Commander", "It should be in one of the doors ahead."]
@@ -390,11 +403,15 @@ const storyChapters = {
             reward: 0,
             enemies: [],
             objective: {
-                type: "capture",
+                type: "capture", 
+                x: 400, 
+                y: 150, 
+                radius: 65, 
+                duration: 6 
             }
         },
         {
-            map: "map4p2",
+            map: "map7p6",
             dialogue: [
                 ["Commander", "Hey... It looks like they've been experimenting on something here..."],
                 ["Commander", "There is a monster ahead, it seems to be a mutated version of the Dragon Slayer."],
@@ -402,7 +419,11 @@ const storyChapters = {
             reward: 0,
             enemies: [],
             objective: {
-                type: "capture",
+                type:"capture",
+                 x: 400,
+                y: 150, 
+                radius: 65, 
+                duration: 6 
             }
         }
         
@@ -413,7 +434,7 @@ const storyChapters = {
             ["Commander", "Alright, we're done here."],
             ["Commander", "We will be continuing the mission in a later chapter."]
         ],
-        map: "map4"
+        map: "map6"
     }]
 },
     
@@ -727,6 +748,11 @@ function updateStory(){
     if (storyPhase === "dialogue" && dialogueDone) {
         if(stage.objective?.type === "capture") {
             storyPhase = "capture";
+            enemyCounter = 0;
+            enemyCountMax = stage.enemies.length;
+            for (const weapon of stage.enemies) {
+                spawnEnemy(weapon, pickEnemySpawn());
+            }
         } else if (stage.objective?.type === "collect") {
             objects = objects.filter(obj => obj.type !== "keycard");
             objects.push(new Object("keycard", 650, 500));
@@ -736,7 +762,7 @@ function updateStory(){
             startAirstrike(stage.objective.duration);
         }
         else {
-        enemyCounter = 0;
+
         enemyCountMax = stage.enemies.length;
         storyPhase = "fight";
 
@@ -3091,6 +3117,127 @@ function Map() {
         addProp(server, 250, 200, 60, 60);
         addProp(server, 500, 350, 60, 60);
     }
+    if (selectedMap === "map6") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        floors.push(new Floor(340, 0, 120, 600, road));
+        addWall(concrete, 150, 120, 100, 20);
+        addWall(concrete, 150, 120, 20, 70);
+        addWall(concrete, 550, 120, 100, 20);
+        addWall(concrete, 630, 120, 20 ,70);
+        addWall(concrete, 150, 420, 100, 20);
+        addWall(concrete, 630, 420, 20 ,70);
+        addProp(crate, 260, 300, 50, 50);
+        addProp(crate, 490, 240, 50, 50);
+        sandbags.push(new Sandbag(100, 250, 35, 80));
+        sandbags.push(new Sandbag(665, 250, 35, 80));
+    }
+    if (selectedMap === "map6p2") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        addWall(concrete, 250, 80, 20, 180);
+        addWall(concrete, 250, 340, 20, 180);
+        addWall(concrete, 520, 160, 20, 280);
+        addWall(fence, 270, 260, 80, 20, "penetrate");
+        addProp(crate, 500, 100, 50, 50);
+        addProp(crate, 380, 450, 50, 50);
+        addProp(crate, 60, 300, 50, 50);
+        sandbags.push(new Sandbag(120, 150, 35, 80));
+    }
+    if (selectedMap === "map6p3") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        addWall(concrete, 200, 0, 20, 400);
+        addWall(concrete, 580, 0, 20, 400);
+        addWall(concrete, 200, 480, 120, 20);
+        addWall(concrete, 580, 480, 120, 20);
+        addProp(crate, 320, 250, 50, 50);
+        addProp(crate, 440, 150, 50, 50);
+        addProp(crate, 360, 400, 50, 50);
+    }
+    if (selectedMap === "map6p4") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        addWall(concrete, 250, 40, 300, 150);
+        addProp(door, 350, 190, 100, 40, "deflect");
+        addWall(fence, 0, 300 , 200, 20, "penetrate");
+        addProp(crate, 560, 380, 50, 50);
+        addProp(crate, 720, 400, 50, 50);
+        addProp(crate, 120, 450, 50, 50);
+        sandbags.push(new Sandbag(300, 400, 80, 35));
+    }
+    if (selectedMap === "map7"){
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 120, 0, 20, 300);
+        addWall(concrete, 660, 0, 20, 300);
+        addWall(concrete, 280, 250, 20, 150);
+        addWall(concrete, 500, 250, 20, 150);
+        addProp(crate, 380, 330, 50, 50);
+        addProp(crate, 200, 420, 50, 50);
+        addProp(crate, 560, 420, 50, 50);
+    }
+    if (selectedMap === "map7p2"){
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addProp(server, 150, 180, 60, 60);
+        addProp(server, 210, 180, 60, 60);
+        addProp(server, 530, 180, 60, 60);
+        addProp(server, 590, 180, 60, 60);
+        addProp(server, 150, 340, 60, 60);
+        addProp(server, 210, 340, 60, 60);
+        addProp(server, 530, 340, 60, 60);
+        addProp(server, 590, 340, 60, 60);
+        addWall(concrete, 370, 220, 60, 20);
+        addWall(concrete, 370, 360, 60, 20);
+    }
+    if (selectedMap === "map7p3"){
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0, 140, 350, 20);
+        addProp(door, 350, 130, 100, 40, "deflect");
+        addWall(concrete, 450, 140, 350, 20);
+        addProp(crate, 200, 200, 50, 50);
+        addProp(crate, 550, 200, 50, 50);
+        addProp(crate, 200, 400, 50, 50);
+        addProp(crate, 550, 400, 50, 50);
+    }
+    if (selectedMap === "map7p4"){
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0,170, 800, 20);
+        addWall(concrete, 0, 410, 800, 20);
+        addProp(crate, 200, 250, 50, 50);
+        addProp(crate, 550, 250, 50, 50);
+        addProp(crate, 200, 350, 50, 50);
+        addProp(crate, 550, 350, 50, 50);
+    }
+    if (selectedMap === "map7p5"){
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0, 250, 120, 20);
+        addProp(door, 120, 240, 100, 40, "deflect");
+        addWall(concrete, 220, 250, 100, 20);
+        addWall(concrete, 480, 250, 100, 20);
+        addProp(door, 580, 240, 100, 40, "deflect");
+        addWall(concrete, 680, 250, 120, 20);
+        addWall(concrete, 300, 40, 20, 210);
+        addWall(concrete, 480, 40, 20, 210);
+        addProp(server, 680, 80, 60, 60);
+        addProp(server, 680, 80, 60, 60);
+        addProp(crate, 150, 400, 50, 50);
+        addProp(crate, 600, 400, 50, 50);
+    }
+    if (selectedMap === "map7p6"){
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addProp(server, 130, 130, 60, 60);
+        addProp(server, 610, 130, 60, 60);
+        addProp(server, 130, 410, 60, 60);
+        addProp(server, 610, 410, 60, 60);
+        addProp(crate, 375, 275, 50, 50);
+    }
 }
 
 const mapSpawns = {
@@ -3100,7 +3247,17 @@ const mapSpawns = {
     map5p3:{ player: [575,130], enemies: [[700,200], [700, 400], [700, 300]]},
     map5p4: { player: [400, 540]},
     map5p5: { player: [400, 540], enemies: [[300,50], [400, 50], [500, 50]]},
-    map5p6: { player: [80, 300], enemies: [[700,200], [700, 400], [700, 300]]}
+    map5p6: { player: [80, 300], enemies: [[700,200], [700, 400], [700, 300]]},
+    map6: { player: [400, 300]},
+    map6p2: { player: [80, 300], enemies: [[700,100], [700, 500]]},
+    map6p3: { player: [400, 540]},
+    map6p4: { player: [100, 400]},
+    map7: { player: [400, 80],  enemies: [[100,500], [700,500], [400,560]] },
+    map7p2: { player: [400, 540], enemies: [[100,80], [700,80], [400,60]] },
+    map7p3: { player: [400, 540], enemies: [[60,540], [740,540], [100,300], [700,300]] },
+    map7p4: { player: [60, 300],  enemies: [[740, 300]] },
+    map7p5: { player: [400, 540] },
+    map7p6: { player: [400, 540], enemies: [[400, 80]] },
 }
 function pickEnemySpawn() {
     const list = mapSpawns[selectedMap]?.enemies;
@@ -4065,13 +4222,14 @@ function animate(){
     // mobilebutton.draw(ctx);
     handleWallCollision();
 for (const ball of balls) {
+    if(!ball.isPlayer || storyPhase !== "airstrike"){
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius*ball.size, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
     ctx.globalAlpha = ball.isDead ? 0.25 : 1;
     ctx.fill();
     ctx.globalAlpha = 1;
-
+    }
     drawEnemyWeapon(ball);
     drawEnemyHat(ball);
     drawEnemyHealthBar(ball);
