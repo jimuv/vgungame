@@ -613,6 +613,8 @@ const fence = new Image();
 fence.src = "assets/fence.png";
 const server = new Image();
 server.src = "assets/server.png";
+const monster = new Image();
+monster.src = "assets/monster.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
 
@@ -3141,7 +3143,7 @@ function Map() {
         addWall(fence, 270, 260, 80, 20, "penetrate");
         addProp(crate, 500, 100, 50, 50);
         addProp(crate, 380, 450, 50, 50);
-        addProp(crate, 60, 300, 50, 50);
+        addProp(crate, 60, 500, 50, 50);
         sandbags.push(new Sandbag(120, 150, 35, 80));
     }
     if (selectedMap === "map6p3") {
@@ -3237,6 +3239,7 @@ function Map() {
         addProp(server, 130, 410, 60, 60);
         addProp(server, 610, 410, 60, 60);
         addProp(crate, 375, 275, 50, 50);
+        addProp(monster, 375, 100, 150, 150);
     }
 }
 
