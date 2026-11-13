@@ -397,16 +397,14 @@ const storyChapters = {
         {
             map: "map7p5",
             dialogue: [
-                ["Commander", "Nice, lets go clear out the research section."],
-                ["Commander", "It should be in one of the doors ahead."]
+                ["Commander", "Wait... hold fire! theres somebody here in the research section"],
+                ["Commander", "Hes unarmed... we need to question him"]
             ],
             reward: 0,
-            enemies: [],
+            enemies: ["Researcher"],
             objective: {
-                type: "capture", 
-                x: 400, 
-                y: 150, 
-                radius: 65, 
+                type: "talk", 
+                radius: 95, 
                 duration: 6 
             }
         },
@@ -762,6 +760,15 @@ function updateStory(){
         } else if (stage.objective?.type === "airstrike") {
             storyPhase = "airstrike";
             startAirstrike(stage.objective.duration);
+        } else if (stage.objective?.type === "talk") {
+            storyPhase = "talk";
+            captureProgress = 0;
+            captureLastUpdate = Date.now();
+            enemyCounter = 0;
+            enemyCountMax = stage.enemies.length;
+            for (const weapon of stage.enemies) {
+                spawnEnemy(weapon, pickEnemySpawn());
+            }
         }
         else {
 
@@ -789,6 +796,41 @@ function updateStory(){
             if(captureProgress >= stage.objective.duration) {
                 storyPhase = "fight";
                 enemyCounter = 0;
+            }
+        }
+    } else if (storyPhase === "talk") {
+        const player = balls.find(b => b.isPlayer);
+        const researcher = balls.find(b => b.isEnemy && b.weapon === "Researcher");
+        const now = Date.now();
+        if (!researcher) {
+            spawnEnemy("Researcher", pickEnemySpawn());
+            showDialogue("Stop shooting! We need him alive...", "Commander", commanderImage, true);
+            return;
+        }
+        if (player && researcher) {
+            const distance = Math.hypot(player.x - researcher.x, player.y - researcher.y);
+            if (distance <= stage.objective.radius) {
+                captureProgress += Math.min((now - captureLastUpdate) / 1000, 0.05);
+            } else {
+                captureProgress = Math.max(0, captureProgress - Math.min((now - captureLastUpdate) / 1000, 0.05));
+            }
+            captureLastUpdate = now;
+            
+            const ratio = captureProgress / stage.objective.duration;
+            if (ratio >= 0.25 && !researcher.talk1) {
+                researcher.talk1 = true;
+                showDialogue("Please, I can help you! I know their plans!", "Researcher", null, true);
+            } else if (ratio >= 0.5 && !researcher.talk2) {
+                researcher.talk2 = true;
+                showDialogue("I can tell you where their base is!", "Researcher", null, true);
+            } else if (ratio >= 0.75 && !researcher.talk3) {
+                researcher.talk3 = true;
+                showDialogue("The mutated monster is in the next room here!", "Researcher", null, true);
+            }
+            if (captureProgress >= stage.objective.duration) {
+                researcher.remove = true;
+                enemyCounter = 0;
+                storyPhase = "fight";
             }
         }
     }
@@ -1676,6 +1718,13 @@ const enemyStats = {
         damage: 10,
         shootDelay: 0,
         size:1
+    },
+    "Researcher": {
+        health: 500,
+        speed: 0.95,
+        damage: 0,
+        shootDelay: 0,
+        size: 1
     }
 
 }
@@ -1706,7 +1755,8 @@ const keepDistance = {
     "Sniper": 200,
     "Dual Wield": 75,
     "Explosive Sniper": 150,
-    "Medic": 125
+    "Medic": 125,
+    "Researcher": 800
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -1743,7 +1793,7 @@ function spawnEnemy(weapon, pos=null) {
         y: pos ? pos[1] : 100,
         dx: 0,
         dy: 0,
-        color: weapon === "Medic" ? "limegreen" : "red",
+        color: weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : "red"),
         radius: radius,
         health: stats.health,
         speed: stats.speed,
@@ -3259,7 +3309,7 @@ const mapSpawns = {
     map7p2: { player: [400, 540], enemies: [[100,80], [700,80], [400,60]] },
     map7p3: { player: [400, 540], enemies: [[60,540], [740,540], [100,300], [700,300]] },
     map7p4: { player: [60, 300],  enemies: [[740, 300]] },
-    map7p5: { player: [400, 540] },
+    map7p5: { player: [400, 540], enemies: [[400,120]]},
     map7p6: { player: [400, 540], enemies: [[400, 80]] },
 }
 function pickEnemySpawn() {
@@ -3885,7 +3935,7 @@ function drawWaveIndicator() {
     ctx.restore();
 }
 function drawCaptureProgress(){
-        if (gameMode !== "story" || storyPhase !== "capture") return;
+        if (gameMode !== "story" || storyPhase !== "capture" && storyPhase !== "talk") return;
 
     const stage = storyChapters[storyChapter].stages[storyStage];
     if (!stage.objective || stage.objective.type !== "capture") return;
@@ -3915,27 +3965,38 @@ function drawCaptureProgress(){
 }
 function drawCaptureZone(){
     if(gameMode !== "story") return;
-    if(storyPhase !== "dialogue" && storyPhase !== "capture") return;
+    if(storyPhase !== "dialogue" && storyPhase !== "capture" && storyPhase !== "talk") return;
 
     const stage = storyChapters[storyChapter].stages[storyStage];
     if(!stage.objective|| stage.objective.type !== "capture") return;
 
+    let targetX = stage.objective.x;
+    let targetY = stage.objective.y;
     const player = balls.find(b => b.isPlayer);
-    const distance = Math.hypot(player.x - stage.objective.x, player.y - stage.objective.y);
+    const distance = Math.hypot(player.x - targetX, player.y - targetY);
     const inside = distance <= stage.objective.radius;
+
+    let label = "Stand in the circle";
+    if (stage.objective.type === "talk"){
+        const researcher = balls.find(b => b.isEnemy && b.name === "Researcher");
+        if (!researcher) return;
+        targetX = researcher.x;
+        targetY = researcher.y;
+        label = "Talk to the researcher";
+    }
 
     ctx.save();
     ctx.globalAlpha = 0.2;
     ctx.fillStyle = inside ? "green" : "red";
     ctx.beginPath();
-    ctx.arc(stage.objective.x, stage.objective.y, stage.objective.radius, 0, Math.PI * 2);
+    ctx.arc(targetX, targetY, stage.objective.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
     ctx.fillStyle = "black";
     ctx.font = "18px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.fillText("Stand in the circle", stage.objective.x, stage.objective.y - stage.objective.radius - 10);
+    ctx.fillText(label, targetX, targetY - stage.objective.radius - 10);
     ctx.restore();
 }
 function drawShopTooltip() {
