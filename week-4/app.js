@@ -311,89 +311,89 @@ const storyChapters = {
                 type: "airstrike", duration: 6
             }
         },
-        {
-            map: "map6",
-            dialogue: [
-                ["Commander", "Nice, the airstrikes are done"],
-                ["Commander", "Lets move on.."]
-            ],
-            enemies: [],
-            reward: 0
-        },
+        // {
+        //     map: "map6",
+        //     dialogue: [
+        //         ["Commander", "Nice, the airstrikes are done"],
+        //         ["Commander", "Lets move on.."]
+        //     ],
+        //     enemies: [],
+        //     reward: 0
+        // },
             
-            {
-            map: "map6p2",
-            dialogue: [
-                ["Commander", "Alright, their base has been destroyed now, but the area is still uncertain."],
-                ["Commander", "Lets go back to base and report our findings."],
-                ["Commander", "Theres a straggler enemy ahead, be careful!"],
-            ],
+        //     {
+        //     map: "map6p2",
+        //     dialogue: [
+        //         ["Commander", "Alright, their base has been destroyed now, but the area is still uncertain."],
+        //         ["Commander", "Lets go back to base and report our findings."],
+        //         ["Commander", "Theres a straggler enemy ahead, be careful!"],
+        //     ],
             
-            enemies: ["Katana"],
-            reward: 5
-        },
-        {
-            map: "map6p3",
-            dialogue: [
-                ["Commander", "Okay, there is just rubble here, but lets keep moving."],
-            ],
-            enemies: [],
-            reward: 0
-        },
-        {
-            map: "map6p4",
-            dialogue: [
-                ["Commander", "Hey, there is a basement ahead, lets check it out."],
-                ["Commander", "There seems to be a lock to it, we need to find a keycard nearby."],
-            ],
-            enemies: [],
-            reward: 30,
-            objective: {
-            type: "collect"
-        }
-        },
-        {
-            map: "map7",
-            dialogue: [
-                ["Commander", "Nice, we got access to the basement, but this place seems unharmed..."],
-                ["Commander", "They must've heard us, Pistol guys are coming in"]
-            ],
-            enemies: [...repeat("Pistol", 5)],
-            reward: 10
-        },
-        {
-            map: "map7p2",
-            dialogue: [
-                ["Commander", "This seems to be an underground research facility, there are still many enemies here!"],
-            ],
-            enemies: [...repeat("Shotgun", 5)],
-            reward: 20
-        },
-        {
-            map: "map7p3",
-            dialogue: [
-                ["Commander", "Warning! There are many units ahead"],
-                ["Commander", "Behind it is a door, we need to get through it fast!"]
-            ],
-            enemies: [...repeat("Katana", 10)],
-            reward: 20,
-            objective: {
-                type: "capture", 
-                x: 400, 
-                y: 300, 
-                radius: 65, 
-                duration: 6 
-            }
-        },
-        {
-            map: "map7p4",
-            dialogue: [
-                ["Commander", "It seems like we've reached a hallway, there seems to be a sniper ahead."],
-                ["Commander", "Take cover and eliminate it."]
-            ],
-            reward: 30,
-            enemies: ["Sniper"]
-        },
+        //     enemies: ["Katana"],
+        //     reward: 5
+        // },
+        // {
+        //     map: "map6p3",
+        //     dialogue: [
+        //         ["Commander", "Okay, there is just rubble here, but lets keep moving."],
+        //     ],
+        //     enemies: [],
+        //     reward: 0
+        // },
+        // {
+        //     map: "map6p4",
+        //     dialogue: [
+        //         ["Commander", "Hey, there is a basement ahead, lets check it out."],
+        //         ["Commander", "There seems to be a lock to it, we need to find a keycard nearby."],
+        //     ],
+        //     enemies: [],
+        //     reward: 30,
+        //     objective: {
+        //     type: "collect"
+        // }
+        // },
+        // {
+        //     map: "map7",
+        //     dialogue: [
+        //         ["Commander", "Nice, we got access to the basement, but this place seems unharmed..."],
+        //         ["Commander", "They must've heard us, Pistol guys are coming in"]
+        //     ],
+        //     enemies: [...repeat("Pistol", 5)],
+        //     reward: 10
+        // },
+        // {
+        //     map: "map7p2",
+        //     dialogue: [
+        //         ["Commander", "This seems to be an underground research facility, there are still many enemies here!"],
+        //     ],
+        //     enemies: [...repeat("Shotgun", 5)],
+        //     reward: 20
+        // },
+        // {
+        //     map: "map7p3",
+        //     dialogue: [
+        //         ["Commander", "Warning! There are many units ahead"],
+        //         ["Commander", "Behind it is a door, we need to get through it fast!"]
+        //     ],
+        //     enemies: [...repeat("Katana", 10)],
+        //     reward: 20,
+        //     objective: {
+        //         type: "capture", 
+        //         x: 400, 
+        //         y: 300, 
+        //         radius: 65, 
+        //         duration: 6 
+        //     }
+        // },
+        // {
+        //     map: "map7p4",
+        //     dialogue: [
+        //         ["Commander", "It seems like we've reached a hallway, there seems to be a sniper ahead."],
+        //         ["Commander", "Take cover and eliminate it."]
+        //     ],
+        //     reward: 30,
+        //     enemies: ["Sniper"]
+        // },
         {
             map: "map7p5",
             dialogue: [
@@ -405,7 +405,7 @@ const storyChapters = {
             objective: {
                 type: "talk", 
                 radius: 95, 
-                duration: 6 
+                duration: 13 
             }
         },
         {
@@ -618,6 +618,8 @@ greenWallImage.src = "assets/greenwall.png";
 
 const commanderImage = new Image();
 commanderImage.src = "assets/commander.png";
+const researcherImage = new Image();
+researcherImage.src = "assets/researcher.png";
 
 function showDialogue(text, speaker = "", image = null, canSkip = true){
     dialogueQueue.push({text, speaker, image, canSkip});
@@ -787,8 +789,9 @@ function updateStory(){
                 player.x - stage.objective.x,
                 player.y - stage.objective.y
             );
+            const dt = Math.min((now - captureLastUpdate) / 1000, 0.05);
             if (distance <= stage.objective.radius) {
-                captureProgress += Math.min((now - captureLastUpdate) / 1000, 0.05);
+                captureProgress += dt;
             } else {
                 captureProgress = 0
             }
@@ -810,24 +813,26 @@ function updateStory(){
         if (player && researcher) {
             const distance = Math.hypot(player.x - researcher.x, player.y - researcher.y);
             if (distance <= stage.objective.radius) {
-                captureProgress += Math.min((now - captureLastUpdate) / 1000, 0.05);
+                const dt = Math.min((now - captureLastUpdate) / 1000, 0.05);
+                captureProgress += dt;
             } else {
-                captureProgress = Math.max(0, captureProgress - Math.min((now - captureLastUpdate) / 1000, 0.05));
+                const dt = Math.min((now - captureLastUpdate) / 1000, 0.05);
+                captureProgress = Math.max(0, captureProgress - dt);
             }
             captureLastUpdate = now;
             
             const ratio = captureProgress / stage.objective.duration;
             if (ratio >= 0.25 && !researcher.talk1) {
                 researcher.talk1 = true;
-                showDialogue("Please, I can help you! I know their plans!", "Researcher", null, true);
+                showDialogue("Please, I can help you! I know their plans!", "Researcher", researcherImage, true);
             } else if (ratio >= 0.5 && !researcher.talk2) {
                 researcher.talk2 = true;
-                showDialogue("I can tell you where their base is!", "Researcher", null, true);
+                showDialogue("I can tell you where their base is!", "Researcher", researcherImage, true);
             } else if (ratio >= 0.75 && !researcher.talk3) {
                 researcher.talk3 = true;
-                showDialogue("The mutated monster is in the next room here!", "Researcher", null, true);
+                showDialogue("The mutated monster is in the next room here!", "Researcher", researcherImage, true);
             }
-            if (captureProgress >= stage.objective.duration) {
+            if (captureProgress >= stage.objective.duration && researcher.talk3 && dialogueDone) {
                 researcher.remove = true;
                 enemyCounter = 0;
                 storyPhase = "fight";
@@ -2682,7 +2687,7 @@ function createExplosion(x, y, radius, damage) {
     }
 
     const player = balls.find(ball => ball.isPlayer);
-    if (!player || player.isDead || player.remove) {
+    if (!player || player.isDead || player.remove  || storyPhase === "airstrike") {
         return;
     }
     const dx = player.x - x;
@@ -3938,7 +3943,7 @@ function drawCaptureProgress(){
         if (gameMode !== "story" || storyPhase !== "capture" && storyPhase !== "talk") return;
 
     const stage = storyChapters[storyChapter].stages[storyStage];
-    if (!stage.objective || stage.objective.type !== "capture") return;
+    if (!stage.objective || stage.objective.type !== "capture" && stage.objective.type !== "talk") return;
 
     const progress = Math.min(
         captureProgress / stage.objective.duration,
@@ -4743,7 +4748,7 @@ if (player) {
     currentWeapon.y = player.y - currentWeapon.height / 2;
     currentWeapon.translate(mouseX - player.x, mouseY - player.y);
     
-    gunDraw();
+    if (storyPhase !== "airstrike") gunDraw();
     currentMelee.update(player,mouseX, mouseY);
     currentMelee.draw(ctx, player, mouseX, mouseY);
         if (
@@ -4759,7 +4764,7 @@ if (player) {
             player.radius * 2
         );
     }
-    getAccessory();
+    if (storyPhase !== "airstrike") getAccessory();
     updateAbilities(player);
     for (let i = 0; i < abilities.length; i++) {
         const down = keys[binds["ability" + (i + 1)]];
