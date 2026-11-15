@@ -675,6 +675,10 @@ const monster = new Image();
 monster.src = "assets/monster.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
+const batteryImage = new Image();
+batteryImage.src = "assets/crate.png"; //placeholder img
+const generatorImage = new Image();
+generatorImage.src = "assets/server.png";
 
 const commanderImage = new Image();
 commanderImage.src = "assets/commander.png";
@@ -1090,11 +1094,7 @@ function isInvulnerable(ball) {
 let currentCategory = "Guns";
 /*
 plans (not implemented yet):
-add powerups: health, speed, damage, armor
 
-for menu:
-add < > to switch between categories in shop,
-also if theres more than 1 page of whatever
 
 for mobile: add touch controls and improve shooting, draggable aim?
 
@@ -1103,12 +1103,10 @@ add sound
 
 add skill tree (upgrades)
 
-add tutorial (IMPORTANT!!!)
+add advanced tutorial (multiple steps, maybe challenges) --> abilities, doors, etc...
 
 other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
-
-planned: combo key, t + 1,2,3,4,5 = ability (like grenades and stuff) and it will show [ ] [ ] [ ] [Grenade] [...] when t is held
 
 */
 
@@ -1737,6 +1735,7 @@ const mapSelectButtons = [
     new Button(300, 400, 200, 50, "Map 3", "lightblue", 0.5),
     new Button(300, 500, 200, 50, "Back", "lightblue", 0.5),
     new Button(550, 100, 200, 50, "Interactive Map Test", "lightblue", 0.5),
+    new Button(550, 180, 200, 50, "Interactive Map Test2", "lightblue", 0.5),
 ]
 let upgradeButtons = [
     new Button( 150,300, 150, 100, "Increase HP", "lightgreen", 0.75),
@@ -2026,7 +2025,7 @@ function drawModeSelect() {
     ctx.fillText("Select Game Mode", canvas.width / 2, 100);
 
     ctx.font = "16px Arial";
-    ctx.fillText('${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].description}', canvas.width / 2, 150);
+    ctx.fillText(`${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].description}`, canvas.width / 2, 150);
 
     const classKeys = ["Default", "Scout", "Heavy"];
     const arrow = classDropdownOpen ? ">" : "<";
@@ -2153,6 +2152,11 @@ function drawMapSelect() {
         }
         else if (mapSelectButtons[5].isPressed()) {
             selectedMap = "InteractiveMap";
+            gameScreen = "game";
+            Map();
+        }
+        else if (mapSelectButtons[6].isPressed()) {
+            selectedMap = "InteractiveMap2";
             gameScreen = "game";
             Map();
         }
@@ -2988,16 +2992,24 @@ class Wall {
         }
     }
 
-function addDoor(x, y, width, height) {
+function addDoor(x, y, width, height, locked = false) {
     const d = new Wall(x, y, width, height, { image: door, hinged: true });
+    d.locked = locked;
     walls.push(d);
-interactables.push(new interactable(x + width / 2 - 17, y + height / 2 - 17, "door", "Door", (prop) => {
+    const doorProp = (new interactable(x + width / 2 - 17, y + height / 2 - 17, "door", "Door", (prop) => {
+        if (d.locked) {
+            interactionMessage = "Locked!"
+            return;
+        }
         prop.active = !prop.active;
         d.setOpen(prop.active);
         prop.x = d.x + d.width / 2 - 17;
         prop.y = d.y + d.height / 2 - 17;
         interactionMessage = prop.active ? "Door Opened" : "Door Closed";
     }));
+    d.prop = doorProp;
+    interactables.push(doorProp);
+    return d;
 }
 class Sandbag {
     constructor(x,y, width =80, height = 80) {
@@ -3490,7 +3502,7 @@ function Map() {
         floors.push(new Floor(0, 0, 800, 600, metal));
         addWall(concrete, 0, 100, 350, 20);
         addWall(concrete, 450, 100, 350, 20);
-        addDoor(350, 100, 100, 20);
+        const doorUL = addDoor(350, 100, 100, 20, false);
         addBag(500, 300, "Loot bag");
         interactables.push(
             new interactable(200, 200, "terminal", "Security Terminal", prop => {
@@ -3537,6 +3549,16 @@ function Map() {
             // })
             
         )
+    }
+    if (selectedMap === "InteractiveMap2") { //note: wont be used
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        const lockDoor = addDoor(350, 100, 100, 20, true);
+        addBattery(250, 350, "Power Battery")
+        addGenerator(550, 350, () => {
+            lockDoor.locked = false;
+            money += 999;
+        })
     }
 }
 const interactables = [];
@@ -3594,6 +3616,13 @@ class interactable {
     }
 
     draw(ctx) {
+
+        if (this.type === "battery" && batteryImage.complete && batteryImage.naturalWidth > 0) {
+            if (this.used) return;
+            ctx.drawImage(batteryImage, this.x, this.y, this.width, this.height);
+        } else if (this.type === "generator" && generatorImage.complete && generatorImage.naturalWidth > 0) {
+            ctx.drawImage(generatorImage, this.x, this.y, this.width, this.height);
+        }
         ctx.fillStyle = this.active ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)";
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
@@ -3603,6 +3632,31 @@ class interactable {
         ctx.fillText(this.type.toUpperCase(), this.x + 17, this.y + 48);
 
     }
+}
+function addBattery(x,y, name = "Battery") {
+    const battery = new interactable(x, y, "battery", name, (prop) => {
+        if (!carriedItem){
+            carriedItem = prop;
+            prop.active = true;
+            interactionMessage = `Picked up ${prop.message}`;
+        }
+    });
+    battery.dx = 0;
+    battery.dy = 0;
+    interactables.push(battery);
+}
+function addGenerator(x, y, onPowerUp = null, name = "Generator") {
+    const generator = new interactable(x, y, "generator", name, (prop) => {
+        if (!prop.powered) {
+            interactionMessage = `${prop.message} needs to be powered!`;
+        } else {
+            interactionMessage = `${prop.message} is already powered!`;
+        }
+    });
+    generator.powered = false;
+    generator.active = true;
+    generator.onPowerUp = onPowerUp;
+    interactables.push(generator);
 }
 function updateInteractables() {
     const player = balls.find(ball => ball.isPlayer);
@@ -3623,7 +3677,7 @@ function updateInteractables() {
         // if (prop.type === "door") {
 
         // }
-        if (prop.type === "bag"){
+        if (prop.type === "bag" || prop.type === "battery"){
             prop.x += prop.dx;
             prop.y += prop.dy;
             prop.dx *= 0.9;
@@ -3634,7 +3688,22 @@ function updateInteractables() {
         const dx = player.x - (prop.x + 17);
         const dy = player.y - (prop.y + 17);
         const distance = Math.sqrt(dx * dx + dy * dy);
-
+        if (prop.type ==="battery"){
+            for (const generator of interactables) {
+                if (generator.type === "generator" && !generator.powered) {
+                    const dist = Math.hypot((prop.x + 17) - (generator.x + 17), (prop.y + 17) - (generator.y + 17));
+                    if (dist < 50) {
+                        generator.powered = true;
+                        generator.active = true;
+                        prop.used = true;
+                        interactionMessage = "Generator Powered!";
+                        clearTimeout(msgTimer);
+                        msgTimer = setTimeout(() => interactionMessage = "", 2000);
+                        if (generator.onPowerUp) generator.onPowerUp();
+                    }
+                }
+            }
+        }
         if (distance < closestDistance) {
             closestDistance = distance;
             nearbyInteractable = prop;
