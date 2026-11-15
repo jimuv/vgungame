@@ -980,7 +980,8 @@ function addCombo(){
 }
 const abilities = [
     {name: "Grenade", cooldown: 8000, lastUsed:-Infinity},
-    {name: "Speed", cooldown: 5000, lastUsed:-Infinity}
+    {name: "Speed", cooldown: 5000, lastUsed:-Infinity},
+    {name: "Shield", cooldown: 10000, lastUsed:-Infinity}
 ]
 let abilityKey = [false,false];
 let grenades = [];
@@ -995,6 +996,8 @@ function useAbility(index, player){
             grenades.push({x: player.x, y: player.y, dx: Math.cos(angle) * 5, dy: Math.sin(angle) * 5, explodeAt: Date.now() + 2000, done: false});
         } else if (ability.name === "Speed") {
             speedBoost = Date.now() + 5000;
+        } else if (ability.name === "Shield") {
+            player.invulnerableUntil = Date.now() + 3000;
         }
     }
 }
@@ -1064,7 +1067,8 @@ let binds = {
     health: "h",
     ability: "t",
     ability1: "1",
-    ability2: "2"
+    ability2: "2",
+    ability3: "3"
 }
 
 const bindNames = [
@@ -1081,7 +1085,8 @@ const bindNames = [
     ["health","Toggle health bars"],
     ["ability","Use ability"],
     ["ability1","Use ability 1"],
-    ["ability2","Use ability 2"]
+    ["ability2","Use ability 2"],
+    ["ability3","Use ability 3"]
 ]
 let rebinding = null;
 
@@ -1811,8 +1816,21 @@ const enemyStats = {
         damage: 0,
         shootDelay: 0,
         size: 1
+    },
+    "AK47": {
+        health: 40,
+        speed: 0.7,
+        damage: 5,
+        shootDelay: 20,
+        size:1
+    },
+    "Bomber": {
+        health: 10,
+        speed: 2,
+        damage: 0,
+        shootDelay: 0,
+        size:1
     }
-
 }
 
 function drawClassSelect(){
@@ -1843,6 +1861,17 @@ function drawClassSelect(){
         }
     }
 }
+function bomberUpdate(bomber) {
+    if (bomber.weapon !== "Bomber" || bomber.isDead || bomber.remove) return;
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player) return;
+    if (Math.hypot(player.x - bomber.x, player.y - bomber.y) < 50) {
+        bomber.isDead = true;
+        bomber.remove = true;
+        createExplosion(bomber.x, bomber.y, 100, 200);
+        if (["wave", "endless", "story", "tutorial"].includes(gameMode)) enemyCounter--;
+    }
+}
 function checkShieldBreak(enemy) {
     if (enemy.shielded && enemy.health <= 0) {
         enemy.shielded = false;
@@ -1871,7 +1900,8 @@ const keepDistance = {
     "Dual Wield": 75,
     "Explosive Sniper": 150,
     "Medic": 125,
-    "Researcher": 800
+    "Researcher": 800,
+    "AK47": 150,
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -3538,8 +3568,14 @@ function Map() {
             new interactable(400, 480, "trap", "Spawn Trap", prop => {
                 prop.active = true;
                 setTimeout(() => prop.active = false, 500);
-                spawnEnemy("Katana", [200,50]);
-                interactionMessage = "Enemy Spawned!";
+                spawnEnemy("AK47", [200,50]);
+                interactionMessage = "Enemy Spawned! (AK47)";
+            }),
+            new interactable(500, 480, "trap", "Spawn Trap", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Bomber", [200,50]);
+                interactionMessage = "Enemy Spawned! (Bomber)";
             })
             
             
@@ -4733,6 +4769,7 @@ for (const ball of balls) {
         }else{
         enemyShoot(ball);
         enemyMelee(ball);
+        bomberUpdate(ball);
         }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
     }
