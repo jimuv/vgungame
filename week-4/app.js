@@ -1323,6 +1323,12 @@ window.addEventListener("keydown", (event)=>{
         return;
     }
     keys[event.key.toLowerCase()] = true;
+
+    if (event.key.toLowerCase() === "e" && !event.repeat) {
+        if (nearbyInteractable) {
+            nearbyInteractable.interact();
+        }
+    }
 });
 
 window.addEventListener("keyup", (event)=>{
@@ -1654,7 +1660,8 @@ const mapSelectButtons = [
     new Button(300, 200, 200, 50, "Map 1", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Map 2", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Map 3", "lightblue", 0.5),
-    new Button(300, 500, 200, 50, "Back", "lightblue", 0.5)
+    new Button(300, 500, 200, 50, "Back", "lightblue", 0.5),
+    new Button(550, 100, 200, 50, "Interactive Map Test", "lightblue", 0.5),
 ]
 let upgradeButtons = [
     new Button( 150,300, 150, 100, "Increase HP", "lightgreen", 0.75),
@@ -2005,6 +2012,11 @@ function drawMapSelect() {
         }
         else if (mapSelectButtons[4].isPressed()) {
             gameScreen = "mainMenu";
+        }
+        else if (mapSelectButtons[5].isPressed()) {
+            selectedMap = "InteractiveMap";
+            gameScreen = "game";
+            Map();
         }
     }
 }
@@ -2985,6 +2997,7 @@ function Map() {
     walls.length = 0;
     floors.length = 0;
     sandbags.length = 0;
+    interactables.length = 0;
 
     BackgroundImage = new Image();
     bossFightActive = false;
@@ -3295,6 +3308,82 @@ function Map() {
         addProp(server, 610, 410, 60, 60);
         addProp(crate, 375, 275, 50, 50);
         addProp(monster, 375, 100, 150, 150);
+    }
+    if (selectedMap === "InteractiveMap") {
+        wallsVisible = true;
+        
+        floors.push(new Floor(0, 0, 800, 600, metal));
+
+        interactables.push(
+            new interactable(200, 200, "terminal", "Security Terminal", prop => {
+                prop.active = !prop.active;
+                interactionMessage = prop.active ? "Security Terminal Activated!" : "Security Terminal Deactivated!";
+            }
+
+            ),
+            new interactable(400, 300, "switch", "Power Switch", prop => {
+                prop.active = !prop.active;
+                interactionMessage = prop.active ? "Power Switch Turned On!" : "Power Switch Turned Off!";
+            }),
+
+            new interactable(600, 200, "crate", "Supply Crate", prop => {
+                prop.used = true;
+                interactionMessage = prop.active ? "Supply Crate Opened!" : "Supply Crate Closed!";
+            })
+        )
+    }
+}
+const interactables = [];
+let nearbyInteractable = null;
+let interactionMessage = "";
+let msgTimer = null;
+
+class interactable {
+    constructor(x, y, type, message, action) {
+        this.x = x;
+        this.y = y;
+        this.width = 34;
+        this.height = 34;
+        this.type = type;
+        this.message = message;
+        this.action = action;
+        this.used = false;
+        this.active = false;
+    }
+    interact() {
+        if (this.used) return;
+        this.action(this);
+        clearTimeout(msgTimer);
+        msgTimer = setTimeout(() => interactionMessage = "", 2000);
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.active ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)";
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(this.type.toUpperCase(), this.x + 17, this.y + 48);
+
+    }
+}
+function updateInteractables() {
+    const player = balls.find(ball => ball.isPlayer);
+    nearbyInteractable = null;
+    if (!player) return;
+    let closestDistance = 65;
+
+    for (const prop of interactables) {
+        if (prop.used) continue;
+        const dx = player.x - (prop.x + 17);
+        const dy = player.y - (prop.y + 17);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            nearbyInteractable = prop;
+        }
     }
 }
 
@@ -4204,6 +4293,18 @@ function animate(){
     */
     updateTutorial();
     updateStory();
+    updateInteractables();
+    for (const prop of interactables) {
+        prop.draw(ctx);
+    }
+    if (nearbyInteractable) {
+        ctx.fillStyle = isDarkMode ? "#fffefe" : "#000000";
+        ctx.font = "16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Press E to interact", nearbyInteractable.x, nearbyInteractable.y - 20);
+
+        ctx.fillText(interactionMessage,canvas.width / 2, canvas.height - 30);
+    }
     if (Date.now() > comboTimer) {
         combo=0;
     }
