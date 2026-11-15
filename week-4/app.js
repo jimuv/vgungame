@@ -134,6 +134,7 @@ function applyClass(className){
     const player = balls.find(b => b.isPlayer);
     if (player) {
         player.color = classData.color;
+        player.baseColor = classData.color;
         player.maxHealth = getMaxHealth();
         player.health = player.maxHealth;
         player.size = classData.size;
@@ -1966,6 +1967,13 @@ function drawCrossHair() {
     ctx.stroke();
     ctx.restore();
 }
+function baseColorOf(ball) {
+    return ball.baseColor || (ball.isPlayer ? "blue" : "red");
+}
+function setSkin(color) {
+    balls[0].color = color;
+    balls[0].baseColor = color;
+}
 let classDropdownOpen = false;
 
 const classDropdownButton = new Button(10, 20, 200, 45, "Class: Default >", "lightblue", 0.75);
@@ -1999,6 +2007,7 @@ const mapSelectButtons = [
     new Button(300, 500, 200, 50, "Back", "lightblue", 0.5),
     new Button(550, 100, 200, 50, "Interactive Map Test", "lightblue", 0.5),
     new Button(550, 180, 200, 50, "Interactive Map Test2", "lightblue", 0.5),
+    new Button(550, 260, 200, 50, "Spawner Map", "lightblue", 0.5),
 ]
 let upgradeButtons = [
     new Button( 150,300, 150, 100, "Increase HP", "lightgreen", 0.75),
@@ -2197,13 +2206,15 @@ function drawArrow(x1, y1, x2, y2, color,txt,txt2){
 
 function spawnEnemy(weapon, pos=null) {
     const stats = enemyStats[weapon] || enemyStats["Katana"];
+    const color = weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : weapon === "Mutant" ? "darkred" : "red");
     enemyCounter++;
     balls.push({
         x: pos ? pos[0] : 100,
         y: pos ? pos[1] : 100,
         dx: 0,
         dy: 0,
-        color: weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : weapon === "Mutant" ? "darkred" : "red"),
+        baseColor: color,
+        color: color,
         radius: radius,
         health: stats.health,
         speed: stats.speed,
@@ -2452,6 +2463,11 @@ function drawMapSelect() {
         }
         else if (mapSelectButtons[6].isPressed()) {
             selectedMap = "InteractiveMap2";
+            gameScreen = "game";
+            Map();
+        }
+        else if (mapSelectButtons[7].isPressed()) {
+            selectedMap = "SpawnerMap";
             gameScreen = "game";
             Map();
         }
@@ -2928,7 +2944,7 @@ class melee {
                     else {
                         setTimeout(() => {
                             if (!enemy.isDead) {
-                                enemy.color = enemy.weapon === "Medic" ? "limegreen" : "red";
+                                enemy.color = baseColorOf(enemy);
                             }
                         }, 200);
                     }
@@ -3187,7 +3203,7 @@ function createExplosion(x, y, radius, damage) {
             } else {
                 setTimeout(() => {
                     if (!enemy.isDead) {
-                        enemy.color = enemy.weapon === "Medic" ? "limegreen" : "red";
+                        enemy.color = baseColorOf(enemy);
                     }
                 }, 200);
             }
@@ -3910,7 +3926,7 @@ function Map() {
             
         )
     }
-    if (selectedMap === "InteractiveMap2") { //note: wont be used
+    if (selectedMap === "InteractiveMap2") {
         wallsVisible = true;
         floors.push(new Floor(0, 0, 800, 600, metal));
         const lockDoor = addDoor(350, 100, 100, 20, true);
@@ -3919,6 +3935,75 @@ function Map() {
             lockDoor.locked = false;
             money += 999;
         })
+    }
+    if (selectedMap === "SpawnerMap") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0, 100, 350, 20);
+        addWall(concrete, 450, 100, 350, 20);
+        const doorUL = addDoor(350, 100, 100, 20, false);
+        interactables.push(
+            new interactable(100, 480, "Ak47 Spawner", "Spawn Ak47", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("AK47", [200,50]);
+                interactionMessage = "Enemy Spawned! (AK47)";
+            }),
+            new interactable(160, 380, "Pistol Spawner", "Spawn Pistol", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Pistol", [200,50]);
+                interactionMessage = "Enemy Spawned! (Pistol)";
+            }),
+            new interactable(220, 480, "Katana Spawner", "Spawn Katana", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Katana", [200,50]);
+                interactionMessage = "Enemy Spawned! (Katana)";
+            }),
+            new interactable(280, 380, "Shotgun Spawner", "Spawn Shotgun", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Shotgun", [200,50]);
+                interactionMessage = "Enemy Spawned! (Shotgun)";
+            }),
+            new interactable(340, 480, "Shielder Spawner", "Spawn Shielder", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Shielder", [200,50]);
+                interactionMessage = "Enemy Spawned! (Shielder)";
+            }),
+            new interactable(400, 380, "Bomber Spawner", "Spawn Bomber", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Bomber", [200,50]);
+                interactionMessage = "Enemy Spawned! (Bomber)";
+            }),
+            new interactable(460, 480, "Dragon Slayer Spawner", "Dragon Slayer", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Dragon Slayer", [200,50]);
+                interactionMessage = "Enemy Spawned! (Dragon Slayer)";
+            }),
+            new interactable(520, 380, "Researcher Spawner", "Spawn Researcher", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Researcher", [200,50]);
+                interactionMessage = "Enemy Spawned! (Researcher)";
+            }),
+            new interactable(580, 480, "Medic Spawner", "Spawn Medic", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Medic", [200,50]);
+                interactionMessage = "Enemy Spawned! (Medic)";
+            }),
+            new interactable(640, 380, "Mutant Spawner", "Spawn Mutant", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Mutant", [200,50]);
+                interactionMessage = "Enemy Spawned! (Mutant)";
+            }),
+        );
     }
     if (selectedMap === "map9") {
         wallsVisible = true;
@@ -4205,11 +4290,11 @@ const shopItems = {
         { name: "Mine", price: 4, oneTime: false, action: () => objects.push(new Object("mine")) }
     ],
     Skins: [
-        { name: "Red Ball", price: 0, oneTime: true, action: () => balls[0].color = "red" },
-        { name: "Blue Ball", price: 0, oneTime: true, action: () => balls[0].color = "blue" },
+        { name: "Red Ball", price: 0, oneTime: true, action: () => setSkin("red") },
+        { name: "Blue Ball", price: 0, oneTime: true, action: () => setSkin("blue") },
         ...accessories.map(name => ({ name,price: name=== "Crown" ? 10 : 0, oneTime: true, action: () => wearAccessory(name)})),
-        { name: "Green Ball", price: 0, oneTime: true, action: () => balls[0].color = "green" },
-        { name: "Yellow Ball", price: 0, oneTime: true, action: () => balls[0].color = "yellow" },
+        { name: "Green Ball", price: 0, oneTime: true, action: () => setSkin("green") },
+        { name: "Yellow Ball", price: 0, oneTime: true, action: () => setSkin("yellow") },
     ],
     Armor: [
         { name: "Leather Armor", price: 5, oneTime: true, action: () => equipArmor(5, "Leather Armor") },
@@ -5272,7 +5357,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 
                 setTimeout(() => {
                 if (!target.isDead) {
-                        target.color = "blue";
+                        target.color = baseColorOf(target);
                     }
                 }, 200);
 
@@ -5288,7 +5373,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                         target.y = canvas.height / 2;
                         target.dx = 0;
                         target.dy = 0;
-                        target.color = "blue";
+                        target.color = baseColorOf(target);
                     }, 2000);
                 }
             } else {
@@ -5327,7 +5412,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 } else {
                     setTimeout(() => {
                         if (!target.isDead && !target.remove) {
-                            target.color = target.weapon === "Medic" ? "limegreen" : "red";
+                            target.color = baseColorOf(target);
                         }
                         target.hit = false;
                     }, 200);
@@ -5384,7 +5469,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 ball1.health -= ball2.damage;
                 ball1.color = "lightblue";
                 setTimeout(() => {
-                    ball1.color = "blue";
+                    ball1.color = baseColorOf(ball1);
                     ball1.hit = false;
                 }, 200);
                 if(ball1.health <= 0){
