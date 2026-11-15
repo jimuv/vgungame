@@ -1390,7 +1390,10 @@ window.addEventListener("keydown", (event)=>{
     keys[event.key.toLowerCase()] = true;
 
     if (event.key.toLowerCase() === "e" && !event.repeat) {
-        if (nearbyInteractable) {
+        if (carriedItem) {
+            dropCarriedItem();
+            }
+            else if (nearbyInteractable) {
             nearbyInteractable.interact();
         }
     }
@@ -1703,6 +1706,9 @@ function drawCrossHair() {
     ctx.stroke();
     ctx.restore();
 }
+let classDropdownOpen = false;
+
+const classDropdownButton = new Button(10, 20, 200, 45, "Class: Default >", "lightblue", 0.75);
 const classSelectButtons = [
     new Button(10, 100, 200, 55, "Default", "lightblue", 0.75),
     new Button(10, 180, 200, 55, "Scout", "lightblue", 0.75),
@@ -2023,22 +2029,38 @@ function drawModeSelect() {
     ctx.fillText('${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].description}', canvas.width / 2, 150);
 
     const classKeys = ["Default", "Scout", "Heavy"];
-    for (let i = 0; i < classSelectButtons.length; i++) {
-        classSelectButtons[i].color = (selectedClass === classKeys[i]) ? "green" : "lightblue";
-        classSelectButtons[i].transparency = (selectedClass === classKeys[i]) ? 0.75 : 0.5;
-        classSelectButtons[i].draw(ctx);
+    const arrow = classDropdownOpen ? ">" : "<";
+    classDropdownButton.text = `Class: ${selectedClass} ${arrow}`;
+    classDropdownButton.draw(ctx);
+    if (classDropdownOpen){
+        for (let i = 0; i < classSelectButtons.length; i++) {
+            classSelectButtons[i].color = (selectedClass === classKeys[i]) ? "green" : "lightblue";
+            classSelectButtons[i].transparency = (selectedClass === classKeys[i]) ? 0.75 : 0.5;
+            classSelectButtons[i].draw(ctx);
+        }
     }
     for (const button of modeSelectButtons) {
         button.draw(ctx);
     }
     if(justClicked){
-
-        if (classSelectButtons[0].isPressed()) {
-            applyClass("default");
-        } else if (classSelectButtons[1].isPressed()) {
-            applyClass("scout");
-        } else if (classSelectButtons[2].isPressed()) {
-            applyClass("heavy");
+        if (classDropdownButton.isPressed()) {
+            classDropdownOpen = !classDropdownOpen;
+            return;
+        }
+        if (classDropdownOpen) {
+            if (classSelectButtons[0].isPressed()) {
+                applyClass("default");
+                classDropdownOpen = false;
+                return;
+            } else if (classSelectButtons[1].isPressed()) {
+                applyClass("scout");
+                classDropdownOpen = false;
+                return;
+            } else if (classSelectButtons[2].isPressed()) {
+                applyClass("heavy");
+                classDropdownOpen = false;
+                return;
+            }
         }
         if (modeSelectButtons[0].isPressed()) {
             gameScreen = "mapSelect";
@@ -3151,7 +3173,7 @@ function Map() {
     floors.length = 0;
     sandbags.length = 0;
     interactables.length = 0;
-
+    carriedItem = null;
     BackgroundImage = new Image();
     bossFightActive = false;
     if (selectedMap === "default") {
@@ -3469,6 +3491,7 @@ function Map() {
         addWall(concrete, 0, 100, 350, 20);
         addWall(concrete, 450, 100, 350, 20);
         addDoor(350, 100, 100, 20);
+        addBag(500, 300, "Loot bag");
         interactables.push(
             new interactable(200, 200, "terminal", "Security Terminal", prop => {
                 prop.active = !prop.active;
@@ -3485,6 +3508,28 @@ function Map() {
                 prop.used = true;
                 interactionMessage = prop.active ? "Supply Crate Opened!" : "Supply Crate Closed!";
             }),
+            new interactable(100, 500, "pad A", "Teleporter A", prop =>{
+                const player = balls.find(ball => ball.isPlayer);
+                if (!player) return;
+                player.x = 700;
+                player.y = 150;
+                interactionMessage = "Teleported to (B)read.";
+
+            }),
+            new interactable(700, 150, "pad B", "Teleporter B", prop =>{
+                const player = balls.find(ball => ball.isPlayer);
+                if (!player) return;
+                player.x = 100;
+                player.y = 500;
+                interactionMessage = "Teleported to A.";
+            }),
+            new interactable(400, 480, "trap", "Spawn Trap", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Katana", [200,50]);
+                interactionMessage = "Enemy Spawned!";
+            })
+            
             
             // new interactable(300, 400, "door", "Control Room Door", prop => {
             //     prop.active = !prop.active;
@@ -3498,7 +3543,37 @@ const interactables = [];
 let nearbyInteractable = null;
 let interactionMessage = "";
 let msgTimer = null;
+let carriedItem = null;
 
+function addBag(x, y, name = "Loot") {
+    const bag = new interactable(x, y, "bag", name, (prop) => {
+        if (!carriedItem){
+            carriedItem = prop;
+            prop.active = true;
+            interactionMessage = `Picked up ${prop.message}`;
+        }
+    });
+    bag.dx = 0;
+    bag.dy = 0;
+    interactables.push(bag);
+}
+
+function dropCarriedItem() {
+    if (!carriedItem) return;
+    const player = balls.find(ball => ball.isPlayer);
+    if (player) {
+        const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+        carriedItem.x = player.x + Math.cos(angle) * 40;
+        carriedItem.y = player.y + Math.sin(angle) * 40;
+        carriedItem.dx = Math.cos(angle) * 8;
+        carriedItem.dy = Math.sin(angle) * 8;
+    }
+    interactionMessage = `Dropped ${carriedItem.message}`;
+    carriedItem.active = false;
+    carriedItem = null;
+    clearTimeout(msgTimer);
+    msgTimer = setTimeout(() => interactionMessage = "", 2000);
+}
 class interactable {
     constructor(x, y, type, message, action) {
         this.x = x;
@@ -3535,10 +3610,26 @@ function updateInteractables() {
     if (!player) return;
     let closestDistance = 65;
 
+    if (carriedItem) {
+        if (player.isDead){
+            dropCarriedItem();
+        } else {
+            carriedItem.x = player.x + 20;
+            carriedItem.y = player.y + 20;
+        }
+    }
     for (const prop of interactables) {
-        if (prop.used) continue;
-        if (prop.type === "door") {
+        if (prop.used || prop === carriedItem) continue;
+        // if (prop.type === "door") {
 
+        // }
+        if (prop.type === "bag"){
+            prop.x += prop.dx;
+            prop.y += prop.dy;
+            prop.dx *= 0.9;
+            prop.dy *= 0.9;
+            prop.x = Math.max(0, Math.min(canvas.width - prop.width, prop.x));
+            prop.y = Math.max(0, Math.min(canvas.height - prop.height, prop.y));
         }
         const dx = player.x - (prop.x + 17);
         const dy = player.y - (prop.y + 17);
