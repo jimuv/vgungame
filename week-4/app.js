@@ -394,37 +394,58 @@ const storyChapters = {
         //     reward: 30,
         //     enemies: ["Sniper"]
         // },
-        {
-            map: "map7p5",
-            dialogue: [
-                ["Commander", "Wait... hold fire! theres somebody here in the research section"],
-                ["Commander", "Hes unarmed... we need to question him"]
-            ],
-            reward: 0,
-            enemies: ["Researcher"],
-            objective: {
-                type: "talk", 
-                radius: 95, 
-                duration: 13 
-            }
-        },
+        // {
+        //     map: "map7p5",
+        //     dialogue: [
+        //         ["Commander", "Wait... hold fire! theres somebody here in the research section"],
+        //         ["Commander", "Hes unarmed... we need to question him"]
+        //     ],
+        //     reward: 0,
+        //     enemies: ["Researcher"],
+        //     objective: {
+        //         type: "talk", 
+        //         radius: 95, 
+        //         duration: 13 
+        //     }
+        // },
+        // {
+        //     map: "map7p6",
+        //     dialogue: [
+        //         ["Commander", "Hey... It looks like they've been experimenting on something here..."],
+        //         ["Commander", "There is a monster ahead, it seems to be a mutated version of the Dragon Slayer."],
+        //         ["Commander", "Lets go inspect it, but be careful..."]
+        //     ],
+        //     reward: 0,
+        //     enemies: [],
+        //     objective: {
+        //         type:"capture",
+        //          x: 400,
+        //         y: 150, 
+        //         radius: 65, 
+        //         duration: 6 
+        //     }
+        // },
+        //     {
+        //     map: "map7p6",
+        //     dialogue: [
+        //         ["Commander", "This does not seem right..."],
+        //         ["Commander", "We should get rid of it quickly"],
+        //         ["Commander", "Enemies ahead!"]
+        //     ],
+        //     reward: 15,
+        //     enemies: ["Shotgun", "Pistol", "Katana", "Katana", "Katana"],
+        // },
         {
             map: "map7p6",
             dialogue: [
-                ["Commander", "Hey... It looks like they've been experimenting on something here..."],
-                ["Commander", "There is a monster ahead, it seems to be a mutated version of the Dragon Slayer."],
+                ["Commander", "Oh no, it seems like the monster is still alive..."],
+                ["Commander", "its breaking out!"],
+                ["Commander", "We will need to eliminate it quickly!"]
             ],
-            reward: 0,
-            enemies: [],
-            objective: {
-                type:"capture",
-                 x: 400,
-                y: 150, 
-                radius: 65, 
-                duration: 6 
-            }
+            reward: 50,
+            enemies: ["Shotgun", "Pistol"],
+            release: true
         }
-        
     ],
     
     outro: [{
@@ -436,6 +457,15 @@ const storyChapters = {
     }]
 },
     
+}
+
+function releaseMonster() {
+    const i = walls.findIndex(w => w.image === "monster");
+    if (i !== -1) {
+        walls.splice(i, 1);
+    }
+    createExplosion(450, 175, 100, 80);
+    spawnEnemy("Mutant", [450, 175]);
 }
 let airstrike = null;
 
@@ -776,6 +806,7 @@ function updateStory(){
 
         enemyCountMax = stage.enemies.length;
         storyPhase = "fight";
+        if (stage.release) releaseMonster();
 
         for (const weapon of stage.enemies) {
             spawnEnemy(weapon, pickEnemySpawn());
@@ -1730,8 +1761,14 @@ const enemyStats = {
         damage: 0,
         shootDelay: 0,
         size: 1
+    },
+    "Mutant": {
+        health: 600,
+        speed: 0.5,
+        damage: 40,
+        shootDelay: 0,
+        size: 2.5
     }
-
 }
 function checkShieldBreak(enemy) {
     if (enemy.shielded && enemy.health <= 0) {
@@ -1798,7 +1835,7 @@ function spawnEnemy(weapon, pos=null) {
         y: pos ? pos[1] : 100,
         dx: 0,
         dy: 0,
-        color: weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : "red"),
+        color: weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : weapon === "Mutant" ? "darkred" : "red"),
         radius: radius,
         health: stats.health,
         speed: stats.speed,
@@ -2548,6 +2585,65 @@ function enemyMelee(enemy){
             enemy.meleeSwinging = false;
             enemy.nextSwing = now + (enemy.weapon === "Dragon Slayer" ? 1100 : 600);
         }
+    }
+}
+function mutantSlam(enemy){
+    if (!enemy.isEnemy || enemy.isDead || enemy.remove || enemy.weapon !== "Mutant") {
+        return;
+    }
+    const player = balls.find(ball => ball.isPlayer);
+    if (!player || player.isDead || player.remove) {
+        return;
+    }
+    const now = Date.now();
+    const distance = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+    if (!enemy.slamStart){
+        if (distance <= 200 && now >= (enemy.nextSlam || 0)) {
+            enemy.slamStart = now;
+            enemy.following = false;
+            enemy.dx = 0;
+            enemy.dy = 0;
+        }
+        return;
+    }
+    const damage = 500;
+    if (now - enemy.slamStart >= 1000 && !enemy.slamExecuted) {
+        explosions.push({ x: enemy.x, y: enemy.y, radius: 200, damage: 50, createdAt: Date.now(), duration: 250 , color: "rgb(48, 46, 44)"});
+        if (distance <= 200 && !isInvulnerable(player)) {
+            player.health -= damage * 0.1;
+        player.health = Math.max(0, player.health);
+
+        if (player.health <= 0) {
+            player.isDead = true;
+            player.transparency = 0.95;
+
+            setTimeout(() => {
+                player.isDead = false;
+                player.invulnerableUntil = Date.now() + spawnProtectionMs;
+                player.health = getMaxHealth();
+                player.x= canvas.width / 2;
+                player.y= canvas.height / 2;
+                player.dx=0;
+                player.dy=0;
+            }, 2000);
+    }
+        }
+        enemy.slamStart = 0;
+        enemy.following = true;
+        enemy.nextSlam = now + 3000;
+    }
+}
+function drawMutantIndicator(enemy){
+    for (const enemy of balls) {
+        if (enemy.weapon !=="Mutant" || !enemy.slamStart || enemy.isDead) continue;
+        const progress = Math.min((Date.now() - enemy.slamStart) / 1000, 1);
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = "rgb(78, 82, 85)";
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, 150 * progress, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
     }
 }
  function drawEnemyWeapon(enemy){
@@ -4308,6 +4404,7 @@ for (const ball of balls) {
         }else{
         enemyShoot(ball);
         enemyMelee(ball);
+        mutantSlam(ball);
         }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
     }
@@ -4568,7 +4665,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 
         ctx.save();
         ctx.globalAlpha = 1 - progress;
-        ctx.fillStyle = "orange";
+        ctx.fillStyle = explosion.color || "orange";
         ctx.beginPath();
         ctx.arc(
             explosion.x,
@@ -4579,7 +4676,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
         );
         ctx.fill();
 
-        ctx.strokeStyle = "yellow";
+        ctx.strokeStyle = explosion.color ? "darkgray" : "yellow";
         ctx.lineWidth = 4;
         ctx.stroke();
         ctx.restore();
@@ -5299,6 +5396,7 @@ canvas.style.cursor = "default"
         drawCrossHair();
         drawAlarm();
         drawAirstrike();
+        drawMutantIndicator();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
