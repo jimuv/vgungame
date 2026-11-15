@@ -547,33 +547,33 @@ const storyChapters = {
         //         duration: 13 
         //     }
         // },
-        // {
-        //     map: "map7p6",
-        //     dialogue: [
-        //         ["Commander", "Hey... It looks like they've been experimenting on something here..."],
-        //         ["Commander", "There is a monster ahead, it seems to be a mutated version of the Dragon Slayer."],
-        //         ["Commander", "Lets go inspect it, but be careful..."]
-        //     ],
-        //     reward: 0,
-        //     enemies: [],
-        //     objective: {
-        //         type:"capture",
-        //          x: 400,
-        //         y: 150, 
-        //         radius: 65, 
-        //         duration: 6 
-        //     }
-        // },
-        //     {
-        //     map: "map7p6",
-        //     dialogue: [
-        //         ["Commander", "This does not seem right..."],
-        //         ["Commander", "We should get rid of it quickly"],
-        //         ["Commander", "Enemies ahead!"]
-        //     ],
-        //     reward: 15,
-        //     enemies: ["Shotgun", "Pistol", "Katana", "Katana", "Katana"],
-        // },
+        {
+            map: "map7p6",
+            dialogue: [
+                ["Commander", "Hey... It looks like they've been experimenting on something here..."],
+                ["Commander", "There is a monster ahead, it seems to be a mutated version of the Dragon Slayer."],
+                ["Commander", "Lets go inspect it, but be careful..."]
+            ],
+            reward: 0,
+            enemies: [],
+            objective: {
+                type:"capture",
+                 x: 400,
+                y: 150, 
+                radius: 65, 
+                duration: 6 
+            }
+        },
+            {
+            map: "map7p6",
+            dialogue: [
+                ["Commander", "This does not seem right..."],
+                ["Commander", "We should get rid of it quickly"],
+                ["Commander", "Enemies ahead!"]
+            ],
+            reward: 15,
+            enemies: ["Shotgun", "Pistol", "Katana", "Katana", "Katana"],
+        },
         {
             map: "map7p6",
             dialogue: [
@@ -592,14 +592,117 @@ const storyChapters = {
             ["Commander", "Alright, we're done here."],
             ["Commander", "We will be continuing the mission in a later chapter."]
         ],
-        map: "map6"
+        map: "map7p6"
     }]
 },
-    
+    5: {
+        title: "Chapter 5: Breakout",
+        map: "map7p6",
+        stages: [{
+            dialogue: [
+                ["Commander", "Alright, we've gone deep inside their underground facility...let's get moving."],
+                ["Commander", "Lets explore around before we get to the main base."],
+                ["Commander", "There seems to be higher level security here... watch out!"]
+            ],
+            
+            enemies: ["AK47", "AK47"],
+            reward: 10
+        },
+        {
+            map: "map9",
+            dialogue: [
+                ["Commander", "The next door is sealed. It seems like they've lost power here..."],
+                ["Commander", "Find the battery and carry it to the generator"],
+                ["Commander", "Press E to pick it up, and E to drop it"]
+            ],
+            enemies: [],
+            reward: 20,
+            objective: {
+                type: "power", bx: 150, by: 450, gx: 650, gy: 300
+            }
+        },
+        {
+            map: "map9p2",
+            dialogue: [
+                ["Commander", "Ah crap, theres bombers incoming! shoot them before they get too close!"],
+            ],
+            enemies: ["AK47", "Bomber", "Bomber"],
+            reward: 25
+        },
+        {
+            map: "map9p3",
+            dialogue: [
+                ["Commander", "Uh oh, it seems like they are planning to self destruct this place..."],
+                ["Commander", "We need to get as much info as we can before it's too late!"],
+                ["Commander", "Hold off this area..."]
+            ],
+            enemies: ["AK47", "Shotgun", "Pistol", "Katana"],
+            reward: 30,
+            objective: {
+                type: "capture",
+                x: 400,
+                y: 300,
+                radius: 65,
+                duration: 8
+            },
+            alarm: true
+        },
+        {
+            map: "map9p4",
+            dialogue: [
+                ["Commander", "Good news... it seems like we can disable the self destruction."],
+                ["Commander", "The controls are in the security room, but it's locked down."],
+                ["Commander", "We need to find the access card to get in."]
+            ],
+            enemies: [],
+            reward: 30,
+            objective: {
+                type: "collect",
+            },
+            alarm: true
+        },
+        {
+            map: "map9p5",
+            dialogue: [
+                ["Commander", "Alright, we are in the security room, but there are many enemies here."],
+                ["Commander", "There are plenty of gaurds here"],
+                ["Commander", "Theres also a medic, eliminate him first, then the rest of the enemies will be easier to deal with."]
+            ],
+            enemies: ["Medic", "AK47", "Shotgun", "Pistol", "Shielder"],
+            reward: 35,
+            alarm: true
+        },
+        {
+            map: "map9p6",
+            dialogue: [
+                ["Commander", "There it is! the terminal..."],
+                ["Commander", "Press E to start the shutdown."],
+                ["Commander", "We will have 60 seconds"]
+            ],
+            enemies: [...repeat("Bomber", 3), "AK47", "AK47"],
+            reward: 50,
+            objective: {
+                type: "terminal", 
+                x: 400, 
+                y: 120, 
+                timer: 60
+            },
+            alarm: true
+        }
+    ],
+    outro: [{
+        dialogue: [
+            ["Commander", "Nice, we've finally made it out of the underground facility."],
+            ["Commander", "Your next mission will be given soon, we'll extract you from here."]
+        ],
+        map: "map4p2"
+    }]
+    },
 }
 
+let storyTimerEnd = null;
 function releaseMonster() {
-    const i = walls.findIndex(w => w.image === "monster");
+    const i = walls.findIndex(w => w.image === monster);
     if (i !== -1) {
         walls.splice(i, 1);
     }
@@ -684,7 +787,7 @@ function drawAlarm() {
     if (gameMode !== "story") return;
     const stage = storyChapters[storyChapter]?.stages[storyStage];
     if (!stage || !stage.alarm) return;
-    if (storyPhase !== "dialogue" && storyPhase !== "fight") return;
+    if (storyPhase !== "dialogue" && storyPhase !== "fight" && storyPhase !== "collect") return;
 
     const alpha = Math.floor(Date.now() / 500) % 2 === 0 ? 0.1 : 0.2;
     ctx.save();
@@ -892,6 +995,7 @@ function beginStoryStage() {
     const stage = storyChapters[storyChapter].stages[storyStage];
     clearDialogue();
     captureProgress = 0;
+    storyObjectiveComplete = false;
     captureLastUpdate = Date.now();
     if (stage.map && selectedMap !== stage.map) {
         selectedMap = stage.map;
@@ -919,7 +1023,15 @@ function updateStory(){
     const chapter = storyChapters[storyChapter];
     const stage = chapter.stages[storyStage];
     const dialogueDone = !currentDialogue && dialogueQueue.length === 0;
-
+    if (storyPhase === "collect" && storyTimerEnd && !storyObjectiveComplete && Date.now() > storyTimerEnd) {
+        storyTimerEnd = null;
+        balls = balls.filter(b => b.isPlayer);
+        enemyCounter = 0;
+        selectedMap = "";
+        storyTimerEnd = null;
+        beginStoryStage();
+        return;
+    }
     if (storyPhase === "dialogue" && dialogueDone) {
         if(stage.objective?.type === "capture") {
             storyPhase = "capture";
@@ -944,6 +1056,29 @@ function updateStory(){
             for (const weapon of stage.enemies) {
                 spawnEnemy(weapon, pickEnemySpawn());
             }
+        } else if (stage.objective?.type === "terminal"){
+            storyObjectiveComplete = false;
+            storyTimerEnd = Date.now() + stage.objective.timer * 1000;
+            enemyCounter = 0;
+            enemyCountMax = stage.enemies.length;
+            for (const weapon of stage.enemies) {
+                spawnEnemy(weapon, pickEnemySpawn());
+            }
+            interactables.push(new interactable(stage.objective.x, stage.objective.y, "terminal", "Self Destruct Terminal", prop => {
+                prop.used = true;
+                prop.active = true;
+                storyObjectiveComplete = true;
+                interactionMessage = "Self destruction disabled!";
+            }));
+            storyPhase = "collect";
+        } else if (stage.objective?.type === "power") {
+            storyObjectiveComplete = false;
+            addBattery(stage.objective.bx, stage.objective.by);
+            addGenerator(stage.objective.gx, stage.objective.gy, () =>{
+                walls.forEach(door => {if(door.locked) door.locked = false;});
+                storyObjectiveComplete = true;
+            });
+            storyPhase = "collect";
         }
         else {
 
@@ -972,7 +1107,6 @@ function updateStory(){
             captureLastUpdate = now;
             if(captureProgress >= stage.objective.duration) {
                 storyPhase = "fight";
-                enemyCounter = 0;
             }
         }
     } else if (storyPhase === "talk") {
@@ -1083,7 +1217,19 @@ function updateStory(){
             }
         }
     
-
+function drawStoryTimer() {
+    if (!storyTimerEnd || storyPhase != "collect") return;
+    const left = Math.max(0, storyTimerEnd - Date.now());
+    const seconds = Math.ceil(left / 1000);
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(canvas.width - 120, 20, 100, 30);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 18px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`Time left: ${seconds}s`, canvas.width - 70, 40);
+    ctx.restore();
+}
 function addCombo(){
     combo++;
     comboTimer = Date.now() + 5000;
@@ -1793,8 +1939,9 @@ function drawChapterSelect() {
             startStoryChapter(3);
         } else if (chapterSelectButtons[3].isPressed()) {
             startStoryChapter(4);
-        }
-    else if (chapterSelectButtons[4].isPressed()) {
+        } else if (chapterSelectButtons[4].isPressed()) {
+            startStoryChapter(5);
+        } else if (chapterSelectButtons[5].isPressed()) {
             gameScreen = "modeSelect";
         }
         justClicked = false;
@@ -1842,6 +1989,7 @@ const chapterSelectButtons = [
     new Button(300, 200, 200, 50, "Chapter 2", "lightblue", 0.5),
     new Button(300, 250, 200, 50, "Chapter 3", "lightblue", 0.5),
     new Button(550, 150, 200, 50, "Chapter 4", "lightblue", 0.5),
+    new Button(550, 200, 200, 50, "Chapter 5", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
@@ -1927,16 +2075,23 @@ const enemyStats = {
         shootDelay: 0,
         size: 1
     },
+    "Mutant": {
+        health: 600,
+        speed: 0.5,
+        damage: 20,
+        shootDelay: 0,
+        size: 1.5
+    },
     "AK47": {
         health: 40,
-        speed: 0.7,
+        speed: 0.25,
         damage: 5,
         shootDelay: 20,
         size:1
     },
     "Bomber": {
         health: 10,
-        speed: 2,
+        speed: 1.5,
         damage: 0,
         shootDelay: 0,
         size:1
@@ -2092,7 +2247,7 @@ const waveConfigs = {
         ["Medic", ...repeat("Katana", 15), ...repeat("Pistol", 5), "Shielder"],
         [...repeat("Medic", 2),...repeat("Shielder", 2), "Dragon Slayer", ...repeat("Sniper", 2), ...repeat("Shotgun", 2), ...repeat("Pistol", 2)],
         [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 2)],
-        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9)]
+        [...repeat("Medic", 2),...repeat("Shielder", 2),...repeat("Dragon Slayer", 3), ...repeat("Sniper", 5), ...repeat("Shotgun", 5), ...repeat("Pistol", 5), ...repeat("Katana", 9), ...repeat("AK47", 3)],
     ],
     hard: [
         [...repeat("Katana", 5)],
@@ -3765,6 +3920,62 @@ function Map() {
             money += 999;
         })
     }
+    if (selectedMap === "map9") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0, 150, 350, 20);
+        addWall(concrete, 450, 150, 350, 20);
+        addDoor(350, 150, 100, 20, true);
+        addProp(server, 100, 60, 60, 60);
+        addProp(crate, 250, 300, 50, 50);
+        addProp(crate, 520, 420, 50, 50);
+    }
+    if (selectedMap === "map9p2") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 250, 100, 20, 200);
+        addWall(concrete, 250, 380, 20, 120);
+        addWall(concrete, 520, 200, 20, 200);
+        addProp(crate, 380, 80, 50, 50);
+        addProp(crate, 380, 470, 50, 50);
+    }
+    if (selectedMap === "map9p3") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 300, 80, 200, 20);
+        addWall(concrete, 300, 470, 200, 20);
+        addProp(crate, 200, 150, 50, 50);
+        addProp(crate, 550, 150, 50, 50);
+        addProp(crate, 200, 400, 50, 50);
+        addProp(crate, 550, 400, 50, 50);
+    }
+    if (selectedMap === "map9p4") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 250, 150, 20, 300);
+        addWall(concrete, 530, 150, 20, 300);
+        addProp(crate, 350, 200, 50, 50);
+        addProp(crate, 400, 400, 50, 50);
+        addProp(server, 600, 250, 50, 50);
+    }
+    if (selectedMap === "map9p5") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 250, 150, 20, 300);
+        addWall(concrete, 530, 150, 20, 300);
+        addProp(crate, 350, 200, 50, 50);
+        addProp(server, 400, 400, 50, 50);
+        addProp(server, 600, 250, 50, 50);
+    }
+    if (selectedMap === "map9p6") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 250, 150, 20, 300);
+        addWall(concrete, 530, 150, 20, 300);
+        addProp(server, 350, 200, 50, 50);
+        addProp(server, 400, 400, 50, 50);
+        addProp(server, 600, 250, 50, 50);
+    }
 }
 const interactables = [];
 let nearbyInteractable = null;
@@ -3934,6 +4145,12 @@ const mapSpawns = {
     map7p4: { player: [60, 300],  enemies: [[740, 300]] },
     map7p5: { player: [400, 540], enemies: [[400,120]]},
     map7p6: { player: [400, 540], enemies: [[400, 80]] },
+    map9: { player: [400, 590], enemies: []},
+    map9p2: { player: [60, 300], enemies: [[740,150], [740, 300], [740, 450]]},
+    map9p3: { player: [400, 540], enemies: [[60,60], [740,60], [60,540], [740,540]]},
+    map9p4: { player: [80, 300], enemies: []},
+    map9p5: { player: [80, 300], enemies: [[100,80], [700, 80], [400, 60]]},
+    map9p6: { player: [80, 300], enemies: [[60, 540], [740, 540], [100, 300], [700, 300]]},
 }
 function pickEnemySpawn() {
     const list = mapSpawns[selectedMap]?.enemies;
@@ -4937,6 +5154,7 @@ for (const ball of balls) {
             healEnemies(ball);
         }else{
         enemyShoot(ball);
+        mutantSlam(ball);
         enemyMelee(ball);
         bomberUpdate(ball);
         }
@@ -5931,6 +6149,7 @@ canvas.style.cursor = "default"
         drawAlarm();
         drawAirstrike();
         drawMutantIndicator();
+        drawStoryTimer();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
