@@ -116,6 +116,17 @@ const playerClasses = {
         gun: "Shotgun",
         melee: "Katana",
         desc: "Slow, but strong"
+    },
+    engineer: {
+        name: "Engineer",
+        health: 60,
+        speed: .95,
+        damage: 10,
+        size: 1,
+        color: "green",
+        gun: "Pistol",
+        melee: "Katana",
+        desc: "Can build"
     }
 };
 
@@ -1238,7 +1249,9 @@ function addCombo(){
 const abilities = [
     {name: "Grenade", cooldown: 8000, lastUsed:-Infinity},
     {name: "Speed", cooldown: 5000, lastUsed:-Infinity},
-    {name: "Shield", cooldown: 10000, lastUsed:-Infinity}
+    {name: "Shield", cooldown: 10000, lastUsed:-Infinity},
+    {name: "Build", cooldown: 1500, lastUsed:-Infinity},
+    {name: "Demolish", cooldown: 300, lastUsed:-Infinity}
 ]
 let abilityKey = [false,false];
 let grenades = [];
@@ -1246,6 +1259,8 @@ let speedBoost = 0;
 
 function useAbility(index, player){
     const ability = abilities[index];
+    if (ability.name === "Build" && selectedClass !== "engineer") return;
+    if (ability.name === "Demolish" && selectedClass !== "engineer") return;
     if (Date.now() - ability.lastUsed >= ability.cooldown) {
         ability.lastUsed = Date.now();
         if (ability.name === "Grenade") {
@@ -1255,6 +1270,10 @@ function useAbility(index, player){
             speedBoost = Date.now() + 5000;
         } else if (ability.name === "Shield") {
             player.invulnerableUntil = Date.now() + 3000;
+        } else if (ability.name === "Build") {
+            if (!buildWall(player)) ability.lastUsed = Date.now() - ability.cooldown;
+        } else if (ability.name === "Demolish") {
+            if (!demolishWall(player)) ability.lastUsed = Date.now() - ability.cooldown;
         }
     }
 }
@@ -1279,7 +1298,116 @@ function updateAbilities(player){
     }
     grenades = grenades.filter(g => !g.done);    
 }
+const buildSize = 50;
+const buildHP = 100;
+const buildRange = 150;
+const maxBuildWalls = 6;
 
+function getBuildSpot(player){
+    let targetX = mouseX;
+    let targetY = mouseY;
+
+    const distance = Math.hypot(targetX - player.x, targetY - player.y);
+    if (distance > buildRange) {
+        targetX = player.x + ((targetX - player.x) / distance) * buildRange;
+        targetY = player.y + ((targetY - player.y) / distance) * buildRange;
+    }
+    const x = Math.floor(targetX / buildSize) * buildSize;
+    const y = Math.floor(targetY / buildSize) * buildSize;
+    let canbuild = x >= 0 && x + buildSize <= canvas.width && y >= 0 && y + buildSize <= canvas.height;
+
+    if (canbuild) {
+        for (const wall of walls) {
+            if (wall.solid && x < wall.x + wall.width && x + buildSize > wall.x && y < wall.y + wall.height && y + buildSize > wall.y) {
+                if (x < wall.x + wall.width && x + buildSize > wall.x && y < wall.y + wall.height && y + buildSize > wall.y) {
+                    canbuild = false;
+                    break;
+                }
+            }
+        }
+    }
+    if (canbuild) {
+        for (const b of balls) {
+            if (b.isProjectile || b.isDead || b.remove) continue;
+            const cx = Math.max(x, Math.min(b.x, x + buildSize));
+            const cy = Math.max(y, Math.min(b.y, y + buildSize));
+            const r = b.radius * b.size;
+            if ((b.x - cx) ** 2 + (b.y - cy) ** 2 < r ** 2) {
+                canbuild = false;
+                break;
+            }
+        }
+    }
+    return {x, y, canbuild};
+}
+
+function buildWall(player){
+    const spot = getBuildSpot(player);
+    if (!spot || !spot.canbuild) return false;
+    wallsVisible = true;
+    const wall = new Wall(spot.x, spot.y, buildSize, buildSize, {bulletBehavior: "destroy", solid: true, image: crate, tile: false});
+    wall.hp = buildHP;
+    wall.builtByPlayer = true;
+    walls.push(wall);
+    const builtWalls = walls.filter(w => w.builtByPlayer);
+    if (builtWalls.length > maxBuildWalls){
+        walls.splice(walls.indexOf(builtWalls[0]), 1);
+    }
+    return true;
+}
+
+function demolishWall(player){
+    const spot = getBuildSpot(player);
+    if (!spot) return false;
+    for (const wall of walls) {
+        if (wall.builtByPlayer && wall.x === spot.x && wall.y === spot.y) {
+            walls.splice(walls.indexOf(wall), 1);
+            return true;
+        }
+    }
+    return false;
+}
+
+function drawWallBar(wall){
+    const ratio = Math.max(0, wall.hp / buildHP);
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "red";
+    ctx.fillRect(wall.x, wall.y - 8, wall.width, 5);
+    ctx.fillStyle = "limegreen";
+    ctx.fillRect(wall.x, wall.y - 8, wall.width * ratio, 5);
+    ctx.restore();
+}
+
+function enemyAttackWalls(enemy){
+    if(!enemy.isEnemy || enemy.isDead || enemy.remove) return;
+    const now = Date.now();
+    if (now < (enemy.nextWallHit || 0)) return;
+    const radius = enemy.radius * enemy.size + 4;
+    for (const wall of walls) {
+        if (!wall.solid || wall.hp === undefined || wall.hp <= 0) continue;
+        const closestX = Math.max(wall.x, Math.min(enemy.x, wall.x + wall.width));
+        const closestY = Math.max(wall.y, Math.min(enemy.y, wall.y + wall.height));
+        const distance = Math.hypot(enemy.x - closestX, enemy.y - closestY);
+        if (distance < radius) {
+            wall.hp -= enemy.damage;
+            enemy.nextWallHit = now + 500;
+            if (wall.hp <= 0) {
+                wall.remove = true;
+            }
+        }
+    }
+}
+
+function drawBuildPreview(player){
+    if (selectedClass !== "engineer") return;
+    const spot = getBuildSpot(player);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = spot.canbuild ? "green" : "red";
+    ctx.fillRect(spot.x, spot.y, buildSize, buildSize);
+    ctx.restore();
+}
 function drawAbilityBar() {
     const w = 90
     const h = 50;
@@ -1325,7 +1453,9 @@ let binds = {
     ability: "t",
     ability1: "1",
     ability2: "2",
-    ability3: "3"
+    ability3: "3",
+    ability4: "4",
+    ability5: "5"
 }
 
 const bindNames = [
@@ -1343,7 +1473,8 @@ const bindNames = [
     ["ability","Use ability"],
     ["ability1","Use ability 1"],
     ["ability2","Use ability 2"],
-    ["ability3","Use ability 3"]
+    ["ability3","Use ability 3"],
+    ["ability4","Use ability 4"]
 ]
 let rebinding = null;
 
@@ -1981,6 +2112,7 @@ const classSelectButtons = [
     new Button(10, 100, 200, 55, "Default", "lightblue", 0.75),
     new Button(10, 180, 200, 55, "Scout", "lightblue", 0.75),
     new Button(10, 260, 200, 55, "Heavy", "lightblue", 0.75),
+    new Button(230, 100, 200, 55, "Engineer", "lightblue", 0.75),
 ]
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
@@ -2333,7 +2465,7 @@ function drawModeSelect() {
     ctx.font = "16px Arial";
     ctx.fillText(`${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].description}`, canvas.width / 2, 150);
 
-    const classKeys = ["Default", "Scout", "Heavy"];
+    const classKeys = ["default", "scout", "heavy", "engineer"];
     const arrow = classDropdownOpen ? ">" : "<";
     classDropdownButton.text = `Class: ${selectedClass} ${arrow}`;
     classDropdownButton.draw(ctx);
@@ -2363,6 +2495,10 @@ function drawModeSelect() {
                 return;
             } else if (classSelectButtons[2].isPressed()) {
                 applyClass("heavy");
+                classDropdownOpen = false;
+                return;
+            } else if (classSelectButtons[3].isPressed()) {
+                applyClass("engineer");
                 classDropdownOpen = false;
                 return;
             }
@@ -3168,7 +3304,14 @@ let currentMelee = katana;
 
 function createExplosion(x, y, radius, damage) {
     explosions.push({ x, y, radius, damage, createdAt: Date.now(),duration: 250});
-
+    for (const wall of walls) {
+        if (wall.hp === undefined) continue;
+        const cx = Math.max(wall.x, Math.min(x, wall.x + wall.width));
+        const cy = Math.max(wall.y, Math.min(y, wall.y + wall.height));
+        if (Math.hypot(cx - x, cy - y) <= radius) {
+            wall.hp -= damage;
+        }
+    }
     for (const enemy of balls) {
         if (!enemy.isEnemy || enemy.isDead || enemy.remove) {
             continue;
@@ -3403,6 +3546,12 @@ class Sandbag {
 }
 
 function handleWallCollision() {
+    for (let i=0; i<walls.length; i++) {
+        if (walls[i].hp !== undefined && walls[i].hp <= 0) {
+            walls.splice(i, 1);
+            i--;
+        }
+    }
     for (let i=balls.length-1; i>=0; i--) {
         const ball = balls[i];
         if (ball.isDead || ball.remove) {
@@ -3462,6 +3611,9 @@ function handleWallCollision() {
 
                 if(wall.bulletBehavior === "penetrate"){
                     continue;
+                }
+                if (wall.hp !== undefined && ball.isEnemyBullet){
+                    wall.hp -= ball.damage;
                 }
                 if (wall.bulletBehavior === "destroy"){
                     ball.remove=true;
@@ -5110,6 +5262,9 @@ function animate(){
         walls.forEach(wall => {
             if (bossFightActive && wall.bosswall) return;
             wall.draw(ctx);
+            if (wall.hp !== undefined) {
+                drawWallBar(wall);
+            }
         });
     }
 
@@ -5242,6 +5397,7 @@ for (const ball of balls) {
         mutantSlam(ball);
         enemyMelee(ball);
         bomberUpdate(ball);
+        enemyAttackWalls(ball);
         }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
     }
@@ -5709,6 +5865,7 @@ if (player) {
     }
     if (keys[binds.ability]) {
         drawAbilityBar();
+        drawBuildPreview(player);
     }
     info.visible = true;
     
