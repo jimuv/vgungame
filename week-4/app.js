@@ -736,7 +736,7 @@ function startAirstrike(duration) {
 }
 function updateAirstrike() {
     if (!airstrike) return true;
-    keys = {};
+    if (storyPhase === "airstrike") keys = {};
     const now = Date.now();
     const elapsed = now - airstrike.start;
 
@@ -765,7 +765,7 @@ function updateAirstrike() {
     for (const b of airstrike.bombs) {
         if (!b.done && now >= b.explodeAt) {
             b.done = true;
-            createExplosion(b.x, b.y, 100, 80);
+            createExplosion(b.x, b.y, 100, 80, false);
         }
     }
     const allBombsDone = airstrike.bombs.every(b => b.done);
@@ -787,7 +787,8 @@ function drawAirstrike() {
 
     const jet = airstrike.jet;
     if (jet) {
-        const img = weaponImages["Explosive Sniper"];
+        const img = new Image();
+        img.src = "assets/jet.png";
         ctx.translate(jet.x, jet.y);
         ctx.scale(jet.dir, 1);
         ctx.drawImage(img, -img.width / 2, -img.height / 2);
@@ -3302,7 +3303,7 @@ const nodachi = new melee("Nodachi", 50, 100);
 const dragonslayer = new melee("Dragon Slayer", 75, 150);
 let currentMelee = katana;
 
-function createExplosion(x, y, radius, damage) {
+function createExplosion(x, y, radius, damage, hurtPlayer = true) {
     explosions.push({ x, y, radius, damage, createdAt: Date.now(),duration: 250});
     for (const wall of walls) {
         if (wall.hp === undefined) continue;
@@ -3354,6 +3355,9 @@ function createExplosion(x, y, radius, damage) {
     }
 
     const player = balls.find(ball => ball.isPlayer);
+    if (!hurtPlayer || !player || player.isDead || player.remove || storyPhase === "airstrike") {
+        return;
+    }
     if (!player || player.isDead || player.remove  || storyPhase === "airstrike") {
         return;
     }
@@ -4087,6 +4091,19 @@ function Map() {
             lockDoor.locked = false;
             money += 999;
         })
+        
+           const support = new interactable(400, 480, "support", "get Support", prop => {
+                
+                    if (airstrike) {
+                        interactionMessage = "Support is already active!";
+                        return;
+                    }
+                prop.active = true;
+                setTimeout(() => prop.active = false, 1000);
+                startAirstrike(6);
+                interactionMessage = "Support is on the way! (Airstrike)";
+            })
+        interactables.push(support);
     }
     if (selectedMap === "SpawnerMap") {
         wallsVisible = true;
@@ -5280,6 +5297,11 @@ function animate(){
     updateTutorial();
     updateStory();
     updateInteractables();
+    if (airstrike && storyPhase !== "airstrike") {
+        if (updateAirstrike()) {
+            endAirstrike();
+        }
+    }
     for (const prop of interactables) {
         prop.draw(ctx);
     }

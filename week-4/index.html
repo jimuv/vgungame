@@ -96,6 +96,16 @@
         margin: 0;
         font-size: 2em;
     }
+    table {
+        margin: 10px auto;
+        border-collapse: collapse;
+        background-color: white;
+        font-size: 14px;
+    }
+    th, td {
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+    }
     </style>
 </head>
 <body>
@@ -113,6 +123,7 @@
         <button class="tab-button" onclick="openTab('controls', this)">Basic Controls</button>
         <button class="tab-button" onclick="openTab('ui', this)">UI</button>
         <button class="tab-button" onclick="openTab('notes', this)">Notes</button>
+        <button class="tab-button" onclick="openTab('classes', this)">Classes</button>
      </div>
 </div>
 <script>
@@ -129,6 +140,18 @@
     <h2>Overview</h2>
     <p>Welcome to the game! You can play in different modes, first you will need to click "Start Game", select the mode, and now you can play. (tutorial highly recommended)</p>
     <p>As of now there are 7 main modes: 5 Wave, Normal Mode, Hard Mode, Endless, Story, Sandbox, and the tutorial. Note: after completing any wave modes, you will need to restart in order to play again.</p>
+    <details>
+        <summary>Modes</summary>
+        <ul>
+            <li>5 Wave</li>
+            <li>Normal Mode</li>
+            <li>Hard Mode</li>
+            <li>Endless</li>
+            <li>Story</li>
+            <li>Sandbox</li>
+            <li>Tutorial</li>
+        </ul>
+    </details>
     </div>
     <div id="controls" class="tabs">
     <h2>Basic Controls</h2>
@@ -207,6 +230,23 @@
     <p>I will be working on this game through multiple weeks probably, so this wont be a full game yet. (As of week 3, there is now a story mode)</p>
     <p>For debugging or testing purposes, you can use toggling walls in the settings menu if you ever encounter issues with being stuck.</p>
     <p>Note: some features may be hidden, due to it not being fully implemented/ready for use.</p>
+    </div>
+    <div id="classes" class="tabs">
+    <h2>Classes</h2>
+    <p>There are 4 classes in the game which can be selected during mode select screen</p>
+    <table>
+        <tr><th>Class</th><th>Weapon</th><th>Description</th></tr>
+        <tr><td>Default</td><td>Pistol</td><td>Standard class with balanced stats.</td></tr>
+        <tr><td>Scout</td><td>Dual Wield</td><td>Faster movement speed, but lower health.</td></tr>
+        <tr><td>Heavy</td><td>Shotgun</td><td>Slower movement speed, but higher health and damage.</td></tr>
+        <tr><td>Engineer</td><td>Pistol</td><td>Can build and demolish walls, but has lower health.</td></tr>
+    </table>
+    <h3>Special Classes</h1>
+    <details>
+        <summary>Engineer</summary>
+        <p>The Engineer class can build walls to block enemies and demolish them when needed.</p>
+        <img src="assets/engi.png" alt="Engineer class demo" loading="lazy">
+    </details>
     </div>
 </body>
 <img src="assets/9913ae2a6d0c38196c511a216b1ad6ea.gif"
@@ -288,6 +328,7 @@
             <li>Bomber and AK47 enemy (can be spawned in first InteractiveMap)</li>
             <li>Invincibility ability</li>
             <li>Engineer class (special)</li>
+            <li>HTML changes (classes tab and modes)</li>
         </ul>
     </details>
     <p>Made by jimuv</p>

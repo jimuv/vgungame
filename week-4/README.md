@@ -17,14 +17,14 @@ On the website, if you scroll down, you should be able to see another "How to pl
 
 On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
 
-For gamemodes, there is sandbox, 5 wave, Normal mode, and Hard mode. Note: "5 wave" came from Week 1 and the rest is from other weeks, and "sandbox" is to test everything out without much enemies
+For gamemodes, there is sandbox, 5 wave, Normal mode,  Hard mode and story mode. Note: "5 wave" came from Week 1 and the rest is from other weeks, and "sandbox" is to test everything out without much enemies
 
-Note: after completing 5 Wave mode or other gamemodes, you will need to restart in order to play again, do this by pressing 'esc' or 'p' then pressing exit (Endless as an exception).
+Note: after completing 5 Wave mode or other gamemodes, you will need to restart in order to play again, do this by pressing 'esc' or 'p' then pressing "quit game" (Endless as an exception).
 
 ### Keybinds
 The basics of this game is that you press 'f' to shoot, 'g' to melee, and shortcuts are 'm' for menu, 'n' for shop, 'h' for toggling enemy healthbars, and 'esc' or 'p' to pause/resume the game
 
-For abilities, you hold 't', and press either '1' '2' '3' '4' or '5' to choose which to use, as of now there are grenade and speed
+For abilities, you hold 't', and press either '1' '2' '3' '4' or '5' to choose which to use, as of now there are grenade, speed, shield (build/demolish is exclusive to engineer class, refer to class selection)
 
 For player movement, use WASD to move in 4 directions, "Ctrl" to dash forward, and "Shift" to sprint.
 
@@ -45,6 +45,13 @@ There is also a button on settings called "keybinds" which opens a keybinds menu
 
 Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging.
 
+#### Class selection
+This is a new feature added in week 4, you can access this through the class button found during the mode selection
+
+There are 4 classes: Default, Heavy, Scout, and Engineer
+
+The engineer is a special class, and only they have access to the abilities t+4 and t+5, which is building and demolishing, other classes cannot use these
+
 #### Shop
 On the shop, it is important to drag it into frame, which then you can see more buttons.
 
@@ -61,7 +68,7 @@ In the skins section, there is many items that costs money, you can obtain these
 #### Enemies
 So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Dragon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and guaranteed +10 money. 
 
-There are special enemies I added (week 2) which are: the medic enemy, which heals its surroundings, the shielder which has bullet resistance (30% damage taken).
+There are special enemies I added (week 2) which are: the medic enemy, which heals its surroundings, the shielder which has bullet resistance (30% damage taken). and week(week 4): mutant, bomber
 
 Tip: for shielder, it is vulnerable to melee attacks, so it is easier to break its shield using a melee (press 'g' to melee)
 
@@ -69,16 +76,16 @@ Tip: for shielder, it is vulnerable to melee attacks, so it is easier to break i
 This game will evolve to a story based shooter game, where there will be plenty of chapters a player can play in, progressing through the story . My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
 # Modes
-So in the game, there are different types of modes, the tutorial covers the basics of the game. Wave modes, are wave based spawn. The story mode, includes capture zones, keycard pickups, dialogue, and objectives. And sandbox gives money to work around with.
+So in the game, there are different types of modes, the tutorial covers the basics of the game. Wave modes, are wave based spawn. The story mode, includes capture zones, keycard pickups, dialogue, cutscenes and objectives (interactables). And sandbox gives money to work around with.
 
 For every other waves, there is a prompt given to upgrade HP, speed, or damage.
 
 # notes
-As of now, there are multiple modes, I am currently working on the Story modes. This is a game updated on top of multiple weeks.
+As of now, there are multiple modes, I am currently working on the Story modes (now at 5 chapters). This is a game updated on top of multiple weeks.
 
 If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
 
-Right here should be within a week-3 folder, so it should be separate from the main as of now which is was used for week 2
+Right here should be within a week-4 folder, so it should be separate from the main as of now which is was used for week 2
 
 <!-- This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable. -->
 
