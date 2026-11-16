@@ -127,6 +127,30 @@ const playerClasses = {
         gun: "Pistol",
         melee: "Katana",
         desc: "Can build"
+    },
+    medic: {
+        name: "Medic",
+        health: 80,
+        speed: 1.05,
+        damage: 8,
+        armor: 0,
+        size: 1,
+        color: "mediumseagreen",
+        gun: "Pistol",
+        melee: "Katana",
+        desc: "Passive healing regen"
+    },
+    sniper: {
+        name: "Sniper",
+        health: 60,
+        speed: 1,
+        damage: 20,
+        armor: 0,
+        size: 1,
+        color: "purple",
+        gun: "Sniper",
+        melee: "Katana",
+        desc: "Long range, high damage"
     }
 };
 
@@ -1505,15 +1529,8 @@ map creation? (will need export/import)
 */
 
 /*
-future story structure:
-Raid into enemy base,
-find key to room,
-open door,
-at the end, is the boss, after winning, cutscene (maybe) airstrike the enemy base
 
 story addons:
--Objectives (key, position, doors)
--Enemy spawn positions
 -pre shop
 -Save data, new currency, story coins?
 
@@ -2113,7 +2130,9 @@ const classSelectButtons = [
     new Button(10, 100, 200, 55, "Default", "lightblue", 0.75),
     new Button(10, 180, 200, 55, "Scout", "lightblue", 0.75),
     new Button(10, 260, 200, 55, "Heavy", "lightblue", 0.75),
-    new Button(230, 100, 200, 55, "Engineer", "lightblue", 0.75),
+    new Button(230, 20, 200, 55, "Engineer", "lightblue", 0.75),
+    new Button(230, 100, 200, 55, "Medic", "lightblue", 0.75),
+    new Button(450, 20, 200, 55, "Sniper", "lightblue", 0.75),
 ]
 const modeSelectButtons = [
     new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
@@ -2240,14 +2259,20 @@ const enemyStats = {
     }
 }
 
-function drawClassSelect(){
+function updateMedicPassive(player){
+    if (selectedClass !== "medic") return;
+    if (player.health < player.maxHealth) {
+        player.health = Math.min(player.maxHealth, player.health + 0.015);
+    }
+}
+function drawClassSelect(){ //not in use, but could be used for a class select screen
     ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
     ctx.font = "24px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillText("Select a Class", canvas.width / 2, 80);
 
-    const keysList = ["Default", "Scout", "Heavy"];
+    const keysList = ["Default", "Scout", "Heavy", "Engineer", "Medic"];
     for (let i = 0; i < classSelectButtons.length; i++) {
         classSelectButtons[i].draw(ctx);
         ctx.fillStyle = isDarkMode ? "white" : "black";
@@ -2264,7 +2289,11 @@ function drawClassSelect(){
         } else if (classSelectButtons[2].isPressed()) {
             selectClass("Heavy");
         } else if (classSelectButtons[3].isPressed()) {
-            gameScreen = "modeSelect";
+            selectClass("Engineer");
+        } else if (classSelectButtons[4].isPressed()) {
+            selectClass("Medic");
+        } else if (classSelectButtons[5].isPressed()) {
+            selectClass("Sniper");
         }
     }
 }
@@ -2466,7 +2495,7 @@ function drawModeSelect() {
     ctx.font = "16px Arial";
     ctx.fillText(`${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].description}`, canvas.width / 2, 150);
 
-    const classKeys = ["default", "scout", "heavy", "engineer"];
+    const classKeys = ["default", "scout", "heavy", "engineer", "medic", "sniper"];
     const arrow = classDropdownOpen ? ">" : "<";
     classDropdownButton.text = `Class: ${selectedClass} ${arrow}`;
     classDropdownButton.draw(ctx);
@@ -2500,6 +2529,14 @@ function drawModeSelect() {
                 return;
             } else if (classSelectButtons[3].isPressed()) {
                 applyClass("engineer");
+                classDropdownOpen = false;
+                return;
+            } else if (classSelectButtons[4].isPressed()) {
+                applyClass("medic");
+                classDropdownOpen = false;
+                return;
+            } else if (classSelectButtons[5].isPressed()) {
+                applyClass("sniper");
                 classDropdownOpen = false;
                 return;
             }
@@ -4832,7 +4869,6 @@ const button2 = new Button(
 const button3 = new Button(
     265, 445, 270, 40, "Add Moving Ball", "darkblue", 0.5
 );
-//plan: remodel this into inventory/clothing/wardrobe type
 const button4 = new Button(
     265, 395, 130, 40, "Skins inventory", "lightyellow", 0.5
 );
@@ -5878,6 +5914,7 @@ if (player) {
     }
     if (storyPhase !== "airstrike") getAccessory();
     updateAbilities(player);
+    updateMedicPassive(player);
     for (let i = 0; i < abilities.length; i++) {
         const down = keys[binds["ability" + (i + 1)]];
         if (keys[binds.ability] && down && !abilityKey[i] && !player.isDead) {

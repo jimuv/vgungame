@@ -48,9 +48,11 @@ Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging
 #### Class selection
 This is a new feature added in week 4, you can access this through the class button found during the mode selection
 
-There are 4 classes: Default, Heavy, Scout, and Engineer
+There are 6 classes: Default, Heavy, Scout, Sniper, Medic and Engineer
 
 The engineer is a special class, and only they have access to the abilities t+4 and t+5, which is building and demolishing, other classes cannot use these
+
+The medic is also a special class, with passive healing
 
 #### Shop
 On the shop, it is important to drag it into frame, which then you can see more buttons.
