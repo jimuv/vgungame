@@ -1284,6 +1284,8 @@ let speedBoost = 0;
 
 function useAbility(index, player){
     const ability = abilities[index];
+    if (!ability) return;
+    if (ability.class && ability.class !== selectedClass) return;
     if (ability.name === "Build" && selectedClass !== "engineer") return;
     if (ability.name === "Demolish" && selectedClass !== "engineer") return;
     if (Date.now() - ability.lastUsed >= ability.cooldown) {
@@ -1437,9 +1439,11 @@ function drawAbilityBar() {
     const w = 90
     const h = 50;
     const gap = 10;
-    const startX = canvas.width /2 - (abilities.length * w + (abilities.length - 1) * gap) / 2;
+    const count = selectedClass === "engineer" ? 5 : 3;
+    const startX = canvas.width /2 - (count * w + (count - 1) * gap) / 2;
     const y = canvas.height - 70;
     for (let i = 0; i < abilities.length; i++) {
+        if (i >= 3 && selectedClass !== "engineer") continue;
         const x = startX + i * (w + gap);
         ctx.fillStyle = "gray";
         ctx.fillRect(x, y, w, h);
