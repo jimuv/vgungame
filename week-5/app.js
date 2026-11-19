@@ -734,6 +734,56 @@ const storyChapters = {
         map: "map4p2"
     }]
     },
+        6: {
+    stages: [{
+        map: "map10p1",
+        dialogue: [
+            ["Commander", "Alright, we've extracted to our base, but it seems like the enemy is still after us."],
+            ["Commander", "We need to hold this area"],
+            ["Commander", "Be ready to defend against any incoming threats."],
+            ["Commander", "Looks like we got company, there are many enemies ahead!"]
+        ],
+        enemies: [],
+        reward: 0
+    },
+    {
+        map: "map10p1",
+        dialogue: [["Commander", "It seems like they are sending in more troops, we're calling in reinforcements, keep holding the line."]],
+        enemies: [],
+        reward: 0
+    },
+    {
+        map: "map10p1",
+        dialogue: [["Commander", "We've got reinforcements, there is less coming now..."]],
+        enemies: [],
+        reward: 0
+    },
+    {
+        map: "map10p1",
+        dialogue: [["Commander", "Uh oh, they've got vehicles now."]],
+        enemies: [],
+        reward: 0
+    },
+    {
+        map: "map10p1",
+        dialogue: [["Commander", "This is an all out war... prepare for a counter attack!"]],
+        enemies: [],
+        reward: 0
+    },
+    {
+        map: "map10p1",
+        dialogue: [["Commander", "Bla bla bla!!! I am a placeholder!!!!!"]],
+        enemies: [],
+        reward: 0
+    }
+    ],
+    outro: [{
+        dialogue: [
+            ["Commander", "We've made it out alive! We must still continue, the battle is over, but the war is not."],
+        ],
+        map: "map10p1"
+    }]
+    }
 }
 
 let storyTimerEnd = null;
@@ -2096,6 +2146,8 @@ function drawChapterSelect() {
         } else if (chapterSelectButtons[4].isPressed()) {
             startStoryChapter(5);
         } else if (chapterSelectButtons[5].isPressed()) {
+            startStoryChapter(6);
+        } else if (chapterSelectButtons[6].isPressed()) {
             gameScreen = "modeSelect";
         }
         justClicked = false;
@@ -2154,6 +2206,7 @@ const chapterSelectButtons = [
     new Button(300, 250, 200, 50, "Chapter 3", "lightblue", 0.5),
     new Button(550, 150, 200, 50, "Chapter 4", "lightblue", 0.5),
     new Button(550, 200, 200, 50, "Chapter 5", "lightblue", 0.5),
+    new Button(550, 250, 200, 50, "Chapter 6", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
@@ -2259,6 +2312,22 @@ const enemyStats = {
         speed: 1.5,
         damage: 0,
         shootDelay: 0,
+        size:1
+    }
+}
+const allyStats = {
+    "Pistol": {
+        health: 100,
+        speed: 1,
+        damage: 5,
+        shootDelay: 30,
+        size:1
+    },
+    "Shotgun": {
+        health: 100,
+        speed: 0.75,
+        damage: 10,
+        shootDelay: 50,
         size:1
     }
 }
@@ -2399,6 +2468,33 @@ function spawnEnemy(weapon, pos=null) {
         shielded: weapon === "Shielder"
     });
 }
+function spawnAlly(weapon, pos=null) {
+    const stats = allyStats[weapon];
+    if (!stats) return;
+    const color = "lightblue";
+    balls.push({
+        x: pos ? pos[0] : 100,
+        y: pos ? pos[1] : 100,
+        dx: 0,
+        dy: 0,
+        baseColor: color,
+        color: color,
+        radius: radius,
+        health: stats.health,
+        speed: stats.speed,
+        damage: stats.damage,
+        shootDelay: stats.shootDelay,
+        size: stats.size,
+        maxHealth: stats.health,
+        hit: false,
+        isDead: false,
+        isAlly: true,
+        following: true,
+        strafe: true,
+        stuckTimer: 0,
+        weapon: weapon
+    });
+} //reminder: use this for the ally part later (placeholder/unused for now)
 function repeat(item, count) {
     return Array(count).fill(item);
 }
@@ -4271,6 +4367,49 @@ function Map() {
         addProp(server, 400, 400, 50, 50);
         addProp(server, 600, 250, 50, 50);
     }
+        if (selectedMap === "map10p1") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        
+        floors.push(new Floor(340, 0, 120, 220, road));
+        floors.push(new Floor(170, 220, 460, 290, metal));
+        addWall(fence, 0, 170, 150, 20, "penetrate");
+        addWall(fence, 650, 170, 150, 20, "penetrate");
+        addWall(concrete, 150, 200, 190, 20);
+        addWall(concrete, 460, 200, 190, 20);
+        addWall(concrete, 150, 200, 20, 140);
+        addWall(concrete, 150, 440, 20, 90);
+        addWall(concrete, 630, 200, 20, 140);
+        addWall(concrete, 630, 440, 20, 90);
+        addWall(concrete, 150, 510, 500, 20);
+
+        addWall(concrete, 300, 400, 20, 110);
+        addWall(concrete, 480, 400, 20, 110);
+        addWall(concrete, 320, 400, 40, 20);
+        addWall(concrete, 440, 400, 40, 20);
+        addProp(server, 330, 440, 60, 60);
+        addProp(server, 410, 440, 60, 60);
+
+        addProp(sandbagImage, 200, 300, 80, 35);
+        addProp(sandbagImage, 520, 300, 80, 35);
+        addProp(sandbagImage, 360, 300, 80, 35);
+        addProp(sandbagImage, 440, 300, 80, 35);
+
+        addProp(crate, 200, 200, 50, 50);
+        addProp(crate, 550, 200, 50, 50);
+        addProp(crate, 200, 400, 50, 50);
+        addProp(crate, 550, 400, 50, 50);
+        addProp(crate, 360, 200, 50, 50);
+    }
+    if (selectedMap === "map10p2") { //placeholder maps
+        wallsVisible = true;
+    }
+    if (selectedMap === "map10p3") {
+        wallsVisible = true;
+    }
+    if (selectedMap === "map10p4") {
+        wallsVisible = true;
+    }
 }
 const interactables = [];
 let nearbyInteractable = null;
@@ -4446,6 +4585,7 @@ const mapSpawns = {
     map9p4: { player: [80, 300], enemies: []},
     map9p5: { player: [80, 300], enemies: [[100,80], [700, 80], [400, 60]]},
     map9p6: { player: [80, 300], enemies: [[60, 540], [740, 540], [100, 300], [700, 300]]},
+    map10: { player: [400, 340], enemies: [[60,60], [740,60], [60,540], [740,540]]},
 }
 function pickEnemySpawn() {
     const list = mapSpawns[selectedMap]?.enemies;
