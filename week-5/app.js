@@ -755,7 +755,8 @@ const storyChapters = {
     {
         map: "map10p1",
         dialogue: [["Commander", "We've got reinforcements, there is less coming now..."]],
-        enemies: [],
+        allies: ["Pistol", "Shotgun"],
+        enemies: ["Pistol", "Katana"],
         reward: 0
     },
     {
@@ -1098,7 +1099,10 @@ function beginStoryStage() {
         showDialogue(text, speaker, commanderImage, true);
     }
     const player = balls.find(b => b.isPlayer);
-    if (player) player.health = player.maxHealth;
+    if (player) {
+    player.health = player.maxHealth;
+    (stage.allies || []).forEach((a, i) => spawnAlly(a, [player.x - 40 - i * 40, player.y]));
+    }
     storyPhase = "dialogue";
 }
 function finishStoryChapter(){
@@ -2495,6 +2499,51 @@ function spawnAlly(weapon, pos=null) {
         weapon: weapon
     });
 } //reminder: use this for the ally part later (placeholder/unused for now)
+function getNearestEnemy(ballFrom){
+    let best = null;
+    let bestDistance = Infinity;
+    for (const ball of balls) {
+        if (!ball.isEnemy || ball.isDead || ball.remove || ball.weapon === "Researcher") continue;
+        const d = Math.hypot(ball.x - ballFrom.x, ball.y - ballFrom.y);
+        if (d <bestDistance) {
+            bestDistance = d;
+            best = ball;
+        }
+    }
+    return best;
+}
+function allyShoot(ally) {
+    if (!ally.isAlly || ally.isDead || ally.remove || !ally.weapon) return;
+    if (ally.shootCooldown > 0) return;
+    const target = getNearestEnemy(ally);
+    if (!target) return;
+
+    const baseGun = globalThis.Object.values(weapons).find(w => w.name === ally.weapon);
+    if (!baseGun) return;
+    if (!ally.gun){
+        ally.gun = new Gun(
+            baseGun.name,
+            baseGun.damage,
+            baseGun.fireRate,
+            Infinity,
+            baseGun.projectileSpeed,
+            baseGun.bulletCount,
+            baseGun.spread,
+            baseGun.explosive,
+            baseGun.explosionRadius,
+            baseGun.explosionDamage
+        )
+    }
+
+    const projectiles = ally.gun.shoot(ally, target.x, target.y);
+    for (const projectile of projectiles) {
+        projectile.isAllyBullet = true;
+        projectile.color = "cyan";
+        projectile.owner = ally;
+    }
+    balls.push(...projectiles);
+    ally.shootCooldown = ally.shootDelay;
+}
 function repeat(item, count) {
     return Array(count).fill(item);
 }
@@ -3377,6 +3426,20 @@ function drawMutantIndicator(enemy){
         ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
 
         ctx.restore();
+    }
+    function drawAllyWeapon(ally){
+        if (!ally.isAlly || ally.isDead || ally.remove || !ally.weapon) return;
+            const img = weaponImages[ally.weapon];
+            if(!img || !img.complete || img.naturalWidth === 0){
+                return;
+            }
+            const target = getNearestEnemy(ally) || balls.find(ball => ball.isPlayer);
+            ctx.save();
+            ctx.translate(ally.x, ally.y);
+            ctx.rotate(Math.atan2(target.y - ally.y, target.x - ally.x));
+            ctx.drawImage(img,ally.radius-25,-ally.radius-25, 50, 50);
+            ctx.restore();
+        
     }
     function enemyShoot(enemy){
         if (!enemy.isEnemy || enemy.isDead || enemy.remove || !enemy.weapon) {
@@ -4824,7 +4887,7 @@ function buyItem(item) {
     }
 }
 function drawEnemyHealthBar(enemy) {
-    if(!showEnemyHealthbars || !enemy.isEnemy || enemy.isDead || enemy.remove) return;
+    if(!showEnemyHealthbars || (!enemy.isEnemy && !enemy.isAlly) || enemy.isDead || enemy.remove) return;
     
     const barWidth = enemy.radius * 2;
     const barHeight = 5;
@@ -5589,6 +5652,7 @@ for (const ball of balls) {
     ctx.globalAlpha = 1;
     }
     drawEnemyWeapon(ball);
+    drawAllyWeapon(ball);
     drawEnemyHat(ball);
     drawEnemyHealthBar(ball);
     if(ball.isEnemy){
@@ -5601,6 +5665,10 @@ for (const ball of balls) {
         bomberUpdate(ball);
         enemyAttackWalls(ball);
         }
+        ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
+    }
+    if (ball.isAlly){
+        allyShoot(ball);
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
     }
 
@@ -5650,6 +5718,9 @@ for (const ball of balls) {
     if (ball.following===true&&ball.isEnemy&&!ball.isDead&&!player.isDead&&player.isDead===false){
                 startFollowing(ball);
             }
+    if (ball.isAlly && ball.following && !ball.isDead && !player.isDead && player.isDead === false) {
+        startFollowing(ball, getNearestEnemy(ball) || player);
+    }
     
     if (ball.x + ball.radius * ball.size > canvas.width) {
     ball.x = canvas.width - ball.radius * ball.size;
@@ -5695,7 +5766,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 
     if (projectile && target && !projectile.remove && !target.remove && !target.isDead) {
         const correctTarget = projectile.isEnemyBullet
-            ? target.isPlayer
+            ? (target.isPlayer || target.isAlly)
             : target.isEnemy;
 
         const dx = target.x - projectile.x;
@@ -5733,6 +5804,21 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                         target.dy = 0;
                         target.color = baseColorOf(target);
                     }, 2000);
+                }
+            } else if (target.isAlly){
+                target.health = Math.max(0, target.health - projectile.damage);
+                target.color = "white";
+                setTimeout(() => {
+                    if (!target.isDead) {
+                        target.color = baseColorOf(target);
+                    }
+                }, 200);
+                if (target.health <= 0) {
+                    target.isDead = true;
+                    target.transparency = 0.95;
+                    target.dx = projectile.dx / 15;
+                    target.dy = projectile.dy / 15;
+                    setTimeout(() => target.remove = true, 800);
                 }
             } else {
                 target.hit = true;
@@ -6440,8 +6526,8 @@ function getWallWaypoint(ball, player) {
         y: Math.floor(targetIndex / cols) * cellSize + cellSize / 2
     };
 }
-function startFollowing(ball) {
-    const player = balls.find(b => b.isPlayer);
+function startFollowing(ball, target = null) {
+    const player = target || balls.find(b => b.isPlayer);
     if (!player || player.isDead) return;
 
     if (ball.stuckTimer === undefined) {
