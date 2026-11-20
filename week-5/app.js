@@ -4455,14 +4455,14 @@ function Map() {
 
         addProp(sandbagImage, 200, 300, 80, 35);
         addProp(sandbagImage, 520, 300, 80, 35);
-        addProp(sandbagImage, 360, 300, 80, 35);
-        addProp(sandbagImage, 440, 300, 80, 35);
+        addProp(sandbagImage, 360, 270, 80, 35);
+        addProp(sandbagImage, 50, 450, 80, 35);
 
         addProp(crate, 200, 200, 50, 50);
         addProp(crate, 550, 200, 50, 50);
-        addProp(crate, 200, 400, 50, 50);
-        addProp(crate, 550, 400, 50, 50);
-        addProp(crate, 360, 200, 50, 50);
+        addProp(crate, 200, 450, 50, 50);
+        addProp(crate, 550, 450, 50, 50);
+        addProp(crate, 360, 50, 50, 50);
     }
     if (selectedMap === "map10p2") { //placeholder maps
         wallsVisible = true;
@@ -6600,6 +6600,32 @@ function startFollowing(ball, target = null) {
         } else {
             ball.dx = targetDx / targetDistance * 2 * ball.speed;
             ball.dy = targetDy / targetDistance * 2 * ball.speed;
+        }
+    }
+    if(ball.isAlly && player.isPlayer && targetDistance > 0) {
+        if (targetDistance < 70) {
+            ball.dx = -targetDx / targetDistance * 2 * ball.speed;
+            ball.dy = -targetDy / targetDistance * 2 * ball.speed;
+            return;
+        }
+        if (targetDistance < 120) {
+            ball.dx = -targetDy / targetDistance * ball.StrafeDir * 1.5;
+            ball.dy = targetDx / targetDistance * ball.StrafeDir * 1.5;
+            return;
+        }
+    }
+
+    
+    if (ball.isAlly){
+        for (const other of balls) {
+            if (other === ball || !other.isAlly || other.isDead) continue;
+            const odx = other.x - ball.x;
+            const ody = other.y - ball.y;
+            const odist = Math.sqrt(odx * odx + ody * ody);
+            if (odist < ball.radius * ball.size + other.radius * other.size + 10) {
+                ball.dx -= odx / odist * 0.5;
+                ball.dy -= ody / odist * 0.5;
+            }
         }
     }
     const weaponDistance = keepDistance[ball.weapon];
