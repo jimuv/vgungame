@@ -793,6 +793,30 @@ const storyChapters = {
         ],
         map: "map10p1"
     }]
+    },
+    training: {
+        map: "map4",
+        stages: [{
+            dialogue: [
+                ["Commander", "Welcome to advanced training."],
+                ["Commander", "You can hold shift to sprint while moving"],
+                // ["Commander", "Take down this target"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "sprint",
+                hint: "Hold shift to sprint",
+            }
+        }],
+        outro: [{
+            dialogue: [
+                ["Commander", "Good job, you have completed the training."],
+                ["Commander", "That's everything for now."]
+            ],
+            map: "map4"
+        }]
     }
 }
 
@@ -951,6 +975,7 @@ const weaponImages= {
     "Nodachi": new Image(),
     "Dragon Slayer": new Image(),
     "AK47": new Image(),
+    "Tank": new Image(),
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -960,6 +985,7 @@ weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
 weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png";
 weaponImages["AK47"].src = "assets/AK47.png";
+weaponImages["Tank"].src = "assets/AK47.png";
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
 const sandFloorImage = new Image();
@@ -1116,7 +1142,7 @@ function beginStoryStage() {
 }
 function finishStoryChapter(){
     quitGame();
-    gameScreen = "chapterSelect";
+    gameScreen = storyChapter === "training" ? "modeSelect" : "chapterSelect";
 }
 function updateStory(){
     if (gameMode !== "story") return;
@@ -1178,6 +1204,9 @@ function updateStory(){
                 walls.forEach(door => {if(door.locked) door.locked = false;});
                 storyObjectiveComplete = true;
             });
+            storyPhase = "collect";
+        } else if (stage.objective?.type === "do") {
+            storyObjectiveComplete = false;
             storyPhase = "collect";
         }
         else {
@@ -1316,7 +1345,37 @@ function updateStory(){
                 return;
             }
         }
-    
+function updateTraining() {
+    if (gameMode !== "story" || storyPhase !== "collect") return;
+    const obj = storyChapters[storyChapter]?.stages[storyStage]?.objective;
+    if (!obj || obj.type !== "do") return;
+
+    const moving = keys[binds.up] || keys[binds.down] || keys[binds.left] || keys[binds.right];
+    const checks = {
+        sprint: keys[binds.speed] && moving,
+        dodge: keys[binds.dodge],
+        abilityMenu: keys[binds.ability],
+    }
+    if (checks[obj.action]) {
+        storyObjectiveComplete = true;
+    }
+}
+function tutorialAction(value){
+    //placeholder
+}
+function drawTrainingHint(){
+    if (gameMode !== "story" || storyPhase !== "collect") return;
+    const obj = storyChapters[storyChapter]?.stages[storyStage]?.objective;
+    if (!obj?.hint) return;
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(canvas.width / 2 - 150, canvas.height - 100, 300, 50);
+    ctx.fillStyle = "white";
+    ctx.font = "18px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(obj.hint, canvas.width / 2, canvas.height - 70);
+    ctx.restore();
+}
 function drawStoryTimer() {
     if (!storyTimerEnd || storyPhase != "collect") return;
     const left = Math.max(0, storyTimerEnd - Date.now());
@@ -2211,7 +2270,8 @@ const modeSelectButtons = [
     new Button(100, 350, 100, 50, "Endless Mode", "lightblue", 0.5),
     new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
     new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5),
-    new Button(550, 400, 100, 100, "Story Mode", "orange", 0.5)
+    new Button(550, 400, 100, 100, "Story Mode", "orange", 0.5),
+    new Button(680, 300, 100, 100, "Advanced Tutorial", "purple", 0.5),
 ]
 const chapterSelectButtons = [
     new Button(300,150, 200, 50, "Chapter 1", "lightblue", 0.5),
@@ -2758,6 +2818,8 @@ function drawModeSelect() {
         }
         else if (modeSelectButtons[7].isPressed()) {
             gameScreen = "chapterSelect";
+        } else if (modeSelectButtons[8].isPressed()) {
+            startStoryChapter("training");
         }
     }
 }
@@ -3440,6 +3502,8 @@ function drawMutantIndicator(enemy){
             }
         }
         ctx.rotate(Math.atan2(player.y - enemy.y, player.x - enemy.x));
+        const s = enemy.weapon === "Tank" ? enemy.size : 1;
+        ctx.scale(s,s);
         ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
 
         ctx.restore();
@@ -5571,6 +5635,7 @@ function animate(){
     */
     updateTutorial();
     updateStory();
+    updateTraining();
     updateInteractables();
     if (airstrike && storyPhase !== "airstrike") {
         if (updateAirstrike()) {
@@ -6775,6 +6840,7 @@ canvas.style.cursor = "default"
         drawAirstrike();
         drawMutantIndicator();
         drawStoryTimer();
+        drawTrainingHint();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
