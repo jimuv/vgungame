@@ -735,6 +735,8 @@ const storyChapters = {
     }]
     },
         6: {
+            title: "Chapter 6: The War",
+            map: "map10p1",
     stages: [{
         map: "map10p1",
         dialogue: [
@@ -743,39 +745,46 @@ const storyChapters = {
             ["Commander", "Be ready to defend against any incoming threats."],
             ["Commander", "Looks like we got company, there are many enemies ahead!"]
         ],
-        enemies: [],
-        reward: 0
+        enemies: [...repeat("Katana", 5), ...repeat("Pistol", 2)],
+        reward: 15
     },
     {
         map: "map10p1",
         dialogue: [["Commander", "It seems like they are sending in more troops, we're calling in reinforcements, keep holding the line."]],
-        enemies: [],
-        reward: 0
+        enemies: [...repeat("Pistol", 4), ...repeat("Shotgun", 3), "Katana", "Katana"],
+        reward: 20
     },
     {
         map: "map10p1",
         dialogue: [["Commander", "We've got reinforcements, there is less coming now..."]],
         allies: ["Pistol", "Shotgun"],
-        enemies: ["Pistol", "Katana"],
-        reward: 0
+        enemies: [...repeat("Pistol", 4), ...repeat("Katana", 4), "Medic"],
+        reward: 20
     },
     {
         map: "map10p1",
         dialogue: [["Commander", "Uh oh, they've got vehicles now."]],
-        enemies: [],
-        reward: 0
+        enemies: ["Tank", "Pistol", "Pistol"],
+        reward: 30
     },
     {
         map: "map10p1",
         dialogue: [["Commander", "This is an all out war... prepare for a counter attack!"]],
-        enemies: [],
-        reward: 0
+        enemies: ["AK47", "AK47", "Shotgun", "Shotgun", "Katana", "Katana", "Shielder"],
+        reward: 30,
+        objective:{
+            type: "capture",
+            x: 400,
+            y: 350,
+            radius: 65,
+            duration: 8
+        }
     },
     {
         map: "map10p1",
-        dialogue: [["Commander", "Bla bla bla!!! I am a placeholder!!!!!"]],
-        enemies: [],
-        reward: 0
+        dialogue: [["Commander", "Oh no... the mutant we've just killed is back..."]],
+        enemies: ["Mutant", "Tank", "Medic", "Shielder", "Sniper", "Sniper"],
+        reward: 60
     }
     ],
     outro: [{
@@ -2317,7 +2326,14 @@ const enemyStats = {
         damage: 0,
         shootDelay: 0,
         size:1
-    }
+    },
+        "Tank": {
+        health: 400,
+        speed: 0.3,
+        damage: 15,
+        shootDelay: 90,
+        size:2
+        }
 }
 const allyStats = {
     "Pistol": {
@@ -2415,6 +2431,7 @@ const keepDistance = {
     "Medic": 125,
     "Researcher": 800,
     "AK47": 150,
+    "Tank": 200,
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -3409,8 +3426,8 @@ function drawMutantIndicator(enemy){
         }
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
-        const player = balls.find(ball => ball.isPlayer);
-        if (player.isDead) enemy.swingStart = 0;
+        const player = enemy.target || balls.find(ball => ball.isPlayer);
+        if (!player ||player.isDead) enemy.swingStart = 0;
         else if (["Katana", "Nodachi", "Dragon Slayer"].includes(enemy.weapon)) {
             if (!enemy.swingStart && Math.hypot(player.x - enemy.x, player.y - enemy.y) <= 100) {
                 enemy.swingStart = Date.now();
@@ -3451,7 +3468,7 @@ function drawMutantIndicator(enemy){
         if (enemy.weapon === "Katana" || enemy.weapon === "Nodachi" || enemy.weapon === "Dragon Slayer") {
             return;
         }
-        const player = balls.find(ball => ball.isPlayer);
+        const player = enemy.target;
         if (!player || player.isDead || player.remove) {
             return;
         }
@@ -3650,7 +3667,7 @@ function addWall(img, x, y, width, height, bullets = "deflect") {
 }
 function addProp(img, x, y, w, h, bullets = "destroy") {
     walls.push(new Wall(x, y, w, h, {
-        bulletBehavior: bullets, solid: true, image: img, tile: false
+        bulletBehavior: bullets, solid: true, image: img, tile: false, isProp: true
     }));
 }
 class Wall {
@@ -3665,6 +3682,7 @@ class Wall {
         this.bosswall = options.bosswall ?? false;
         this.image = options.image || wallImage;
         this.tile = options.tile ?? false;
+        this.isProp = options.isProp ?? false;
 
         this.hinged = options.hinged ?? false;
         this.closed = {x, y, w:width, h:height};
@@ -3766,6 +3784,7 @@ function handleWallCollision() {
             if (!wall.solid||wallsVisible===false||(bossFightActive && wall.bosswall)) {
                 continue;
             }
+            if (wall.isProp && !ball.isProjectile && ball.size >= 1.5) continue;
             const closestX = Math.max(wall.x, Math.min(ball.x, wall.x + wall.width));
             const closestY = Math.max(wall.y, Math.min(ball.y, wall.y + wall.height));
             let dx= ball.x - closestX;
@@ -4372,6 +4391,18 @@ function Map() {
                 spawnEnemy("Mutant", [200,50]);
                 interactionMessage = "Enemy Spawned! (Mutant)";
             }),
+            new interactable(700, 480, "Ally Pistol Spawner", "Spawn Ally Pistol", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnAlly("Pistol", [200,400]);
+                interactionMessage = "Ally Spawned! (Ally Pistol)";
+            }),
+            new interactable(760, 380, "Ally Shotgun Spawner", "Spawn Ally Shotgun", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnAlly("Shotgun", [200,400]);
+                interactionMessage = "Ally Spawned! (Ally Shotgun)";
+            }),
         );
     }
     if (selectedMap === "map9") {
@@ -4648,7 +4679,7 @@ const mapSpawns = {
     map9p4: { player: [80, 300], enemies: []},
     map9p5: { player: [80, 300], enemies: [[100,80], [700, 80], [400, 60]]},
     map9p6: { player: [80, 300], enemies: [[60, 540], [740, 540], [100, 300], [700, 300]]},
-    map10: { player: [400, 340], enemies: [[60,60], [740,60], [60,540], [740,540]]},
+    map10p1: { player: [400, 340], enemies: [[60,60], [740,60]]},
 }
 function pickEnemySpawn() {
     const list = mapSpawns[selectedMap]?.enemies;
@@ -4680,7 +4711,8 @@ const weapons = {
     Sniper: new Gun("Sniper", 100, 0.5, 50, 10, 1),
     ExplosiveSniper: new Gun("Explosive Sniper", 100, 0.5, 50, 10, 1,0,true,120,100),
     DualWield: new Gun("Dual Wield", 8, 5, Infinity),
-    AK47: new Gun("AK47", 12, 5, 300, 7, 1, 0.1)
+    AK47: new Gun("AK47", 12, 5, 300, 7, 1, 0.1),
+    Tank: new Gun("Tank", 25, 0.7, Infinity, 5, 3, 0.3),
 };
 
 const shopItems = {
@@ -5651,6 +5683,20 @@ for (const ball of balls) {
     ctx.fill();
     ctx.globalAlpha = 1;
     }
+    if (ball.isEnemy && !ball.isDead){
+        let best = null;
+        let bestDist = Infinity;
+        for (const b of balls) {
+            if (!(b.isPlayer || b.isAlly) || b.isDead || b.remove) continue;
+            if (ball.weapon === "Researcher" && !b.isPlayer) continue;
+            const d = Math.hypot(b.x - ball.x, b.y - ball.y) * (b.isPlayer ? 0.8 : 1);
+            if (d < bestDist) {
+                bestDist = d;
+                best = b;
+            }
+        }
+        ball.target = best;
+    }
     drawEnemyWeapon(ball);
     drawAllyWeapon(ball);
     drawEnemyHat(ball);
@@ -5715,8 +5761,8 @@ for (const ball of balls) {
     ball.x += ball.dx;
     ball.y += ball.dy;
     const player = balls.find(b => b.isPlayer);
-    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&!player.isDead&&player.isDead===false){
-                startFollowing(ball);
+    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target){
+                startFollowing(ball, ball.target);
             }
     if (ball.isAlly && ball.following && !ball.isDead && !player.isDead && player.isDead === false) {
         startFollowing(ball, getNearestEnemy(ball) || player);
@@ -5926,6 +5972,24 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                         ball1.y = canvas.height / 2;
                         ball1.invulnerableUntil = Date.now() + spawnProtectionMs;
                     }, 2000);
+                }
+            }
+            const ally = ball1.isAlly ? ball1 : ball2.isAlly ? ball2 : null;
+            const enemy = ball1.isEnemy ? ball1 : ball2.isEnemy ? ball2 : null;
+            if (ally && enemy && enemy.damage > 0 && !ally.hit) {
+                ally.hit = true;
+                ally.health -= enemy.damage;
+                ally.color = "white";
+                setTimeout(() => {
+                    ally.color = baseColorOf(ally);
+                    ally.hit = false;
+                }, 200);
+                if(ally.health <= 0){
+                    ally.isDead = true;
+                    ally.transparency=0.95;
+                    setTimeout(() => {
+                        ally.remove = true;
+                    }, 800);
                 }
             }
             ball1.x -= nx * overlap / 2;
@@ -6408,9 +6472,11 @@ function rayHitsWall(x1, y1, x2, y2, wall, radius) {
 function getWallWaypoint(ball, player) {
     if (!wallsVisible) return null;
     const radius = ball.radius * ball.size;
+    const big = ball.size >= 1.5;
     let directBlocked = false;
     for (const wall of walls) {
         if (!wall.solid) continue;
+        if (big && wall.isProp) continue;
         if (bossFightActive && wall.bosswall) continue;
         if (rayHitsWall(ball.x, ball.y, player.x, player.y, wall, radius - 2)) {
             directBlocked = true;
@@ -6430,6 +6496,7 @@ function getWallWaypoint(ball, player) {
         }
         for (const wall of walls) {
             if (!wall.solid || (bossFightActive && wall.bosswall)) continue;
+            if (big && wall.isProp) continue;
             const closestX = Math.max(wall.x, Math.min(x, wall.x + wall.width));
             const closestY = Math.max(wall.y, Math.min(y, wall.y + wall.height));
             const dx = x - closestX;
@@ -6580,6 +6647,7 @@ function startFollowing(ball, target = null) {
         if (wallsVisible) {
             for (const wall of walls) {
                 if (!wall.solid) continue;
+                if (ball.size >= 1.5 && wall.isProp) continue;
                 if (rayHitsWall(ball.x, ball.y, player.x, player.y, wall, radius + 25)) {
                     canStrafeSafely = false;
                     break;
