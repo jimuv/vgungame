@@ -1273,12 +1273,15 @@ const weaponDescriptions = {
     "AK47": "Automatic gun",
     "Minigun": "BRRRRRRRRRRRRRR",
     "Flamethrower": "Burns enemies",
+    "GrenadeLauncher": "Explosive gun",
 }
 const UtilityDescriptions = {
     "Speed Boost": "Increases movement speed",
     "Heal Package": "Increases health",
     "Mine": "Places a mine that explodes when enemies are near",
-    "Big Rock": "Damage on contact"
+    "Big Rock": "Damage on contact",
+    "Refill Ammo": "Fully refills current gun",
+    "Ammo Pack": "Partial refill of current gun",
 }
 const AccessoryDescriptions = {
     "Glasses": "Cool factor, aura",
@@ -1314,6 +1317,7 @@ const weaponImages= {
     "Tank": new Image(),
     "Minigun": new Image(),
     "Flamethrower": new Image(),
+    "Grenade Launcher": new Image(),
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -1323,9 +1327,10 @@ weaponImages["Katana"].src = "assets/Katana.png";
 weaponImages["Nodachi"].src = "assets/Katana.png";
 weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png";
 weaponImages["AK47"].src = "assets/AK47.png";
-weaponImages["Tank"].src = "assets/AK47.png";
-weaponImages["Minigun"].src = "assets/Sniper.png";
-weaponImages["Flamethrower"].src = "assets/Sniper.png";
+weaponImages["Tank"].src = "assets/tank2.png";
+weaponImages["Minigun"].src = "assets/minigun.png";
+weaponImages["Flamethrower"].src = "assets/flamethrower.png";
+weaponImages["Grenade Launcher"].src = "assets/grenade launcher.png";
 
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
@@ -1352,7 +1357,7 @@ monster.src = "assets/monster.png";
 const greenWallImage = new Image();
 greenWallImage.src = "assets/greenwall.png";
 const batteryImage = new Image();
-batteryImage.src = "assets/crate.png"; //placeholder img
+batteryImage.src = "assets/battery.png"; //placeholder img
 const generatorImage = new Image();
 generatorImage.src = "assets/server.png";
 
@@ -1936,7 +1941,7 @@ function demolishWall(player){
 }
 
 function drawWallBar(wall){
-    const ratio = Math.max(0, wall.hp / buildHP);
+    const ratio = Math.max(0, wall.hp / (wall.maxHp || buildHP));
     ctx.save();
     ctx.globalAlpha = 1;
     ctx.fillStyle = "red";
@@ -2318,11 +2323,11 @@ function updateTutorial() {
         gameMode = null;
         const player = balls.find(ball => ball.isPlayer);
         money=0;
-        player.health = getMaxHealth();
+        gameScreen = "mainMenu";
         if (!player) return;
+        player.health = getMaxHealth();
         player.x=canvas.width / 2;
         player.y=canvas.height / 2;
-        gameScreen = "mainMenu";
     }
 }
 
@@ -2854,6 +2859,20 @@ const enemyStats = {
         damage: 15,
         shootDelay: 90,
         size:2
+        },
+        "Flamethrower": {
+            health: 60, 
+            speed: 0.7, 
+            damage: 2, 
+            shootDelay: 15,
+            size:1
+        },
+        "Summoner": {
+            health: 60,
+            speed: 0.5,
+            damage: 0,
+            shootDelay: 0,
+            size:1
         }
 }
 const allyStats = {
@@ -2953,6 +2972,8 @@ const keepDistance = {
     "Researcher": 800,
     "AK47": 150,
     "Tank": 200,
+    "Flamethrower": 70,
+    "Summoner": 250,
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -2980,10 +3001,20 @@ function drawArrow(x1, y1, x2, y2, color,txt,txt2){
     ctx.stroke();
     ctx.restore();
 }
-
+function summonerUpdate(summoner) {
+    if (summoner.weapon !== "Summoner" || summoner.isDead || summoner.remove) return;
+    const now = Date.now();
+    if (!summoner.nextSummon) summoner.nextSummon = now + 3000;
+    if (now < summoner.nextSummon) return;
+    summoner.nextSummon = now + 10000;
+    const alive = balls.filter(b => b.summonedBy === summoner && !b.isDead && !b.remove).length;
+    if (alive >= 4) return;
+    spawnEnemy("Katana", [summoner.x + 30, summoner.y]);
+    balls[balls.length - 1].summonedBy = summoner;
+}
 function spawnEnemy(weapon, pos=null) {
     const stats = enemyStats[weapon] || enemyStats["Katana"];
-    const color = weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : weapon === "Mutant" ? "darkred" : "red");
+    const color = weapon === "Medic" ? "limegreen" : (weapon === "Researcher" ? "plum" : weapon === "Mutant" ? "darkred" : weapon === "Flamethrower" ? "orange" : weapon === "Summoner" ? "purple" : "red");
     enemyCounter++;
     balls.push({
         x: pos ? pos[0] : 100,
@@ -3304,6 +3335,9 @@ function drawModeSelect() {
             tutorialStep = 0;
             gameMode = "tutorial";
             gameScreen = "mapSelect";
+            tutorialAccessoryBought = false;
+            tutorialShots = 0;
+            tutorialMelee = 0;
             setTutorialStep(0)
         }
         else if (modeSelectButtons[7].isPressed()) {
@@ -3578,6 +3612,7 @@ class Gun {
         this.damage = damage;
         this.fireRate = fireRate;
         this.ammo = ammo;
+        this.maxammo = ammo;
         this.projectileSpeed = projectileSpeed;
         this.bulletCount = bulletCount;
         this.spread = spread;
@@ -3636,7 +3671,7 @@ class Gun {
             this.offsetX=0;
             this.offsetY=0;
         }
-        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower"){
+        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower" || this.name==="Grenade Launcher"){
             this.x=0;
             this.y=-10;
             this.width=60;
@@ -3683,7 +3718,7 @@ class Gun {
                 dy: Math.sin(projectileAngle)*this.projectileSpeed,
                 color: this.name === "Flamethrower" ? "orangered" :"yellow",
                 radius: this.name === "Flamethrower" ? 7 : 5,
-                life: this.name === "Flamethrower" ? 350 : 3000,
+                life: this.name === "Flamethrower" ? 350 : this.name === "Grenade Launcher" ? 1000 : 3000,
                 size: 1,
                 isProjectile: true,
                 createdAt: Date.now(),
@@ -3692,6 +3727,7 @@ class Gun {
                 isFlame: this.name === "Flamethrower",
                 hitSet: new Set(),
                 isExplosive: this.explosive,
+                explodeOnEnd: this.name === "Grenade Launcher",
                 explosionRadius: this.explosionRadius,
                 explosionDamage: this.explosionDamage * (player.isPlayer ? (stats.damage / 10) : 1),
             })
@@ -3996,9 +4032,15 @@ function drawMutantIndicator(enemy){
             }
         }
         ctx.rotate(Math.atan2(player.y - enemy.y, player.x - enemy.x));
-        const s = enemy.weapon === "Tank" ? enemy.size : 1;
+        const s = enemy.weapon === "Tank" ? enemy.size * 2 : 1;
         ctx.scale(s,s);
-        ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
+        if (enemy.weapon === "Tank") {
+            const size = enemy.radius * 2;
+            ctx.drawImage(weaponImage, -size / 2, -size /2, size, size);
+        }
+        else{
+            ctx.drawImage(weaponImage,enemy.radius-25,-enemy.radius-25, 50, 50);
+        }
 
         ctx.restore();
     }
@@ -4488,6 +4530,7 @@ class Floor {
 function addBarrel(x, y){
     const b = new Wall(x, y, 30, 30, {bulletBehavior: "destroy", solid: true, image: crate, tile: false});
     b.hp = 30;
+    b.maxHp = 30;
     b.isBarrel = true;
     walls.push(b);
 }
@@ -4990,6 +5033,24 @@ function Map() {
                 spawnAlly("Shotgun", [200,400]);
                 interactionMessage = "Ally Spawned! (Ally Shotgun)";
             }),
+            new interactable(760, 300, "Tank Spawner", "Spawn Tank", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Tank", [200,400]);
+                interactionMessage = "Enemy Spawned! (Enemy Tank)";
+            }),
+            new interactable(580, 300, "Summoner Spawner", "Spawn Summoner", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Summoner", [200,50]);
+                interactionMessage = "Enemy Spawned! (Enemy Summoner)";
+            }),
+            new interactable(400, 300, "Flamethrower Spawner", "Spawn Flamethrower", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Flamethrower", [200,50]);
+                interactionMessage = "Enemy Spawned! (Enemy Flamethrower)";
+            }),
         );
     }
     if (selectedMap === "map9") {
@@ -5303,7 +5364,8 @@ const weapons = {
     AK47: new Gun("AK47", 12, 5, 300, 7, 1, 0.1),
     Tank: new Gun("Tank", 25, 0.7, Infinity, 5, 3, 0.3),
     Minigun: new Gun("Minigun", 5, 14, 500, 8, 1, 0.25),
-    Flamethrower: new Gun("Flamethrower", 2, 18, 400, 4, 2, 0.4),
+    Flamethrower: new Gun("Flamethrower", 2, 18, 400, 8, 2, 0.4),
+    GrenadeLauncher: new Gun("Grenade Launcher", 5, 1, 30, 5, 1 ,0, false, 100, 60),
 };
 
 const shopItems = {
@@ -5318,14 +5380,17 @@ const shopItems = {
         { name: "Nodachi", price: 10, oneTime: true,action: () => currentMelee= nodachi },
         { name: "Dragon Slayer", price: 20, oneTime: true,action: () => currentMelee= dragonslayer },
         { name: "Minigun", price: 75, oneTime: true, action: () => currentWeapon = weapons.Minigun},
-        { name: "Flamethrower", price: 65, oneTime: true, action: () => currentWeapon = weapons.Flamethrower}
+        { name: "Flamethrower", price: 65, oneTime: true, action: () => currentWeapon = weapons.Flamethrower},
+        { name: "Grenade Launcher", price: 80, oneTime: true, action: () => currentWeapon = weapons.GrenadeLauncher}
     ],
 
     Utility: [
         { name: "Heal Package", price: 1, oneTime: false, action: () => objects.push(new Object("heal")) },
         { name: "Big Rock", price: 2, oneTime: false, action: () => objects.push(new Object("rock")) },
         { name: "Speed Boost", price: 3, oneTime: false, action: () => objects.push(new Object("speedboost")) },
-        { name: "Mine", price: 4, oneTime: false, action: () => objects.push(new Object("mine")) }
+        { name: "Mine", price: 4, oneTime: false, action: () => objects.push(new Object("mine")) },
+        { name: "Refill Ammo", price: 15, oneTime: false, canBuy: () => canBuyAmmo(), action: () => refillAmmo(1) },
+        { name: "Refill Ammo (25%)", price: 4, oneTime: false, canBuy: () => canBuyAmmo(), action: () => refillAmmo(0.25) }
     ],
     Skins: [
         { name: "Red Ball", price: 0, oneTime: true, action: () => setSkin("red") },
@@ -5342,6 +5407,13 @@ const shopItems = {
     ]
 };
 
+function canBuyAmmo() {
+    return currentWeapon.ammo !== Infinity && currentWeapon.ammo < currentWeapon.maxammo;
+}
+function refillAmmo(amt) {
+    const add = Math.max(10, Math.ceil(currentWeapon.maxammo * amt));
+    currentWeapon.ammo = Math.min(currentWeapon.maxammo, currentWeapon.ammo + add);
+}
 function getMaxHealth() {
     return stats.health + stats.armor * 5;
 }
@@ -5499,7 +5571,10 @@ function buyItem(item) {
         showCategory(currentCategory);
         return;
     }
-
+    if (item.canBuy && !item.canBuy()){
+        playSound();
+        return;
+    }
     if (money >= cost) {
         money -= cost;
         if (item.oneTime) {
@@ -5553,7 +5628,7 @@ function quitGame() {
     player.dx = 0;
     player.dy = 0;
     player.isDead = false;
-
+    for (const w of globalThis.Object.values(weapons)) w.ammo = w.maxammo;
     if (trainingPrevClass){
         applyClass(trainingPrevClass);
         trainingPrevClass = null;
@@ -6295,8 +6370,8 @@ for (const ball of balls) {
     if (ball.isFlame){
     const age = Math.min((Date.now() - ball.createdAt) / ball.life, 1);
     ball.radius += 0.1;
-    ball.dx * 0.96;
-    ball.dy * 0.96;
+    ball.dx *= 0.96;
+    ball.dy *= 0.96;
     ball.color = age < 0.3 ? "yellow" : age < 0.7 ? "orange" : "orangered";
     ctx.globalAlpha = Math.max(0, 1-age);} else {
         ctx.globalAlpha = ball.isDead ? 0.25 : 1;
@@ -6333,6 +6408,7 @@ for (const ball of balls) {
         mutantSlam(ball);
         enemyMelee(ball);
         bomberUpdate(ball);
+        summonerUpdate(ball);
         enemyAttackWalls(ball);
         }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
@@ -6980,7 +7056,7 @@ if (shopmenu.visible) {
 if(settings.visible&&clickedFrame===settings){
     if(saveButton.isPressed()) saveGame();
     if(loadButton.isPressed()) loadGame();
-    if(clearButton.isPressed()) clearSave();
+    if(clearButton.isPressed()) clearGame();
     if(bgButton.isPressed()&& !bgCooldown){
         isDarkMode=!isDarkMode;
         bgCooldown = true;
@@ -7149,7 +7225,14 @@ function getWallWaypoint(ball, player) {
         }
     }
     if (!directBlocked) return null;
-
+    const now = Date.now();
+    const pc = ball.pathCache;
+    if (pc && now - pc.time < 300 && Math.hypot(player.x - pc.gx, player.y - pc.gy) < 40) {
+        while (pc.idx < pc.points.length - 1 && Math.hypot(pc.points[pc.idx].x - ball.x, pc.points[pc.idx].y - ball.y) < 15 ) {
+            pc.idx++;
+        }
+        return pc.points[Math.min(pc.idx + 2, pc.points.length - 1)];
+    }
     const cellSize = 10;
     const cols = Math.floor(canvas.width / cellSize);
     const rows = Math.floor(canvas.height / cellSize);
@@ -7252,11 +7335,22 @@ function getWallWaypoint(ball, player) {
     }
     path.unshift(start);
 
-    const targetIndex = path[Math.min(2, path.length - 1)];
-    return {
-        x: (targetIndex % cols) * cellSize + cellSize / 2,
-        y: Math.floor(targetIndex / cols) * cellSize + cellSize / 2
+    // const targetIndex = path[Math.min(2, path.length - 1)];
+    // return {
+    //     x: (targetIndex % cols) * cellSize + cellSize / 2,
+    //     y: Math.floor(targetIndex / cols) * cellSize + cellSize / 2
+    // };
+    ball.pathCache = {
+        time: now,
+        gx: player.x,
+        gy: player.y,
+        idx: 0,
+        points: path.map(index => ({
+            x: (index % cols) * cellSize + cellSize / 2,
+            y: Math.floor(index / cols) * cellSize + cellSize / 2
+        }))
     };
+    return ball.pathCache.points[Math.min(2, ball.pathCache.points.length - 1)];
 }
 function startFollowing(ball, target = null) {
     const player = target || balls.find(b => b.isPlayer);
@@ -7419,6 +7513,12 @@ for (const frame of frameOrder) {
 }
 updateShopHover();
 drawShopTooltip();
+for (const b of balls){
+    if (b.explodeOnEnd && !b.exploded && (b.remove || Date.now() - b.createdAt >= (b.life || 3000))) {
+        createExplosion(b.x, b.y, b.explosionRadius, b.explosionDamage);
+        b.exploded = true;
+    }
+}
 balls = balls.filter(ball =>
     !ball.remove &&
     (!ball.isProjectile || Date.now() - ball.createdAt < (ball.life || 3000))
