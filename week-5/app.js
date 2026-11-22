@@ -3788,10 +3788,11 @@ function drawMutantIndicator(enemy){
         if(!weaponImage || !weaponImage.complete || weaponImage.naturalWidth === 0){
             return;
         }
+        const player = enemy.target || balls.find(ball => ball.isPlayer);
+        if (!player) return;
         ctx.save();
         ctx.translate(enemy.x, enemy.y);
-        const player = enemy.target || balls.find(ball => ball.isPlayer);
-        if (!player ||player.isDead) enemy.swingStart = 0;
+        if (player.isDead) enemy.swingStart = 0;
         else if (["Katana", "Nodachi", "Dragon Slayer"].includes(enemy.weapon)) {
             if (!enemy.swingStart && Math.hypot(player.x - enemy.x, player.y - enemy.y) <= 100) {
                 enemy.swingStart = Date.now();
@@ -3817,6 +3818,7 @@ function drawMutantIndicator(enemy){
                 return;
             }
             const target = getNearestEnemy(ally) || balls.find(ball => ball.isPlayer);
+            if(!target) return;
             ctx.save();
             ctx.translate(ally.x, ally.y);
             ctx.rotate(Math.atan2(target.y - ally.y, target.x - ally.x));
