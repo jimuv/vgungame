@@ -154,6 +154,21 @@ const playerClasses = {
     }
 };
 
+const achievementsList = [
+    {id: "first_blood", title: "First Blood", desc: "Kill your first enemy" },
+    {id: "combo_5", title: "Nice Combo", desc: "Get a 5x combo"},
+    {id: "barrel_boom", title: "BOOM!", desc: "Destroy an explosive barrel"},
+    {id: "mystery_box", title: "rolll roll roll", desc: "roll a weapon from the mystey box"}
+];
+const unlockedAchievements = new Set();
+let achievementsOpen = false;
+
+function unlockAchievement(id) {
+    if (unlockedAchievements.has(id)) return;
+    const ach = achievementsList.find(a => a.id === id);
+    if (!ach) return;
+    unlockedAchievements.add(id);
+}
 function applyClass(className){
     const classData = playerClasses[className] || playerClasses["default"];
     selectedClass = className;
@@ -1771,6 +1786,8 @@ function drawStoryTimer() {
 function addCombo(){
     combo++;
     comboTimer = Date.now() + 5000;
+    unlockAchievement("first_blood");
+    if (combo >= 5) unlockAchievement("combo_5");
 }
 const abilities = [
     {name: "Grenade", cooldown: 8000, lastUsed:-Infinity},
@@ -2675,6 +2692,7 @@ function setSkin(color) {
     balls[0].color = color;
     balls[0].baseColor = color;
 }
+const achievementsButton = new Button(canvas.width - 160, 20, 140, 40, "Achievements", "gold", 0.85);
 let classDropdownOpen = false;
 
 const classDropdownButton = new Button(10, 20, 200, 45, "Class: Default >", "lightblue", 0.75);
@@ -3156,10 +3174,39 @@ function drawModeSelect() {
             classSelectButtons[i].draw(ctx);
         }
     }
+    achievementsButton.text = `Achievements: (${unlockedAchievements.size}/${achievementsList.length})`;
+    achievementsButton.draw(ctx);
+
+    if (achievementsOpen) {
+        ctx.save();
+        achievementsList.forEach((ach, idx) => {
+            const unlocked = unlockedAchievements.has(ach.id);
+            const boxX = canvas.width - 240;
+            const boxY = 70 + idx * 46;
+            ctx.fillStyle = unlocked ? "rgba(76, 175, 80, 0.85)" : "rgba(60, 60, 60, 0.85)";
+            ctx.fillRect(boxX, boxY, 220, 40);
+            ctx.strokeStyle = unlocked ? "gold" : "gray";
+            ctx.strokeRect(boxX, boxY, 220, 40);
+
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillStyle = unlocked ? "gold" :"#bbb";
+            ctx.font = "14px Arial";
+            ctx.fillText(ach.title, boxX + 8, boxY + 6);
+            ctx.fillStyle = "white";
+            ctx.font = "12px Arial";
+            ctx.fillText(ach.desc, boxX + 8, boxY + 22);
+        });
+        ctx.restore();
+    }
     for (const button of modeSelectButtons) {
         button.draw(ctx);
     }
     if(justClicked){
+        if (achievementsButton.isPressed()) {
+            achievementsOpen = !achievementsOpen;
+            return;
+        }
         if (classDropdownButton.isPressed()) {
             classDropdownOpen = !classDropdownOpen;
             return;
@@ -4267,6 +4314,7 @@ function handleWallCollision() {
             walls.splice(i, 1);
             i--;
             if (w.isBarrel) {
+                unlockAchievement("barrel_boom");
                 createExplosion(w.x + w.width / 2, w.y + w.height / 2, 100, 50);
             }
         }
@@ -4760,6 +4808,7 @@ function Map() {
                     playSound();
                     return;
                 }
+                unlockAchievement("mystery_box");
                 money -= cost;
                 const pool = ["Pistol", "DualWield", "Shotgun", "AK47", "ExplosiveSniper", "Sniper", "Minigun", "Flamethrower"];
                 const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -6227,7 +6276,6 @@ for (const ball of balls) {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius*ball.size, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
-    ctx.globalAlpha = ball.isDead ? 0.25 : 1;
     ctx.fill();
     ctx.globalAlpha = 1;
     }
