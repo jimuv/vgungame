@@ -797,9 +797,10 @@ const storyChapters = {
     training: {
         map: "map4",
         stages: [{
+            map: "map4",
             dialogue: [
                 ["Commander", "Welcome to advanced training."],
-                ["Commander", "You can hold shift to sprint while moving"],
+                ["Commander", "Alright, first we are going over Sprinting..."],
                 // ["Commander", "Take down this target"]
             ],
             enemies: [],
@@ -809,7 +810,275 @@ const storyChapters = {
                 action: "sprint",
                 hint: "Hold shift to sprint",
             }
-        }],
+        },
+{
+            map: "map4",
+            dialogue: [
+                ["Commander", "Now, we are going over dodging"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "dodge",
+                hint: "Press CTRL to dodge",
+            }
+        },
+        {
+            map: "map4",
+            dialogue: [
+                ["Commander", "Alright, now, we have abilities, players are given 3 abilities to use for default"],
+                ["Commander", "We will start with the grenade"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "Grenade",
+                hint: "Hold T, then press 1",
+            }
+        },
+                {
+            map: "map4",
+            dialogue: [
+                ["Commander", "Next ability: the speed boost"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "Speed",
+                hint: "Hold T, then press 2",
+            }
+        },
+                        {
+            map: "map4",
+            dialogue: [
+                ["Commander", "Next ability: the shield"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "Shield",
+                hint: "Hold T, then press 3",
+            }
+        },
+        {
+            map: "InteractiveMap",
+            dialogue: [
+                ["Commander", "Alright, in this game are interactables, objects can be used with E"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "door",
+                hint: "Press E to open the door",
+            }
+        },
+                {
+            map: "InteractiveMap",
+            dialogue: [
+                ["Commander", "Some objects can also be carried."],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "bag",
+                hint: "Press E to carry the bag",
+            }
+        },
+                        {
+            map: "InteractiveMap",
+            dialogue: [
+                ["Commander", "Now, these objects can also be dropped."],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "drop",
+                hint: "Press E to drop the bag",
+            }
+        },
+        {
+            map: "InteractiveMap2",
+            dialogue: [
+                ["Commander", "There are also interactables that can do certain actions"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "support",
+                hint: "Press E at the radio to call in an airstrike",
+            }
+        },
+        {
+            map: "map9",
+            dialogue: [
+                ["Commander", "This door is locked."],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "power",
+                bx: 150, by: 450, gx: 650, gy: 300,
+                hint: "Pick up the battery and carry it to the generator to unlock the door",
+            }
+        },
+        {
+            map: "map4",
+            dialogue: [
+                ["Commander", "Keycards can also open locked areas"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "collect",
+                hint: "Pick up the keycard (walk over it)",
+            }
+        },
+                {
+            map: "map4",
+            dialogue: [
+                ["Commander", "Some objectives require you to hold a position"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "capture",
+                x: 400, y: 300, radius: 65, duration: 3,
+                hint: "Stand inside the circle to hold the position",
+            }
+        },
+        {
+            map: "map4",
+            setClass: "engineer",
+            dialogue: [
+                ["Commander", "Some classes have special abilities, I've switched you to engineer"],
+                ["Commander", "Engineers can build walls for cover"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "Build",
+                hint: "Hold T, then press 4 to build a wall",
+            }
+        },
+
+                {
+            map: "map4",
+            setClass: "engineer",
+            dialogue: [
+                ["Commander", "Walls can also be removed"],
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "Demolish",
+                hint: "Hold T, then press 5 to demolish it",
+            }
+        },
+                        {
+            map: "map4",
+            setClass: "default",
+            dialogue: [
+                ["Commander", "Alright, now we have some basic keybind buttons"],
+                ["Commander", "You could pause in this game"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "pause",
+                hint: "Hold P to Esc to pause, then resume",
+            }
+        },
+                        {
+            map: "map2",
+            dialogue: [
+                ["Commander", "Alright, now we will go over combat, aim with mouse, F to shoot, and G to melee"],
+            ],
+            enemies: ["Pistol", "Katana"],
+            reward: 0,
+
+                hint: "Aim with mouse, F to shoot, and G to melee",
+            
+        },
+        {
+            map: "map2",
+            dialogue: [
+                ["Commander", "There are also special enemies in this game."
+                ],
+            ],
+            enemies: ["Medic", "Medic"],
+            reward: 0,
+
+                hint: "This is a medic, it will heal other enemies nearby",
+        },
+                {
+            map: "map2",
+            dialogue: [
+                ["Commander", "This enemy carries a shield"
+                ],
+            ],
+            enemies: ["Shielder"],
+            reward: 0,
+
+                hint: "This is a shielder, they take reduced damage from guns, use a melee for effective damage",
+        },
+                        {
+            map: "map2",
+            dialogue: [
+                ["Commander", "Bombers are fast and explode when they are near you"],
+                ["Commander", "Prepare, I will spawn one now"]
+            ],
+            enemies: ["Bomber"],
+            reward: 0,
+
+                hint: "Shoot them before they reach you",
+        },
+        {
+            map: "map6",
+            dialogue: [
+                ["Commander", "Snipers are long range enemies they have high damage"],
+            ],
+            enemies: ["Sniper"],
+            reward: 0,
+            hint: "Stay behind walls, then close in to attack"
+        },
+                {
+            map: "map2",
+            dialogue: [
+                ["Commander", "Allies will help you in battles, they are spawned in certain times"],
+            ],
+            enemies: ["Katana", "Katana", "Katana"],
+            allies: ["Pistol", "Shotgun"],
+            reward: 0,
+            hint: "Your allies shoot the nearest enemy and follow you"
+        },
+        {
+            map: "map9p6",
+            dialogue: [
+                ["Commander", "Now, this is a timed objective"],
+                ["Commander", "Reach the terminal before time runs out"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "terminal",
+                x: 400,
+                y: 120,
+                timer: 30,
+                hint: "Walk to the terminal and Press E"
+            }
+        }
+],
         outro: [{
             dialogue: [
                 ["Commander", "Good job, you have completed the training."],
@@ -821,6 +1090,7 @@ const storyChapters = {
 }
 
 let storyTimerEnd = null;
+let trainingPrevClass = null;
 function releaseMonster() {
     const i = walls.findIndex(w => w.image === monster);
     if (i !== -1) {
@@ -1020,8 +1290,8 @@ commanderImage.src = "assets/commander.png";
 const researcherImage = new Image();
 researcherImage.src = "assets/researcher.png";
 
-function showDialogue(text, speaker = "", image = null, canSkip = true){
-    dialogueQueue.push({text, speaker, image, canSkip});
+function showDialogue(text, speaker = "", image = null, canSkip = true, duration = 3000){
+    dialogueQueue.push({text, speaker, image, canSkip, duration});
     if(!currentDialogue){
         nextDialogue();
     }
@@ -1039,7 +1309,7 @@ function drawDialogue(){
             lastCharTime = Date.now();
         }
     }
-    if(Date.now() - lastCharTime > 3000){
+    if(Date.now() - lastCharTime > currentDialogue.duration){
         if(dialogueCharIndex < currentDialogue.text.length){
             dialogueCharIndex = currentDialogue.text.length;
         } else if(currentDialogue.canSkip){
@@ -1095,6 +1365,9 @@ function startStoryChapter(n){
     explosions = [];
     grenades = [];
 
+    if (n=== "training") {
+        trainingPrevClass = selectedClass;
+    }
     const player = balls[0];
     player.health = player.maxHealth;
     player.x = mapSpawns[selectedMap]?.player[0] || canvas.width / 2;
@@ -1111,6 +1384,7 @@ function startStoryChapter(n){
     selectedMap = chapter.map;
     gameScreen = "game";
     storyObjectiveComplete = false;
+    storyTimerEnd = null;
     Map();
     beginStoryStage();
 }
@@ -1119,6 +1393,9 @@ function beginStoryStage() {
     clearDialogue();
     captureProgress = 0;
     storyObjectiveComplete = false;
+    stage.finished = false;
+    if (stage.setClass) applyClass(stage.setClass);
+    if (storyChapter === "training" ) balls = balls.filter(b => !b.isAlly);
     captureLastUpdate = Date.now();
     if (stage.map && selectedMap !== stage.map) {
         selectedMap = stage.map;
@@ -1133,6 +1410,7 @@ function beginStoryStage() {
     for (const [speaker, text] of stage.dialogue) {
         showDialogue(text, speaker, commanderImage, true);
     }
+    if (stage.hint) showDialogue(stage.hint, "Hint", commanderImage, true);
     const player = balls.find(b => b.isPlayer);
     if (player) {
     player.health = player.maxHealth;
@@ -1277,6 +1555,15 @@ function updateStory(){
         }
     }
         else if (storyPhase === "collect" && storyObjectiveComplete) {
+            if (stage.objective?.type === "do") {
+                if (!stage.finished) {
+                    stage.finished = true;
+                    clearDialogue();
+                    showDialogue("Nice!", "Commander", commanderImage, true, 800);
+                    return;
+                }
+                if (!dialogueDone) return;
+            }
     money += stage.reward;
     storyStage++;
 
@@ -1361,20 +1648,34 @@ function updateTraining() {
     }
 }
 function tutorialAction(value){
-    //placeholder
-}
-function drawTrainingHint(){
     if (gameMode !== "story" || storyPhase !== "collect") return;
     const obj = storyChapters[storyChapter]?.stages[storyStage]?.objective;
+    if (obj && obj.type === "do" && obj.action === value) {
+        storyObjectiveComplete = true;
+    }
+}
+let trainingPromptShown = false;
+function drawTrainingHint(){
+    if (gameMode !== "story") return;
+    if (storyPhase === "dialogue" || storyPhase === "outro") {
+        trainingPromptShown = false;
+        return;
+    }
+    if (storyPhase !== "collect" || trainingPromptShown) return;
+    const obj = storyChapters[storyChapter]?.stages[storyStage]?.objective;
     if (!obj?.hint) return;
-    ctx.save();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.fillRect(canvas.width / 2 - 150, canvas.height - 100, 300, 50);
-    ctx.fillStyle = "white";
-    ctx.font = "18px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(obj.hint, canvas.width / 2, canvas.height - 70);
-    ctx.restore();
+    trainingPromptShown = true;
+    clearDialogue();
+    showDialogue(obj.hint, "Commander", commanderImage, false);
+    // ctx.save();
+    // ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    // ctx.fillRect(canvas.width / 2 - 150, canvas.height - 100, 300, 50);
+    // ctx.fillStyle = "white";
+    // ctx.font = "18px Arial";
+    // ctx.textAlign = "center";
+    // ctx.fillText(obj.hint, canvas.width / 2, canvas.height - 70);
+    // ctx.restore();
+    
 }
 function drawStoryTimer() {
     if (!storyTimerEnd || storyPhase != "collect") return;
@@ -1412,6 +1713,7 @@ function useAbility(index, player){
     if (ability.name === "Demolish" && selectedClass !== "engineer") return;
     if (Date.now() - ability.lastUsed >= ability.cooldown) {
         ability.lastUsed = Date.now();
+        tutorialAction(ability.name);
         if (ability.name === "Grenade") {
             const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
             grenades.push({x: player.x, y: player.y, dx: Math.cos(angle) * 5, dy: Math.sin(angle) * 5, explodeAt: Date.now() + 2000, done: false});
@@ -4601,6 +4903,7 @@ function dropCarriedItem() {
     interactionMessage = `Dropped ${carriedItem.message}`;
     carriedItem.active = false;
     carriedItem = null;
+    tutorialAction("drop");
     clearTimeout(msgTimer);
     msgTimer = setTimeout(() => interactionMessage = "", 2000);
 }
@@ -4619,6 +4922,7 @@ class interactable {
     interact() {
         if (this.used) return;
         this.action(this);
+        tutorialAction(this.type);
         clearTimeout(msgTimer);
         msgTimer = setTimeout(() => interactionMessage = "", 2000);
     }
@@ -4999,6 +5303,7 @@ function drawEnemyHealthBar(enemy) {
 
 function pauseGame() {
     paused = true;
+    tutorialAction("pause");
     pausedImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
     pauseMenu.visible = true;
     keys = {};
@@ -5023,6 +5328,10 @@ function quitGame() {
     player.dy = 0;
     player.isDead = false;
 
+    if (trainingPrevClass){
+        applyClass(trainingPrevClass);
+        trainingPrevClass = null;
+    }
     objects = [];
     explosions = [];
     grenades = [];
