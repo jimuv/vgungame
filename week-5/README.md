@@ -28,6 +28,8 @@ For abilities, you hold 't', and press either '1' '2' '3' '4' or '5' to choose w
 
 For player movement, use WASD to move in 4 directions, "Ctrl" to dash forward, and "Shift" to sprint.
 
+For interactables, press E to interact with objects (such as doors, batteries, bags, terminals, mystery box, etc.)
+
 You could rebind keys on the keybinds menu, which you can get to by going to settings then clicking keybinds (refer to Game ui section)
 
 ### Game ui
@@ -42,6 +44,8 @@ Other buttons on the menu includes the Settings and Skins, which as of now are b
 On settings, you can change the background (only if its black/white), toggle or adjust sound, and toggle walls (for testing)
 
 There is also a button on settings called "keybinds" which opens a keybinds menu, that you can change different keybinds.
+
+As of week 5, there is now a save system that can be accessed through settings, which the three buttons can save, load, or clear manually.
 
 Move ball, Stop Ball, and Add moving ball are part of the sandbox, and debugging.
 
@@ -81,7 +85,7 @@ This is a new addition from week 5, which is a "variant" of an enemy, except it 
 This game will evolve to a story based shooter game, where there will be plenty of chapters a player can play in, progressing through the story . My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
 # Modes
-So in the game, there are different types of modes, the tutorial covers the basics of the game. Wave modes, are wave based spawn. The story mode, includes capture zones, keycard pickups, dialogue, cutscenes and objectives (interactables). And sandbox gives money to work around with.
+So in the game, there are different types of modes, the tutorial covers the basics of the game (advanced covers extra). Wave modes, are wave based spawn. The story mode, includes capture zones, keycard pickups, dialogue, cutscenes and objectives (interactables). And sandbox gives money to work around with.
 
 For every other waves, there is a prompt given to upgrade HP, speed, or damage.
 
