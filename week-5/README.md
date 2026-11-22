@@ -15,7 +15,7 @@ Note: This is only for PC, on the web
 ### Website and Canvas
 On the website, if you scroll down, you should be able to see another "How to play", there are interactive tab buttons where you can further click for details on certain information.
 
-On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended).
+On the game canvas, there is a tutorial, once you press "Start game", "Tutorial", and then select a map (Map2 recommended). There is also another advanced tutorial which goes more in depth (less on basics), into the game functions.
 
 For gamemodes, there is sandbox, 5 wave, Normal mode,  Hard mode and story mode. Note: "5 wave" came from Week 1 and the rest is from other weeks, and "sandbox" is to test everything out without much enemies
 
@@ -74,6 +74,9 @@ There are special enemies I added (week 2) which are: the medic enemy, which hea
 
 Tip: for shielder, it is vulnerable to melee attacks, so it is easier to break its shield using a melee (press 'g' to melee)
 
+#### Allies
+This is a new addition from week 5, which is a "variant" of an enemy, except it targets the enemy itsself rather than the player
+
 # description
 This game will evolve to a story based shooter game, where there will be plenty of chapters a player can play in, progressing through the story . My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
@@ -83,11 +86,11 @@ So in the game, there are different types of modes, the tutorial covers the basi
 For every other waves, there is a prompt given to upgrade HP, speed, or damage.
 
 # notes
-As of now, there are multiple modes, I am currently working on the Story modes (now at 5 chapters). This is a game updated on top of multiple weeks.
+As of now, there are multiple modes, I am currently working on the Story modes (now at 6 chapters). This is a game updated on top of multiple weeks.
 
 If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
 
-Right here should be within a week-4 folder, so it should be separate from the main as of now which is was used for week 2
+Right here should be within a week-5 folder, so it should be separate from the main as of now which is was used for week 2
 
 <!-- This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable. -->
 

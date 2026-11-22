@@ -1234,7 +1234,9 @@ const weaponDescriptions = {
     "Katana": "Basic melee",
     "Nodachi": "Longer reach melee",
     "Dragon Slayer": "Powerful melee",
-    "AK47": "Automatic gun"
+    "AK47": "Automatic gun",
+    "Minigun": "BRRRRRRRRRRRRRR",
+    "Flamethrower": "Burns enemies",
 }
 const UtilityDescriptions = {
     "Speed Boost": "Increases movement speed",
@@ -1274,6 +1276,8 @@ const weaponImages= {
     "Dragon Slayer": new Image(),
     "AK47": new Image(),
     "Tank": new Image(),
+    "Minigun": new Image(),
+    "Flamethrower": new Image(),
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -1284,6 +1288,9 @@ weaponImages["Nodachi"].src = "assets/Katana.png";
 weaponImages["Dragon Slayer"].src = "assets/DragonSlayer.png";
 weaponImages["AK47"].src = "assets/AK47.png";
 weaponImages["Tank"].src = "assets/AK47.png";
+weaponImages["Minigun"].src = "assets/Sniper.png";
+weaponImages["Flamethrower"].src = "assets/Sniper.png";
+
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
 const sandFloorImage = new Image();
@@ -1419,6 +1426,13 @@ function startStoryChapter(n){
 function beginStoryStage() {
     const stage = storyChapters[storyChapter].stages[storyStage];
     clearDialogue();
+    if (storyChapter === "training"){
+        menu.visible = false;
+        shopmenu.visible = false;
+        settings.visible = false;
+        keybindsmenu.visible = false;
+        skinsmenu.visible = false;
+    }
     captureProgress = 0;
     storyObjectiveComplete = false;
     stage.finished = false;
@@ -1587,7 +1601,7 @@ function updateStory(){
                 if (!stage.finished) {
                     stage.finished = true;
                     clearDialogue();
-                    showDialogue("Nice!", "Commander", commanderImage, true, 800);
+                    showDialogue("Nice!", "Commander", commanderImage, true, ["keybinds", "equipWeapon"].includes(stage.objective.action) ? 1200 : 800);
                     return;
                 }
                 if (!dialogueDone) return;
@@ -2190,7 +2204,7 @@ function drawTrainingArrow(){
             if (!menu.visible) {
                 target = menubutton;
                 txt = "Open Menu";
-                txt2 = '(or press ${binds.menu.toUpperCase()})';
+                txt2 = `(or press ${binds.menu.toUpperCase()})`;
             } else {
                 target = buttonshop;
                 txt = "Click Shop";
@@ -3556,7 +3570,7 @@ class Gun {
             this.offsetX=0;
             this.offsetY=0;
         }
-        if(this.name==="AK47"){
+        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower"){
             this.x=0;
             this.y=-10;
             this.width=60;
@@ -3594,20 +3608,23 @@ class Gun {
         const projectiles = [];
         
         for(let i=0;i<this.bulletCount;i++){
-            const offset=this.bulletCount===1?0:(i/(this.bulletCount-1)-0.5)*this.spread;
+            const offset= this.name === "Flamethrower" ? (Math.random() - 0.5) * this.spread :this.bulletCount===1?0:(i/(this.bulletCount-1)-0.5)*this.spread;
             const projectileAngle=angle+offset;
             projectiles.push({
                 x: player.x,
                 y: player.y,
                 dx: Math.cos(projectileAngle)*this.projectileSpeed,
                 dy: Math.sin(projectileAngle)*this.projectileSpeed,
-                color: "yellow",
-                radius: 5,
+                color: this.name === "Flamethrower" ? "orangered" :"yellow",
+                radius: this.name === "Flamethrower" ? 7 : 5,
+                life: this.name === "Flamethrower" ? 350 : 3000,
                 size: 1,
                 isProjectile: true,
                 createdAt: Date.now(),
                 damage: this.damage * (player.isPlayer ? (stats.damage / 10) : 1),
 
+                isFlame: this.name === "Flamethrower",
+                hitSet: new Set(),
                 isExplosive: this.explosive,
                 explosionRadius: this.explosionRadius,
                 explosionDamage: this.explosionDamage * (player.isPlayer ? (stats.damage / 10) : 1),
@@ -4246,8 +4263,12 @@ class Sandbag {
 function handleWallCollision() {
     for (let i=0; i<walls.length; i++) {
         if (walls[i].hp !== undefined && walls[i].hp <= 0) {
+            const w = walls[i];
             walls.splice(i, 1);
             i--;
+            if (w.isBarrel) {
+                createExplosion(w.x + w.width / 2, w.y + w.height / 2, 100, 50);
+            }
         }
     }
     for (let i=balls.length-1; i>=0; i--) {
@@ -4311,7 +4332,7 @@ function handleWallCollision() {
                 if(wall.bulletBehavior === "penetrate"){
                     continue;
                 }
-                if (wall.hp !== undefined && ball.isEnemyBullet){
+                if (wall.hp !== undefined && ball.isEnemyBullet || wall.isBarrel){
                     wall.hp -= ball.damage;
                 }
                 if (wall.bulletBehavior === "destroy"){
@@ -4397,7 +4418,12 @@ class Floor {
         }
     }
 }
-
+function addBarrel(x, y){
+    const b = new Wall(x, y, 30, 30, {bulletBehavior: "destroy", solid: true, image: crate, tile: false});
+    b.hp = 30;
+    b.isBarrel = true;
+    walls.push(b);
+}
 
 function Map() {
     bushes.length = 0;
@@ -4725,7 +4751,24 @@ function Map() {
         addWall(concrete, 450, 100, 350, 20);
         const doorUL = addDoor(350, 100, 100, 20, false);
         addBag(500, 300, "Loot bag");
+        addBarrel(700, 400);
         interactables.push(
+            new interactable(600, 400, "mystery box", "Mystery Box", prop => {
+                const cost = shopFree ? 0 : 20;
+                if (money < cost) {
+                    interactionMessage = "Not enough money!";
+                    playSound();
+                    return;
+                }
+                money -= cost;
+                const pool = ["Pistol", "DualWield", "Shotgun", "AK47", "ExplosiveSniper", "Sniper", "Minigun", "Flamethrower"];
+                const pick = pool[Math.floor(Math.random() * pool.length)];
+                currentWeapon = weapons[pick];
+                if (!Owned.includes(currentWeapon.name)) Owned.push(currentWeapon.name);
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                interactionMessage = `Rolled ${currentWeapon.name}!`;
+            }),
             new interactable(200, 200, "terminal", "Security Terminal", prop => {
                 prop.active = !prop.active;
                 interactionMessage = prop.active ? "Security Terminal Activated!" : "Security Terminal Deactivated!";
@@ -5191,6 +5234,8 @@ const weapons = {
     DualWield: new Gun("Dual Wield", 8, 5, Infinity),
     AK47: new Gun("AK47", 12, 5, 300, 7, 1, 0.1),
     Tank: new Gun("Tank", 25, 0.7, Infinity, 5, 3, 0.3),
+    Minigun: new Gun("Minigun", 5, 14, 500, 8, 1, 0.25),
+    Flamethrower: new Gun("Flamethrower", 2, 18, 400, 4, 2, 0.4),
 };
 
 const shopItems = {
@@ -5204,6 +5249,8 @@ const shopItems = {
         { name: "Katana", price: 0, oneTime: true,action: () => currentMelee= katana },
         { name: "Nodachi", price: 10, oneTime: true,action: () => currentMelee= nodachi },
         { name: "Dragon Slayer", price: 20, oneTime: true,action: () => currentMelee= dragonslayer },
+        { name: "Minigun", price: 75, oneTime: true, action: () => currentWeapon = weapons.Minigun},
+        { name: "Flamethrower", price: 65, oneTime: true, action: () => currentWeapon = weapons.Flamethrower}
     ],
 
     Utility: [
@@ -6041,6 +6088,10 @@ function animate(){
         walls.forEach(wall => {
             if (bossFightActive && wall.bosswall) return;
             wall.draw(ctx);
+            if (wall.isBarrel) {
+                ctx.fillStyle = "rgba(255,0,0,0.45)";
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            }
             if (wall.hp !== undefined) {
                 drawWallBar(wall);
             }
@@ -6164,6 +6215,15 @@ function animate(){
     handleWallCollision();
 for (const ball of balls) {
     if(!ball.isPlayer || storyPhase !== "airstrike"){
+    if (ball.isFlame){
+    const age = Math.min((Date.now() - ball.createdAt) / ball.life, 1);
+    ball.radius += 0.1;
+    ball.dx * 0.96;
+    ball.dy * 0.96;
+    ball.color = age < 0.3 ? "yellow" : age < 0.7 ? "orange" : "orangered";
+    ctx.globalAlpha = Math.max(0, 1-age);} else {
+        ctx.globalAlpha = ball.isDead ? 0.25 : 1;
+    }
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius*ball.size, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
@@ -6200,6 +6260,26 @@ for (const ball of balls) {
         enemyAttackWalls(ball);
         }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
+        if (ball.burnUntil && Date.now() < ball.burnUntil && !ball.isDead) {
+            ball.health -=0.15;
+            ball.color = "orangered";
+            if (ball.health <= 0){
+                addCombo();
+                ball.isDead = true;
+                setTimeout(() => {
+                    if (!ball.remove){
+                        ball.remove = true;
+                        money += 10;
+                        if (["wave","tutorial", "endless", "story"].includes(gameMode)) {
+                            enemyCounter--;
+                        }
+                    }
+                }, 800);
+            }
+        } else if (ball.burnUntil && !ball.isDead){
+            ball.burnUntil = 0;
+            ball.color = baseColorOf(ball);
+        }
     }
     if (ball.isAlly){
         allyShoot(ball);
@@ -6230,8 +6310,10 @@ for (const ball of balls) {
             ball.dx *= 0.75;
             ball.dy *= 0.75;
         
-        const sprint = keys[binds.speed] ? 1.5 : 1;        const boost = Date.now() < speedBoost ? 2 : 1;
-        const run = sprint * boost;
+        const sprint = keys[binds.speed] ? 1.5 : 1;        
+        const boost = Date.now() < speedBoost ? 2 : 1;
+        const minigunSlow = (keys[binds.shoot] && currentWeapon.name === "Minigun") ? 0.55 : 1;
+        const run = sprint * boost * minigunSlow;
         if (keys[binds.up] || (mobileW.visible && mobileW.update())) {
         ball.y -= 2 * stats.speed * run;
     }
@@ -6309,8 +6391,12 @@ if (ball1.isProjectile && !ball2.isProjectile) {
 
 
         if (correctTarget && distance < projectile.radius + target.radius * target.size) {
+            if (projectile.isFlame) {
+                if (projectile.hitSet.has(target)) continue;
+                projectile.hitSet.add(target);
+            } else {
             projectile.remove = true;
-
+            }
             if (target.isPlayer && !isInvulnerable(target)) {
                 target.health -= projectile.damage;
                 target.health = Math.max(0, target.health);
@@ -6358,6 +6444,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 target.hit = true;
                 target.color = target.weapon === "Medic" ? "lightgreen" : "lightcoral";
                 target.health -= projectile.damage * (target.shielded ? 0.3 : 1);
+                if (projectile.isFlame) target.burnUntil = Date.now() + 3000;
                 target.health = Math.max(0, target.health);
                 checkShieldBreak(target);
                 if (projectile.isExplosive) {
@@ -6735,7 +6822,7 @@ if (player) {
 //info.draw(ctx);
 drawHUD(player);
 if (keys[binds.shoot] && player && !player.isDead) {
-    if (currentWeapon.name === "AK47" || !fWasPressed) {
+    if (["AK47", "Minigun", "Flamethrower"].includes(currentWeapon.name) || !fWasPressed) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
     if (newProjectiles.length > 0 && gameMode === "tutorial" && tutorialStep === 5) {
@@ -7255,7 +7342,7 @@ updateShopHover();
 drawShopTooltip();
 balls = balls.filter(ball =>
     !ball.remove &&
-    (!ball.isProjectile || Date.now() - ball.createdAt < 3000)
+    (!ball.isProjectile || Date.now() - ball.createdAt < (ball.life || 3000))
 );
 if (gameMode === "tutorial") {
     drawTutorialArrow();
