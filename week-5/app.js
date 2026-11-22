@@ -153,7 +153,28 @@ const playerClasses = {
         desc: "Long range, high damage"
     }
 };
-
+function saveGame(){
+    localStorage.setItem("save", JSON.stringify({
+        owned: Owned,
+        achievements: [...unlockedAchievements],
+        selectedClass,
+        money
+    }))
+}
+function loadGame() {
+    const raw = localStorage.getItem("save");
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Owned = data.owned || Owned;
+    unlockedAchievements.clear();
+    (data.achievements || []).forEach(id => unlockedAchievements.add(id));
+    money = data.money ?? money;
+    if (data.selectedClass) applyClass(data.selectedClass);
+    showCategory(currentCategory);
+}
+function clearGame() {
+    localStorage.removeItem("save");
+}
 const achievementsList = [
     {id: "first_blood", title: "First Blood", desc: "Kill your first enemy" },
     {id: "combo_5", title: "Nice Combo", desc: "Get a 5x combo"},
@@ -2045,8 +2066,6 @@ add sound
 
 add skill tree (upgrades)
 
-add advanced tutorial (multiple steps, maybe challenges) --> abilities, doors, etc...
-
 other fun options: 2 player in 1 device mode?
 map creation? (will need export/import)
 
@@ -2087,7 +2106,6 @@ window.addEventListener("keydown", (e) => {
         else pauseGame();
     }
 });
-
 function setTutorialStep(step) {
     if (tutorialStep === step && tutorialStep != 0) return;
 
@@ -5764,6 +5782,15 @@ menu.addButton(globalStopFollow);
 // skinsmenu.addButton(button7);
 // skinsmenu.addButton(button8);
 let inventoryButtons = [];
+
+const saveButton = new Button(410, 605, 85, 35, "Save", "lightgreen", 0.5);
+const loadButton = new Button(505, 605, 85, 35, "Load", "lightblue", 0.5);
+const clearButton = new Button(600, 605, 85, 35, "Clear", "lightcoral", 0.5);
+
+settings.addButton(saveButton);
+settings.addButton(loadButton);
+settings.addButton(clearButton);
+
 settings.addButton(bgButton);
 settings.addButton(toggleWall);
 settings.addButton(toggleSound);
@@ -6950,6 +6977,9 @@ if (shopmenu.visible) {
 
 }
 if(settings.visible&&clickedFrame===settings){
+    if(saveButton.isPressed()) saveGame();
+    if(loadButton.isPressed()) loadGame();
+    if(clearButton.isPressed()) clearSave();
     if(bgButton.isPressed()&& !bgCooldown){
         isDarkMode=!isDarkMode;
         bgCooldown = true;
