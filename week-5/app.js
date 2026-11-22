@@ -212,6 +212,8 @@ function applyClass(className){
         player.speed = classData.speed;
     }
 }
+const minigunLines = ["BRRRRRRR!", "SUPPRESSING FIRE!", "EAT LEAD!"];
+
 const storyChapters = {
     1: {
         title: "Chapter 1: The Beginning",
@@ -1274,6 +1276,7 @@ const weaponDescriptions = {
     "Minigun": "BRRRRRRRRRRRRRR",
     "Flamethrower": "Burns enemies",
     "GrenadeLauncher": "Explosive gun",
+    "Stun Gun": "Locks enemies in place",
 }
 const UtilityDescriptions = {
     "Speed Boost": "Increases movement speed",
@@ -1318,6 +1321,7 @@ const weaponImages= {
     "Minigun": new Image(),
     "Flamethrower": new Image(),
     "Grenade Launcher": new Image(),
+    "Stun Gun": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -1331,6 +1335,7 @@ weaponImages["Tank"].src = "assets/tank2.png";
 weaponImages["Minigun"].src = "assets/minigun.png";
 weaponImages["Flamethrower"].src = "assets/flamethrower.png";
 weaponImages["Grenade Launcher"].src = "assets/grenade launcher.png";
+weaponImages["Stun Gun"].src = "assets/Pistol.png";
 
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
@@ -1366,6 +1371,33 @@ commanderImage.src = "assets/commander.png";
 const researcherImage = new Image();
 researcherImage.src = "assets/researcher.png";
 
+function updateAndDrawSpeech(enemy){
+    if(enemy.weapon!== "Minigun" || enemy.isDead || enemy.remove) return;
+    const now = Date.now();
+    if (!enemy.nextSpeech || now >= enemy.nextSpeech){
+        enemy.speechText = minigunLines[Math.floor(Math.random() * minigunLines.length)];
+        enemy.speechUntil = now + 2200;
+        enemy.nextSpeech = now + 5000 + Math.random() * 3000;
+    }
+    if (!enemy.speechText || now > enemy.speechUntil) return;
+
+    ctx.save();
+    ctx.font = "12px Arial";
+
+    const width = ctx.measureText(enemy.speechText).width;
+    const height = 22;
+    const x = enemy.x - width / 2;
+    const y = enemy.y - enemy.radius * enemy.size - 38;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.fillRect(x, y, width, height);
+    
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(enemy.speechText, enemy.x, y + height / 2);
+    ctx.restore();
+}
 function showDialogue(text, speaker = "", image = null, canSkip = true, duration = 3000){
     dialogueQueue.push({text, speaker, image, canSkip, duration});
     if(!currentDialogue){
@@ -2873,6 +2905,13 @@ const enemyStats = {
             damage: 0,
             shootDelay: 0,
             size:1
+        },
+        "Minigun": {
+            health: 120,
+            speed: 0.35,
+            damage: 5,
+            shootDelay: 5,
+            size: 1.2
         }
 }
 const allyStats = {
@@ -2974,6 +3013,7 @@ const keepDistance = {
     "Tank": 200,
     "Flamethrower": 70,
     "Summoner": 250,
+    "Minigun": 160
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -3621,7 +3661,7 @@ class Gun {
         this.explosionDamage = explosionDamage;
         this.offsetX = 0;
         this.offsetY = 0;  
-        if (this.name==="Pistol"||this.name===null){
+        if (this.name==="Pistol"|| this.name === "Stun Gun" ||this.name===null){
             this.x=0;
             this.y=0;
             this.width=20;
@@ -3724,6 +3764,7 @@ class Gun {
                 createdAt: Date.now(),
                 damage: this.damage * (player.isPlayer ? (stats.damage / 10) : 1),
 
+                isStun: this.name === "Stun Gun",
                 isFlame: this.name === "Flamethrower",
                 hitSet: new Set(),
                 isExplosive: this.explosive,
@@ -5051,6 +5092,12 @@ function Map() {
                 spawnEnemy("Flamethrower", [200,50]);
                 interactionMessage = "Enemy Spawned! (Enemy Flamethrower)";
             }),
+            new interactable(220, 300, "Minigun Spawner", "Spawn Minigun", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Minigun", [200,50]);
+                interactionMessage = "Enemy Spawned! (Enemy Minigun)";
+            }),
         );
     }
     if (selectedMap === "map9") {
@@ -5366,6 +5413,7 @@ const weapons = {
     Minigun: new Gun("Minigun", 5, 14, 500, 8, 1, 0.25),
     Flamethrower: new Gun("Flamethrower", 2, 18, 400, 8, 2, 0.4),
     GrenadeLauncher: new Gun("Grenade Launcher", 5, 1, 30, 5, 1 ,0, false, 100, 60),
+    StunGun: new Gun("Stun Gun", 3, 2, 100, 9, 1, 0),
 };
 
 const shopItems = {
@@ -5381,7 +5429,8 @@ const shopItems = {
         { name: "Dragon Slayer", price: 20, oneTime: true,action: () => currentMelee= dragonslayer },
         { name: "Minigun", price: 75, oneTime: true, action: () => currentWeapon = weapons.Minigun},
         { name: "Flamethrower", price: 65, oneTime: true, action: () => currentWeapon = weapons.Flamethrower},
-        { name: "Grenade Launcher", price: 80, oneTime: true, action: () => currentWeapon = weapons.GrenadeLauncher}
+        { name: "Grenade Launcher", price: 80, oneTime: true, action: () => currentWeapon = weapons.GrenadeLauncher},
+        { name: "Stun Gun", price: 45, oneTime: true, action: () => currentWeapon = weapons.StunGun}
     ],
 
     Utility: [
@@ -6400,7 +6449,22 @@ for (const ball of balls) {
     drawAllyWeapon(ball);
     drawEnemyHat(ball);
     drawEnemyHealthBar(ball);
+    updateAndDrawSpeech(ball);
+    const stunned = ball.stunUntil && Date.now() < ball.stunUntil && !ball.isDead;
+
+    if(stunned){
+        ball.dx = 0;
+        ball.dy = 0;
+        ctx.save();
+        ctx.strokeStyle = "cyan";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius * ball.size + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
     if(ball.isEnemy){
+        if (!stunned){
         if (ball.weapon === "Medic") {
             healEnemies(ball);
         }else{
@@ -6411,6 +6475,7 @@ for (const ball of balls) {
         summonerUpdate(ball);
         enemyAttackWalls(ball);
         }
+    }
         ball.shootCooldown = Math.max(0, ball.shootCooldown - 1);
         if (ball.burnUntil && Date.now() < ball.burnUntil && !ball.isDead) {
             ball.health -=0.15;
@@ -6483,7 +6548,7 @@ for (const ball of balls) {
     ball.x += ball.dx;
     ball.y += ball.dy;
     const player = balls.find(b => b.isPlayer);
-    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target){
+    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target && !(ball.stunUntil && Date.now() < ball.stunUntil)){
                 startFollowing(ball, ball.target);
             }
     if (ball.isAlly && ball.following && !ball.isDead && !player.isDead && player.isDead === false) {
@@ -6597,6 +6662,8 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 target.color = target.weapon === "Medic" ? "lightgreen" : "lightcoral";
                 target.health -= projectile.damage * (target.shielded ? 0.3 : 1);
                 if (projectile.isFlame) target.burnUntil = Date.now() + 3000;
+
+                if (projectile.isStun) target.stunUntil = Date.now() + 2000;
                 target.health = Math.max(0, target.health);
                 checkShieldBreak(target);
                 if (projectile.isExplosive) {
