@@ -996,8 +996,35 @@ const storyChapters = {
             objective: {
                 type: "do",
                 action: "pause",
-                hint: "Hold P to Esc to pause, then resume",
+                hint: "Press P to Esc to pause, then resume",
             }
+        },
+        {
+            map: "map4",
+            dialogue: [
+                ["Commander", "You can customize your controls in settings"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "keybinds",
+                hint: "Open Menu -> Settings -> Keybinds"
+            }
+        },
+        {
+            map: "map2",
+            dialogue: [
+                ["Commander", "Before combat, lets explore the shop."],
+                ["Commander", "Open the Shop and equip a new gun"]
+            ],
+            enemies: [],
+            reward: 0,
+                objective: {
+                    type: "do",
+                    action: "equipWeapon",
+                    hint: "Open the Shop and equip a new gun"
+                }
         },
                         {
             map: "map2",
@@ -1200,6 +1227,7 @@ let pausedImage = null;
 
 const weaponDescriptions = {
     "Pistol": "Basic gun",
+    "Dual Wield": "Two pistols",
     "Shotgun": "Close range gun",
     "Sniper": "Long range gun",
     "Explosive Sniper": "Special long range gun",
@@ -1364,6 +1392,7 @@ function startStoryChapter(n){
     objects = [];
     explosions = [];
     grenades = [];
+    shopFree = (n === "training");
 
     if (n=== "training") {
         trainingPrevClass = selectedClass;
@@ -1376,7 +1405,6 @@ function startStoryChapter(n){
     player.dy = 0;
 
     gameMode = "story";
-    shopFree = false;
     storyChapter = n;
     storyStage = 0;
     enemyCounter = 0;
@@ -1677,6 +1705,42 @@ function drawTrainingHint(){
     // ctx.restore();
     
 }
+function drawTrainingUI(){
+    if (gameMode !== "story" || storyChapter!== "training") return;
+    if (storyPhase === "outro") return;
+    const total = storyChapters[storyChapter].stages.length;
+    ctx.save();
+    ctx.fillStyle = isDarkMode ? "white" : "black";
+    ctx.font = "bold 18px Arial";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.fillText(`Training: ${storyStage + 1}/${total}`, canvas.width - 20, 30);
+    ctx.restore();
+
+    skipTrainingButton.draw(ctx);
+    if (justClicked && skipTrainingButton.isPressed()){
+        const chapter = storyChapters[storyChapter];
+        storyObjectiveComplete = true;
+        enemyCounter = 0;
+        balls = balls.filter(b => b.isPlayer);
+        storyTimerEnd = null;
+        endAirstrike();
+        storyStage++;
+        storyPhase = "collect";
+
+        if(storyStage >= chapter.stages.length){
+            storyPhase = "outro";
+            clearDialogue();
+            for (const [speaker, text] of chapter.outro[0].dialogue) {
+                showDialogue(text, speaker, commanderImage, true);
+            }
+            selectedMap = chapter.outro[0].map;
+            Map();
+        } else {
+            beginStoryStage();
+        }
+    }
+}
 function drawStoryTimer() {
     if (!storyTimerEnd || storyPhase != "collect") return;
     const left = Math.max(0, storyTimerEnd - Date.now());
@@ -1927,7 +1991,8 @@ const bindNames = [
     ["ability1","Use ability 1"],
     ["ability2","Use ability 2"],
     ["ability3","Use ability 3"],
-    ["ability4","Use ability 4"]
+    ["ability4","Use ability 4"],
+    ["ability5","Use ability 5"]
 ]
 let rebinding = null;
 
@@ -2099,7 +2164,50 @@ function drawTutorialArrow() {
 
     drawArrow(targetX+40, targetY-40, targetX, targetY, "Orange",txt,txt2);
 }
+function drawTrainingArrow(){
+    if (gameMode !== "story" || storyChapter !== "training") return;
+    const obj = storyChapters[storyChapter]?.stages[storyStage]?.objective;
+    if (!obj || obj.type !== "do") return;
 
+    let target = null;
+    let txt = "";
+    let txt2 = "";
+
+    if (obj.action === "keybinds"){
+        if (!menu.visible && !settings.visible) {
+            target = menubutton;
+            txt = "Open Menu";
+            txt2 = `(or press ${binds.menu.toUpperCase()})`;
+        } else if (!settings.visible) {
+            target = buttonSettings;
+            txt = "Click Settings";
+        } else if (!keybindsmenu.visible) {
+            target = keybindsButton;
+            txt = "Click Keybinds";
+        } 
+    } else if (obj.action === "equipWeapon") {
+        if (!shopmenu.visible) {
+            if (!menu.visible) {
+                target = menubutton;
+                txt = "Open Menu";
+                txt2 = '(or press ${binds.menu.toUpperCase()})';
+            } else {
+                target = buttonshop;
+                txt = "Click Shop";
+            } 
+        } else if (currentCategory !== "Guns") {
+                target = buttonshopGun;
+                txt = "Click Guns";
+            } else if (itemButtons[1]) {
+                target = itemButtons[1].button;
+                txt = "Equip a new gun";
+            }
+    }
+    if (!target) return;
+    const tx = target.x + target.width / 2;
+    const ty = target.y + target.height / 2;
+    drawArrow(tx + 40, ty - 40, tx, ty, "Orange", txt, txt2);
+}
 function updateTutorial() {
     if (gameMode !== "tutorial") return;
 
@@ -3014,14 +3122,14 @@ function startEndlessWave(waveNumber) {
 }
 
 function drawModeSelect() {
-    ctx.fillStyle = isDarkMode ? "#2b2828" : "white";
+    ctx.fillStyle = isDarkMode ? "white" : "#2b2828";
     ctx.font = "24px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.fillText("Select Game Mode", canvas.width / 2, 100);
 
     ctx.font = "16px Arial";
-    ctx.fillText(`${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].description}`, canvas.width / 2, 150);
+    ctx.fillText("Class" + ` ${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].desc}`, canvas.width / 2, 150);
 
     const classKeys = ["default", "scout", "heavy", "engineer", "medic", "sniper"];
     const arrow = classDropdownOpen ? ">" : "<";
@@ -5283,6 +5391,7 @@ function buyItem(item) {
             Owned.push(item.name);
         }
         item.action();
+        if (currentCategory === "Guns") tutorialAction("equipWeapon");
         showCategory(currentCategory);
     } else {
         playSound();
@@ -5401,6 +5510,9 @@ const mainmenuButton1 = new Button(
 const menubutton = new Button(
     25, 300, 50, 50, "Menu", "lightgreen", 1
 );
+const skipTrainingButton = new Button(
+canvas.width - 120, 60, 100, 35, "Skip Stage", "orange", 0.8
+)
 const mobilebutton = new Button(
     canvas.width-50, canvas.height-50, 50, 50, "Mobile", "lightblue", 1
 );
@@ -5462,8 +5574,8 @@ const keybindsmenu = new Frame(
 for (let i=0; i<bindNames.length; i++) {
     const [key, name] = bindNames[i];
     const button = new Button(
-        keybindsmenu.x + 10 + Math.floor(i / 7) * 195,
-        keybindsmenu.y + 45 + (i % 7) * 40,
+        keybindsmenu.x + 10 + Math.floor(i / 9) * 195,
+        keybindsmenu.y + 45 + (i % 9) * 40,
         185, 32, name, "lightgray", 0.5
     );
     keybindsmenu.addButton(button);
@@ -6551,9 +6663,15 @@ if (clickedFrame === menu && button4.isPressed()) {
 }
 if (clickedFrame === menu && buttonshop.isPressed()) {
     shopmenu.visible = !shopmenu.visible;
+    if (shopmenu.visible && storyChapter === "training") {
+        menu.visible = false;
+    }
 }
 if (clickedFrame === menu && buttonSettings.isPressed()) {
     settings.visible = !settings.visible;
+    if (settings.visible && storyChapter === "training") {
+        menu.visible = false;
+    }
 }
 
 
@@ -6721,6 +6839,11 @@ if(settings.visible&&clickedFrame===settings){
     }
     if(keybindsButton.isPressed()){
         keybindsmenu.visible = !keybindsmenu.visible;
+        if (keybindsmenu.visible) {
+            if(storyChapter === "training") settings.visible = false;
+        }
+        if (keybindsmenu.visible) 
+            {setTimeout(() => {tutorialAction("keybinds");}, 3500);}
     }
 }
 
@@ -7152,6 +7275,8 @@ canvas.style.cursor = "default"
         drawMutantIndicator();
         drawStoryTimer();
         drawTrainingHint();
+        drawTrainingUI();
+        drawTrainingArrow();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
