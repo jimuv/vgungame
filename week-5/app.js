@@ -2118,7 +2118,9 @@ function setTutorialStep(step) {
         s: 0,
         d: 0,
     };
-
+    if (step === 3) {
+        menu.visible = false;
+    }
     if (step === 5) {
         tutorialShots = 0;
     }
@@ -2161,7 +2163,6 @@ function drawTutorialArrow() {
     else if (tutorialStep === 3) {
         targetX=shopmenu.x+shopmenu.width/2;
         targetY=shopmenu.y;
-        menu.visible = false;
         txt="Drag the Shop menu";
     }
     else if (tutorialStep === 4) {
@@ -2259,7 +2260,7 @@ function drawTrainingArrow(){
 }
 function updateTutorial() {
     if (gameMode !== "tutorial") return;
-
+    if (tutorialStep === 3 || tutorialStep === 4) shopmenu.visible = true;
     if (tutorialStep === 0) {
         if (
             tutorialKeysPressed["w"] > 0 &&
