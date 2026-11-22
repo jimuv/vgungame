@@ -74,14 +74,14 @@ In the skins section, there is many items that costs money, you can obtain these
 #### Enemies
 So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Dragon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and guaranteed +10 money. 
 
-There are special enemies I added (week 2) which are: the medic enemy, which heals its surroundings, the shielder which has bullet resistance (30% damage taken). and week(week 4): mutant, bomber
+There are special enemies I added (week 2) which are: the medic enemy, which heals its surroundings, the shielder which has bullet resistance (30% damage taken), (week 4): mutant, bomber, (week 5): Tank (vehicle), Summonder, Flamethrower, and Minigun (with speech bubbles)
 
 Tip: for shielder, it is vulnerable to melee attacks, so it is easier to break its shield using a melee (press 'g' to melee)
 
 #### Allies
-This is a new addition from week 5, which is a "variant" of an enemy, except it targets the enemy itsself rather than the player
+This is a new addition from week 5, which is a "variant" of an enemy, except it targets the enemy itself rather than the player
 
-# description
+# Description
 This game will evolve to a story based shooter game, where there will be plenty of chapters a player can play in, progressing through the story . My vision for this game is basically to have progression and customizability, though this may remain a skeleton, or like a demo, which I will reuse this for more polished games using the same system/physics.
 
 # Modes
@@ -89,7 +89,9 @@ So in the game, there are different types of modes, the tutorial covers the basi
 
 For every other waves, there is a prompt given to upgrade HP, speed, or damage.
 
-# notes
+On the mode selection screen, there are also achievements that can be viewed on the top right corner.
+
+# Notes
 As of now, there are multiple modes, I am currently working on the Story modes (now at 6 chapters). This is a game updated on top of multiple weeks.
 
 If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
@@ -98,10 +100,10 @@ Right here should be within a week-5 folder, so it should be separate from the m
 
 <!-- This game is intended for PC though I am trying to make it so mobile can play it too, which as of now its partially playable. -->
 
-# problems
+# Problems
 Some problems I'm facing right now is actual game design, I would say that I have no idea what im planning to make, which im basically just adding stuff as I learn.
 
-# showcase
+# Showcase
 
 note: these may be outdated gifs
 
