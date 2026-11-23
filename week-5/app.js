@@ -1022,6 +1022,21 @@ const storyChapters = {
                 hint: "Hold T, then press 5 to demolish it",
             }
         },
+                {
+            map: "map4",
+            setClass: "scout",
+            dialogue: [
+                ["Commander", "Alright, now I've switched you to a scout"],
+                ["Commander", "Scouts can grapple into walls"]
+            ],
+            enemies: [],
+            reward: 0,
+            objective: {
+                type: "do",
+                action: "Grapple",
+                hint: "Hold T, then press 4 to grapple into a wall",
+            }
+        },
                         {
             map: "map4",
             setClass: "default",
@@ -1277,6 +1292,7 @@ const weaponDescriptions = {
     "Flamethrower": "Burns enemies",
     "GrenadeLauncher": "Explosive gun",
     "Stun Gun": "Locks enemies in place",
+    "Burst Rifle": "3 round burst gun",
 }
 const UtilityDescriptions = {
     "Speed Boost": "Increases movement speed",
@@ -1321,6 +1337,7 @@ const weaponImages= {
     "Minigun": new Image(),
     "Flamethrower": new Image(),
     "Grenade Launcher": new Image(),
+    "Burst Rifle": new Image(),
     "Stun Gun": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
@@ -1336,6 +1353,7 @@ weaponImages["Minigun"].src = "assets/minigun.png";
 weaponImages["Flamethrower"].src = "assets/flamethrower.png";
 weaponImages["Grenade Launcher"].src = "assets/grenade launcher.png";
 weaponImages["Stun Gun"].src = "assets/Pistol.png";
+weaponImages["Burst Rifle"].src = "assets/AK47.png";
 
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
@@ -1472,6 +1490,7 @@ function startStoryChapter(n){
     objects = [];
     explosions = [];
     grenades = [];
+    grappleHook = null;
     shopFree = (n === "training");
 
     if (n=== "training") {
@@ -1852,14 +1871,15 @@ const abilities = [
     {name: "Speed", cooldown: 5000, lastUsed:-Infinity},
     {name: "Shield", cooldown: 10000, lastUsed:-Infinity},
     {name: "Build", cooldown: 1500, lastUsed:-Infinity},
-    {name: "Demolish", cooldown: 300, lastUsed:-Infinity}
+    {name: "Demolish", cooldown: 300, lastUsed:-Infinity},
+    {name: "Grapple", class: "scout", cooldown: 3500, lastUsed:-Infinity}
 ]
 let abilityKey = [false,false];
 let grenades = [];
 let speedBoost = 0;
 
 function useAbility(index, player){
-    const ability = abilities[index];
+    const ability = (selectedClass === "scout" && index === 3) ? abilities[5] : abilities[index];
     if (!ability) return;
     if (ability.class && ability.class !== selectedClass) return;
     if (ability.name === "Build" && selectedClass !== "engineer") return;
@@ -1878,9 +1898,126 @@ function useAbility(index, player){
             if (!buildWall(player)) ability.lastUsed = Date.now() - ability.cooldown;
         } else if (ability.name === "Demolish") {
             if (!demolishWall(player)) ability.lastUsed = Date.now() - ability.cooldown;
+        } else if (ability.name === "Grapple") {
+            startGrapple(player);
         }
     }
 }
+let grappleHook = null;
+
+function startGrapple(player){
+    const maxDist = 360;
+    const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+    let endX = player.x + Math.cos(angle) * maxDist;
+    let endY = player.y + Math.sin(angle) * maxDist;
+    let hitProp = null
+    let hitBall = null;
+
+    for (let d = 15; d <= maxDist; d += 5) {
+        const px = player.x + Math.cos(angle) * d;
+        const py = player.y + Math.sin(angle) * d;
+        if (px < 0 || px > canvas.width || py < 0 || py > canvas.height) {
+            endX = Math.max(0, Math.min(canvas.width, px));
+            endY = Math.max(0, Math.min(canvas.height, py));
+            break;
+        }
+        const hitWall = wallsVisible && walls.some(wall => wall.solid && px >= wall.x && px <= wall.x + wall.width && py >= wall.y && py <= wall.y + wall.height);
+        if (hitWall) {
+            endX = px;
+            endY = py;
+            break;
+        }
+        const prop = interactables.find(p => p.x <= px && p.x + p.width >= px && p.y <= py && p.y + p.height >= py);
+        if (prop) {
+            if (prop.type === "bag" || prop.type === "battery") hitProp = prop;
+            endX = px;
+            endY = py;
+            break;
+        }
+        const enemy = balls.find(b => b.isEnemy && !b.isDead && !b.remove && Math.hypot(px - b.x, py - b.y) <= b.radius * b.size);
+        if (enemy) {
+            hitBall = enemy;
+            endX = enemy.x;
+            endY = enemy.y;
+            break;
+        }
+    }
+    grappleHook = {
+        x: endX,
+        y: endY,
+        targetBall: hitBall,
+        targetProp: hitProp,
+        expiresAt: Date.now() + 550
+    }
+}
+
+function updateGrapple(player){
+    if (!grappleHook || !player || player.isDead) {
+        grappleHook = null;
+        return;
+    }
+    if (Date.now() > grappleHook.expiresAt || keys[binds.dodge]) {
+        grappleHook = null;
+        return;
+    }
+    if (grappleHook.targetBall && !grappleHook.targetBall.isDead) {
+        const dx = player.x - grappleHook.targetBall.x;
+        const dy = player.y - grappleHook.targetBall.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 28) {
+            grappleHook.targetBall.dx = dx / dist * 10;
+            grappleHook.targetBall.dy = dy / dist * 10;
+            grappleHook.x = grappleHook.targetBall.x;
+            grappleHook.y = grappleHook.targetBall.y;
+            
+        } else {
+            grappleHook = null;
+            return;
+        }
+    } else if (grappleHook.targetProp && !grappleHook.targetProp.used) {
+        const p = grappleHook.targetProp;
+        const dx = player.x - (p.x + p.width / 2);
+        const dy = player.y - (p.y + p.height / 2);
+        const dist = Math.hypot(dx, dy);
+        if (dist > 28) {
+            p.dx = (dx/dist) * 10;
+            p.dy = (dy/dist) * 10;
+            grappleHook.x = p.x + p.width / 2;
+            grappleHook.y = p.y + p.height / 2;
+        } else {
+            grappleHook = null;
+            return;
+        }
+    } else if (!grappleHook.targetBall && !grappleHook.targetProp) {
+        const dx = grappleHook.x - player.x;
+        const dy = grappleHook.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 18) {
+            player.dx = dx / dist * 10;
+            player.dy = dy / dist * 10;
+        } else {
+            grappleHook = null;
+            return;
+        }
+    } else {
+        grappleHook = null;
+        return;
+    }
+    ctx.save();
+    ctx.strokeStyle = "dodgerblue";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(grappleHook.x, grappleHook.y);
+    ctx.stroke();
+
+    ctx.fillStyle = "cyan";
+    ctx.beginPath();
+    ctx.arc(grappleHook.x, grappleHook.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
 
 function updateAbilities(player){
     ctx.globalAlpha = 1;
@@ -2016,23 +2153,23 @@ function drawAbilityBar() {
     const w = 90
     const h = 50;
     const gap = 10;
-    const count = selectedClass === "engineer" ? 5 : 3;
-    const startX = canvas.width /2 - (count * w + (count - 1) * gap) / 2;
+    // const count = selectedClass === "engineer" ? 5 : 3;
+    const visible = abilities.filter(a => (!a.class || a.class === selectedClass) && ((a.name !== "Build" && a.name !== "Demolish") || selectedClass === "engineer"));
+    const startX = canvas.width /2 - (visible.length * w + (visible.length - 1) * gap) / 2;
     const y = canvas.height - 70;
-    for (let i = 0; i < abilities.length; i++) {
-        if (i >= 3 && selectedClass !== "engineer") continue;
+    for (let i = 0; i < visible.length; i++) {
         const x = startX + i * (w + gap);
         ctx.fillStyle = "gray";
         ctx.fillRect(x, y, w, h);
-        const left = abilities[i].cooldown - (Date.now() - abilities[i].lastUsed);
+        const left = visible[i].cooldown - (Date.now() - visible[i].lastUsed);
         if (left > 0) {
             ctx.fillStyle = "rgba(0,0,0,0.6)";
-            ctx.fillRect(x + w - w * left / abilities[i].cooldown, y, w * left / abilities[i].cooldown, h);
+            ctx.fillRect(x + w - w * left / visible[i].cooldown, y, w * left / visible[i].cooldown, h);
         }
         ctx.fillStyle = "white";
         ctx.font = "16px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(abilities[i].name, x + w / 2, y + h / 2 - 10);
+        ctx.fillText(visible[i].name, x + w / 2, y + h / 2 - 10);
         ctx.fillText(i + 1, x + w / 2, y + h / 2 + 10);
     }
 }
@@ -2788,6 +2925,7 @@ const mapSelectButtons = [
     new Button(550, 100, 200, 50, "Interactive Map Test", "lightblue", 0.5),
     new Button(550, 180, 200, 50, "Interactive Map Test2", "lightblue", 0.5),
     new Button(550, 260, 200, 50, "Spawner Map", "lightblue", 0.5),
+    new Button(550, 340, 200, 50, "Interactive Map Test3", "lightblue", 0.5),
 ]
 let upgradeButtons = [
     new Button( 150,300, 150, 100, "Increase HP", "lightgreen", 0.75),
@@ -3436,6 +3574,10 @@ function drawMapSelect() {
             selectedMap = "SpawnerMap";
             gameScreen = "game";
             Map();
+        }else if (mapSelectButtons[8].isPressed()) {
+            selectedMap = "InteractiveMap3";
+            gameScreen = "game";
+            Map();
         }
     }
 }
@@ -3711,7 +3853,7 @@ class Gun {
             this.offsetX=0;
             this.offsetY=0;
         }
-        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower" || this.name==="Grenade Launcher"){
+        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower" || this.name==="Grenade Launcher" || this.name === "Burst Rifle"){
             this.x=0;
             this.y=-10;
             this.width=60;
@@ -3775,6 +3917,25 @@ class Gun {
         }
 
         return projectiles;
+    }
+
+    shootBurst(player, targetX, targetY, count = 3, interval = 75) {
+        if (!this.canShoot()) return [];
+        this.lastShot = Date.now();
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => {
+                if (this.ammo === 0 || player.isDead) return;
+                const savedLast = this.lastShot;
+                const savedRate = this.fireRate;
+                this.lastShot = -Infinity;
+                this.fireRate = Infinity;
+                const shots = this.shoot(player, targetX, targetY);
+                this.fireRate = savedRate;
+                this.lastShot = savedLast;
+                balls.push(...shots);
+            }, i * interval);
+        }
+        return [];
     }
     
     
@@ -4340,6 +4501,16 @@ class Wall {
         this.height = open ? closed.w : closed.h;
     }
     draw(ctx) {
+        if (this.isGlass) {
+            ctx.save();
+            ctx.fillStyle = "rgba(135, 206, 235, 0.5)";
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.strokeStyle = "rgba(135, 206, 235, 0.8)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+            ctx.restore();
+            return;
+        }
         if (this.image.complete && this.image.naturalWidth > 0) {
             if (this.hinged) {
                 this.angle += (this.targetAngle - this.angle) * 0.1;
@@ -4482,7 +4653,7 @@ function handleWallCollision() {
                 if(wall.bulletBehavior === "penetrate"){
                     continue;
                 }
-                if (wall.hp !== undefined && ball.isEnemyBullet || wall.isBarrel){
+                if (wall.hp !== undefined && ball.isEnemyBullet || wall.isBarrel || wall.isGlass){
                     wall.hp -= ball.damage;
                 }
                 if (wall.bulletBehavior === "destroy"){
@@ -4575,12 +4746,32 @@ function addBarrel(x, y){
     b.isBarrel = true;
     walls.push(b);
 }
+function addGlass(x, y, w, h){
+    const g = new Wall(x, y, w, h, {bulletBehavior: "destroy", solid: true});
+    g.hp = 1;
+    g.maxHp = 1;
+    g.isGlass = true;
+    walls.push(g);
+}   
+const slowZones = [];
+function addSlowZone(x, y, w, h, factor = 0.5, color = "rgba(139, 90, 43, 0.55)"){
+    slowZones.push({x, y, width: w, height: h, factor, color});
+}
 
+function getSlowFactor(ball){
+    for (const z of slowZones){
+        if (ball.x >= z.x && ball.x <= z.x + z.width && ball.y >= z.y && ball.y <= z.y + z.height){
+            return z.factor;
+        }
+    }
+    return 1;
+}
 function Map() {
     bushes.length = 0;
     trees.length = 0;
     walls.length = 0;
     floors.length = 0;
+    slowZones.length = 0;
     sandbags.length = 0;
     interactables.length = 0;
     carriedItem = null;
@@ -5100,6 +5291,41 @@ function Map() {
             }),
         );
     }
+    if (selectedMap === "InteractiveMap3"){
+        wallsVisible = true;
+        addWall(concrete, 250, 120, 100, 20);
+        addGlass(350, 120, 100, 20);
+        addWall(concrete, 450, 120, 100, 20);
+
+        addGlass(250, 140, 20, 320);
+        addGlass(530, 140, 20, 320);
+
+        addWall(concrete, 250, 440, 100, 20);
+        addGlass(350, 440, 100, 20);
+        addWall(concrete, 450, 440, 100, 20);
+
+        addSlowZone(40, 180, 170, 240, 0.5, "rgba(139, 90, 43, 0.55)");
+        addSlowZone(590, 180, 170, 240, 0.5, "rgba(139, 90, 43, 0.55)");
+
+        addBarrel(300, 285);
+        addBarrel(470, 285);
+
+        interactables.push(
+            new interactable(320, 350, "Minigun Spawner", "Spawn Minigun", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Minigun", [200,50]);
+                interactionMessage = "Enemy Spawned! (Enemy Minigun)";
+            }),
+            new interactable(420, 350, "Katana Spawner", "Spawn Katana", prop => {
+                prop.active = true;
+                setTimeout(() => prop.active = false, 500);
+                spawnEnemy("Katana", [200,50]);
+                interactionMessage = "Enemy Spawned! (Enemy Katana)";
+            }),
+        )
+            
+    }
     if (selectedMap === "map9") {
         wallsVisible = true;
         floors.push(new Floor(0, 0, 800, 600, metal));
@@ -5414,6 +5640,7 @@ const weapons = {
     Flamethrower: new Gun("Flamethrower", 2, 18, 400, 8, 2, 0.4),
     GrenadeLauncher: new Gun("Grenade Launcher", 5, 1, 30, 5, 1 ,0, false, 100, 60),
     StunGun: new Gun("Stun Gun", 3, 2, 100, 9, 1, 0),
+    BurstRifle: new Gun("Burst Rifle", 11, 2.2, 240, 8, 1, 0.04)
 };
 
 const shopItems = {
@@ -5430,7 +5657,8 @@ const shopItems = {
         { name: "Minigun", price: 75, oneTime: true, action: () => currentWeapon = weapons.Minigun},
         { name: "Flamethrower", price: 65, oneTime: true, action: () => currentWeapon = weapons.Flamethrower},
         { name: "Grenade Launcher", price: 80, oneTime: true, action: () => currentWeapon = weapons.GrenadeLauncher},
-        { name: "Stun Gun", price: 45, oneTime: true, action: () => currentWeapon = weapons.StunGun}
+        { name: "Stun Gun", price: 45, oneTime: true, action: () => currentWeapon = weapons.StunGun},
+        { name: "Burst Rifle", price: 55, oneTime: true, action: () => currentWeapon = weapons.BurstRifle}
     ],
 
     Utility: [
@@ -6283,6 +6511,12 @@ function animate(){
     bushes.forEach(bush => bush.draw(ctx));
     trees.forEach(tree => tree.draw(ctx));
     floors.forEach(floor => floor.draw(ctx));
+    slowZones.forEach(zone => {
+        ctx.save();
+        ctx.fillStyle = zone.color;
+        ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
+        ctx.restore();
+    })
     sandbags.forEach(sandbag => sandbag.draw(ctx));
 
     if (wallsVisible) {
@@ -6293,7 +6527,7 @@ function animate(){
                 ctx.fillStyle = "rgba(255,0,0,0.45)";
                 ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
             }
-            if (wall.hp !== undefined) {
+            if (wall.hp !== undefined && !wall.isGlass) {
                 drawWallBar(wall);
             }
         });
@@ -6530,7 +6764,7 @@ for (const ball of balls) {
         const sprint = keys[binds.speed] ? 1.5 : 1;        
         const boost = Date.now() < speedBoost ? 2 : 1;
         const minigunSlow = (keys[binds.shoot] && currentWeapon.name === "Minigun") ? 0.55 : 1;
-        const run = sprint * boost * minigunSlow;
+        const run = sprint * boost * minigunSlow * getSlowFactor(ball);
         if (keys[binds.up] || (mobileW.visible && mobileW.update())) {
         ball.y -= 2 * stats.speed * run;
     }
@@ -6544,8 +6778,8 @@ for (const ball of balls) {
         ball.x += 2*stats.speed * run;
     }
     }
-
-    ball.x += ball.dx;
+    const slow = ball.isProjectile ? 1 : getSlowFactor(ball);
+    ball.x += ball.dx * slow;
     ball.y += ball.dy;
     const player = balls.find(b => b.isPlayer);
     if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target && !(ball.stunUntil && Date.now() < ball.stunUntil)){
@@ -7008,6 +7242,7 @@ if (player) {
     }
     if (storyPhase !== "airstrike") getAccessory();
     updateAbilities(player);
+    updateGrapple(player);
     updateMedicPassive(player);
     for (let i = 0; i < abilities.length; i++) {
         const down = keys[binds["ability" + (i + 1)]];
@@ -7041,7 +7276,12 @@ if (player) {
 //info.draw(ctx);
 drawHUD(player);
 if (keys[binds.shoot] && player && !player.isDead) {
-    if (["AK47", "Minigun", "Flamethrower"].includes(currentWeapon.name) || !fWasPressed) {
+    if (currentWeapon.name === "Burst Rifle" && !fWasPressed){
+        currentWeapon.shootBurst(player,mouseX, mouseY, 3, 75);
+        if (gameMode === "tutorial" && tutorialStep === 5) {
+            tutorialShots++;
+        }
+}else if (["AK47", "Minigun", "Flamethrower"].includes(currentWeapon.name) || !fWasPressed) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
     if (newProjectiles.length > 0 && gameMode === "tutorial" && tutorialStep === 5) {
