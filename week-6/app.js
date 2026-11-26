@@ -46,7 +46,8 @@ let accessories = ["Top Hat", "Glasses", "Monocle", "Crown", "Shield"];
 const enemyAccessories = {
     "Sniper": "Glasses",
     "Dragon Slayer": "Crown",
-    "Shielder": "Shield"
+    "Shielder": "Shield",
+    "Outpost Commander": "Crown"
 }
 let Owned = ["Blue Ball"];
 let shopPage = 0;
@@ -1172,27 +1173,37 @@ const storyChapters = {
 
     7: {
         title: "Chapter 7: The Placeholder",
-        map: "map4",
+        map: "map11p1",
         stages: [{
             dialogue: [
-                ["Commander", "Welcome to the Placeholder!"],
-                ["Commander", "Our mission today is to arrive at the enemy base."],
-                ["Commander", "Prepare yourself for the battle ahead."],
-                ["Commander", "There are 2 melee guys ahead!"]
+                ["Commander", "Alright, we are now chasing back the enemy to their main base"],
+                ["Commander", "Watch out, the mud will slow you down."],
+                ["Commander", "We've brought reinforcements with you, take down any enemies you see"],
+                ["Commander", "Be careful, they have flamethrowers and snipers."]
             ],
-            
-            enemies: ["Katana", "Katana"],
-            reward: 10
+            allies: ["Pistol", "Shotgun"],
+            enemies: ["Sniper", "Sniper", "Flamethrower", "Flamethrower"],
+            reward: 20
         },
         {
             dialogue: [
-                ["Commander", "Placeholder job... there are more coming"],
-                ["Commander", "They have guns!?!?"]
+                ["Commander", "Ah crap, looks like they are sending in heavy units"],
+                ["Commander", "Looks like we have a long way to go..."]
             ],
-            enemies: ["Pistol", "Pistol"],
+            enemies: ["Tank", "Shielder", "Shielder", "AK47", "AK47"],
             reward: 15
-        }
-        
+        },
+                {
+            dialogue: [
+                ["Commander", "Hmmmm, it seems like they have a blast door, we need to find a way to power it on"],
+                ["Commander", "Carry the battery to the generator, watch out for bombers"]
+            ],
+            enemies: ["Bomber", "Bomber", "Katana", "Katana"],
+            reward: 15,
+            objective: {
+                type: "power", bx: 150, by: 450, gx: 650, gy: 300
+            }
+        },
     ],
     outro: [{
         dialogue: [
@@ -1548,7 +1559,21 @@ function startStoryChapter(n){
     storyObjectiveComplete = false;
     storyTimerEnd = null;
     Map();
-    beginStoryStage();
+    if (n === 7){
+        money = 140;
+        storyPhase = "preshop";
+        shopmenu.visible = true;
+        shopPage = 0;
+        showCategory("Guns");
+        bringFrameToFront(shopmenu);
+
+        clearDialogue();
+        showDialogue("Listen up, we will be moving forward", "Commander", commanderImage, true);
+        showDialogue("We will expect the worst, so use this $140 budget to prepare...", "Commander", commanderImage, true);
+        showDialogue("Once you're done preparing, press 'Start Mission'","Commander", commanderImage, true);
+    } else {
+        beginStoryStage();
+    }
 }
 function beginStoryStage() {
     const stage = storyChapters[storyChapter].stages[storyStage];
@@ -1826,6 +1851,14 @@ function tutorialAction(value){
 let trainingPromptShown = false;
 function drawTrainingHint(){
     if (gameMode !== "story") return;
+    if (storyPhase === "preshop") {
+        readyButton.draw(ctx);
+        if (justClicked && readyButton.isPressed()) {
+            shopmenu.visible = false;
+            beginStoryStage();
+        }
+        return;
+    }
     if (storyPhase === "dialogue" || storyPhase === "outro") {
         trainingPromptShown = false;
         return;
@@ -2888,7 +2921,11 @@ function drawChapterSelect() {
             startStoryChapter(5);
         } else if (chapterSelectButtons[5].isPressed()) {
             startStoryChapter(6);
-        } else if (chapterSelectButtons[6].isPressed()) {
+        } else if (chapterSelectButtons[5].isPressed()) {
+            startStoryChapter(6);
+        }else if (chapterSelectButtons[6].isPressed()) {
+            startStoryChapter(7);
+        } else if (chapterSelectButtons[7].isPressed()) {
             gameScreen = "modeSelect";
         }
         justClicked = false;
@@ -2950,6 +2987,7 @@ const chapterSelectButtons = [
     new Button(550, 150, 200, 50, "Chapter 4", "lightblue", 0.5),
     new Button(550, 200, 200, 50, "Chapter 5", "lightblue", 0.5),
     new Button(550, 250, 200, 50, "Chapter 6", "lightblue", 0.5),
+    new Button(550, 300, 200, 50, "Chapter 7", "lightblue", 0.5),
     new Button(300, 300, 200, 50, "Back", "lightblue", 0.5),]
 const mapSelectButtons = [
     new Button(300, 100, 200, 50, "Default Map", "lightblue", 0.5),
@@ -3085,6 +3123,14 @@ const enemyStats = {
             damage: 5,
             shootDelay: 5,
             size: 1.2
+        },
+        "Outpost Commander": {
+            health: 700,
+            speed: 0.4,
+            damage: 10,
+            shootDelay: 8,
+            size: 1.5,
+            gun: "Minigun"
         }
 }
 const allyStats = {
@@ -3186,7 +3232,8 @@ const keepDistance = {
     "Tank": 200,
     "Flamethrower": 70,
     "Summoner": 250,
-    "Minigun": 160
+    "Minigun": 160,
+    "Outpost Commander": 180
 }
 
 function drawArrow(x1, y1, x2, y2, color,txt,txt2){
@@ -3250,6 +3297,7 @@ function spawnEnemy(weapon, pos=null) {
         strafe: true,
         stuckTimer: 0,
         weapon: weapon,
+        gunName: stats.gun || weapon,
         accessory: enemyAccessories[weapon] || null,
         shielded: weapon === "Shielder"
     });
@@ -4247,7 +4295,7 @@ function drawMutantIndicator(enemy){
             return;
         }
 
-        const weaponImage = weaponImages[enemy.weapon];
+        const weaponImage = weaponImages[enemy.gunName];
 
         if(!weaponImage || !weaponImage.complete || weaponImage.naturalWidth === 0){
             return;
@@ -4314,7 +4362,7 @@ function drawMutantIndicator(enemy){
         const dy = player.y - enemy.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        const baseGun = globalThis.Object.values(weapons).find(w => w.name === enemy.weapon);
+        const baseGun = globalThis.Object.values(weapons).find(w => w.name === enemy.gunName);
         if (!baseGun) {
             return;
         }
@@ -5451,13 +5499,23 @@ function Map() {
         addProp(crate, 550, 450, 50, 50);
         addProp(crate, 360, 50, 50, 50);
     }
-    if (selectedMap === "map10p2") { //placeholder maps
+    if (selectedMap === "map11p1") { 
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        floors.push(new Floor(340, 0, 120, 600, road));
+        addSlowZone(40, 180, 220, 220, 0.5, "rgba(139, 90, 43, 0.55)");
+        addSlowZone(540, 180, 220, 220, 0.5, "rgba(139, 90, 43, 0.55)");
+        addWall(fence, 260, 180, 80, 20, "penetrate");
+        addWall(fence, 460, 180, 80, 20, "penetrate");
+        sandbags.push(new Sandbag(300, 400, 80, 35));
+        sandbags.push(new Sandbag(420, 400, 80, 35));
+        addBarrel(300, 300);
+        addBarrel(420, 300);
+    }
+    if (selectedMap === "map11p2") {
         wallsVisible = true;
     }
-    if (selectedMap === "map10p3") {
-        wallsVisible = true;
-    }
-    if (selectedMap === "map10p4") {
+    if (selectedMap === "map11p3") {
         wallsVisible = true;
     }
 }
@@ -6015,6 +6073,7 @@ const menubutton = new Button(
 const skipTrainingButton = new Button(
 canvas.width - 120, 60, 100, 35, "Skip Stage", "orange", 0.8
 )
+const readyButton = new Button(canvas.width / 2 - 100, 80, 200, 45, "Start Mission", "lightgreen", 0.9);
 const mobilebutton = new Button(
     canvas.width-50, canvas.height-50, 50, 50, "Mobile", "lightblue", 1
 );
