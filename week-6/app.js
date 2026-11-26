@@ -1166,7 +1166,42 @@ const storyChapters = {
             ],
             map: "map4"
         }]
-    }
+    },
+
+
+
+    7: {
+        title: "Chapter 7: The Placeholder",
+        map: "map4",
+        stages: [{
+            dialogue: [
+                ["Commander", "Welcome to the Placeholder!"],
+                ["Commander", "Our mission today is to arrive at the enemy base."],
+                ["Commander", "Prepare yourself for the battle ahead."],
+                ["Commander", "There are 2 melee guys ahead!"]
+            ],
+            
+            enemies: ["Katana", "Katana"],
+            reward: 10
+        },
+        {
+            dialogue: [
+                ["Commander", "Placeholder job... there are more coming"],
+                ["Commander", "They have guns!?!?"]
+            ],
+            enemies: ["Pistol", "Pistol"],
+            reward: 15
+        }
+        
+    ],
+    outro: [{
+        dialogue: [
+            ["Commander", "Placeholder, you've made it to their base."],
+            ["Commander", "Your next mission will be given soon."]
+        ],
+        map: "map4p2"
+    }]
+    },
 }
 
 let storyTimerEnd = null;
