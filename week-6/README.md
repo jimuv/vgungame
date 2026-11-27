@@ -74,7 +74,7 @@ In the skins section, there is many items that costs money, you can obtain these
 #### Enemies
 So there are a variety of enemies, they have the same weapons that are provided in the shop, the boss as of now is the "Dragon Slayer" ball. They each have a healthbar, which you can toggle off and on with 'h' (Refer to Keybinds). The following feature uses BFS pathfinding, so enemies wont be stuck against a wall. Once an enemy dies, they have a chance of dropping ammo (+10 as of now), and guaranteed +10 money. 
 
-There are special enemies I added (week 2) which are: the medic enemy, which heals its surroundings, the shielder which has bullet resistance (30% damage taken), (week 4): mutant, bomber, (week 5): Tank (vehicle), Summonder, Flamethrower, and Minigun (with speech bubbles)
+There are special enemies I added (week 2) which are: the medic enemy, which heals its surroundings, the shielder which has bullet resistance (30% damage taken), (week 4): mutant, bomber, (week 5): Tank (vehicle), Summoner, Flamethrower, Minigun (with speech bubbles), (week 6): Outpost Commander
 
 Tip: for shielder, it is vulnerable to melee attacks, so it is easier to break its shield using a melee (press 'g' to melee)
 
@@ -92,7 +92,7 @@ For every other waves, there is a prompt given to upgrade HP, speed, or damage.
 On the mode selection screen, there are also achievements that can be viewed on the top right corner.
 
 # Notes
-As of now, there are multiple modes, I am currently working on the Story modes (now at 6 chapters). This is a game updated on top of multiple weeks.
+As of now, there are multiple modes, I am currently working on the Story modes (now at 7 chapters). This is a game updated on top of multiple weeks.
 
 If you are trying to review a specific week, on the web page (the demo link), if you scroll down, there should be a list of features added in specific weeks (I may miss some)
 

@@ -1172,7 +1172,7 @@ const storyChapters = {
 
 
     7: {
-        title: "Chapter 7: The Placeholder",
+        title: "Chapter 7: Leading paths",
         map: "map11p1",
         stages: [{
             dialogue: [
@@ -1186,6 +1186,7 @@ const storyChapters = {
             reward: 20
         },
         {
+        map: "map11p2",
             dialogue: [
                 ["Commander", "Ah crap, looks like they are sending in heavy units"],
                 ["Commander", "Looks like we have a long way to go..."]
@@ -1194,6 +1195,7 @@ const storyChapters = {
             reward: 15
         },
                 {
+            map: "map11p3",
             dialogue: [
                 ["Commander", "Hmmmm, it seems like they have a blast door, we need to find a way to power it on"],
                 ["Commander", "Carry the battery to the generator, watch out for bombers"]
@@ -1204,13 +1206,77 @@ const storyChapters = {
                 type: "power", bx: 150, by: 450, gx: 650, gy: 300
             }
         },
+        {
+                map: "map11p4",
+            dialogue: [
+                ["Commander", "Alright, the alarm is going, lets move it"],
+                ["Commander", "Lets take out the Minigunners"]
+            ],
+            enemies: ["Minigun", "Minigun", "Medic", "Shotgun", "Shotgun"],
+            reward: 35,
+            alarm: true
+        },
+                {
+                map: "map11p5",
+            dialogue: [
+                ["Commander", "Looks like they have more than guns..."],
+                ["Commander", "Take out the summoners, they can spawn enemies."]
+            ],
+            enemies: ["Summoner", "Summoner", "Flamethrower", "Shielder"],
+            reward: 35,
+            alarm: true
+        },
+                {
+                map: "map11p6",
+            dialogue: [
+                ["Commander", "Looks like theres another locked door, we need to hack the terminal"],
+                ["Commander", "We got 45 seconds to hack it, watch out for enemies"]
+            ],
+            enemies: ["Bomber", "Bomber", "AK47", "AK47"],
+            reward: 15,
+            objective: {
+                type: "terminal",
+                x: 400,
+                y: 300,
+                timer: 45
+            },
+            alarm: true
+        },
+                {
+                map: "map11p7",
+            dialogue: [
+                ["Commander", "Hey, there is an enemy commander ahead"],
+                ["Commander", "Be careful, he is very strong in close and long range combat"]
+            ],
+            enemies: ["Outpost Commander", "Medic", "Shielder", "Shielder"],
+            reward: 75
+        },
+        {
+                map: "map11p8",
+            dialogue: [
+                ["Commander", "Looks like we've taken him down"],
+                ["Commander", "Hold down the console, while we extract data"]
+            ],
+            enemies: ["Sniper", "Minigun", ...repeat("Katana", 4)],
+            reward: 15,
+            objective: {
+                type: "capture",
+                x: 400,
+                y: 180,
+                radius: 65,
+                duration: 8
+            }
+        },
+        
     ],
     outro: [{
         dialogue: [
-            ["Commander", "Placeholder, you've made it to their base."],
-            ["Commander", "Your next mission will be given soon."]
+            ["Commander", "Looks like we've downloaded the information we needed..."],
+            ["Commander", "This doesn't seem right..."],
+            ["Commander", "This seems to be like a trap?!?!"],
+            ["Commander", "Uh oh..."],
         ],
-        map: "map4p2"
+        map: "map11p8"
     }]
     },
 }
@@ -1853,7 +1919,7 @@ function drawTrainingHint(){
     if (gameMode !== "story") return;
     if (storyPhase === "preshop") {
         readyButton.draw(ctx);
-        if (justClicked && readyButton.isPressed()) {
+        if (!clickedFrame && readyButton.isPressed()) {
             shopmenu.visible = false;
             beginStoryStage();
         }
@@ -1938,20 +2004,25 @@ const abilities = [
     {name: "Grenade", cooldown: 8000, lastUsed:-Infinity},
     {name: "Speed", cooldown: 5000, lastUsed:-Infinity},
     {name: "Shield", cooldown: 10000, lastUsed:-Infinity},
-    {name: "Build", cooldown: 1500, lastUsed:-Infinity},
-    {name: "Demolish", cooldown: 300, lastUsed:-Infinity},
-    {name: "Grapple", class: "scout", cooldown: 3500, lastUsed:-Infinity}
+    {name: "Build", class: "engineer", cooldown: 1500, lastUsed:-Infinity},
+    {name: "Demolish", class: "engineer", cooldown: 300, lastUsed:-Infinity},
+    {name: "Grapple", class: "scout", cooldown: 3500, lastUsed:-Infinity},
+    {name: "Cloak", class: "sniper", cooldown: 9000, lastUsed:-Infinity},
+    {name: "Slam", class: "heavy", cooldown: 6000, lastUsed:-Infinity},
 ]
 let abilityKey = [false,false];
 let grenades = [];
 let speedBoost = 0;
 
 function useAbility(index, player){
-    const ability = (selectedClass === "scout" && index === 3) ? abilities[5] : abilities[index];
+    // const ability = (selectedClass === "scout" && index === 3) ? abilities[5] : abilities[index];
+    // if (!ability) return;
+    // if (ability.class && ability.class !== selectedClass) return;
+    // if (ability.name === "Build" && selectedClass !== "engineer") return;
+    // if (ability.name === "Demolish" && selectedClass !== "engineer") return;
+    const visible = abilities.filter(a => !a.class || a.class === selectedClass);
+    const ability = visible[index];
     if (!ability) return;
-    if (ability.class && ability.class !== selectedClass) return;
-    if (ability.name === "Build" && selectedClass !== "engineer") return;
-    if (ability.name === "Demolish" && selectedClass !== "engineer") return;
     if (Date.now() - ability.lastUsed >= ability.cooldown) {
         ability.lastUsed = Date.now();
         tutorialAction(ability.name);
@@ -1968,6 +2039,28 @@ function useAbility(index, player){
             if (!demolishWall(player)) ability.lastUsed = Date.now() - ability.cooldown;
         } else if (ability.name === "Grapple") {
             startGrapple(player);
+        } else if (ability.name === "Cloak") {
+            player.cloakUntil = Date.now() + 3000;
+        } else if (ability.name === "Slam") {
+            heavySlam(player);
+        }
+    }
+}
+function heavySlam(player){
+    const slamRadius = 150;
+    createExplosion(player.x, player.y, slamRadius, 35 * (stats.damage / 10), false);
+    explosions[explosions.length - 1].color = "rbg(48,46,44)";
+    for (const enemy of balls) {
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove) continue;
+        const dx = enemy.x - player.x;
+        const dy = enemy.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        if(dist <= slamRadius + enemy.radius * enemy.size){
+            const nx = dist > 0 ? dx / dist : 1;
+            const ny = dist > 0 ? dy / dist : 0;
+            enemy.dx = nx * 10;
+            enemy.dy = ny * 10;
+            enemy.knockbackUntil = Date.now() + 300;
         }
     }
 }
@@ -4232,7 +4325,7 @@ function enemyMelee(enemy){
     }
 }
 function mutantSlam(enemy){
-    if (!enemy.isEnemy || enemy.isDead || enemy.remove || enemy.weapon !== "Mutant") {
+    if (!enemy.isEnemy || enemy.isDead || enemy.remove || enemy.weapon !== "Mutant" && enemy.weapon !== "Outpost Commander") {
         return;
     }
     const player = balls.find(ball => ball.isPlayer);
@@ -4279,7 +4372,7 @@ function mutantSlam(enemy){
 }
 function drawMutantIndicator(enemy){
     for (const enemy of balls) {
-        if (enemy.weapon !=="Mutant" || !enemy.slamStart || enemy.isDead) continue;
+        if (enemy.weapon !=="Mutant" && enemy.weapon !== "Outpost Commander" || !enemy.slamStart || enemy.isDead) continue;
         const progress = Math.min((Date.now() - enemy.slamStart) / 1000, 1);
         ctx.save();
         ctx.globalAlpha = 0.3;
@@ -5510,13 +5603,88 @@ function Map() {
         sandbags.push(new Sandbag(300, 400, 80, 35));
         sandbags.push(new Sandbag(420, 400, 80, 35));
         addBarrel(300, 300);
-        addBarrel(420, 300);
-    }
-    if (selectedMap === "map11p2") {
-        wallsVisible = true;
+        addBarrel(470, 300);
     }
     if (selectedMap === "map11p3") {
         wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        floors.push(new Floor(340, 0, 120, 600, road));
+        addWall(concrete, 0, 120, 340, 20);
+        addWall(concrete, 460, 120, 340, 20);
+        addDoor(340, 120, 120, 20, true);
+        addProp(crate, 160, 360, 50, 50);
+        addProp(crate, 590, 360, 50, 50);
+        sandbags.push(new Sandbag(360, 300, 80, 35));
+    }
+    if (selectedMap === "map11p2") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, sandFloorImage));
+        floors.push(new Floor(340, 0, 120, 600, road));
+        addWall(concrete, 120, 200, 20, 180);
+        addWall(concrete, 660, 200, 20, 180);
+        addProp(crate, 260, 260, 50, 50);
+        addProp(crate, 490, 260, 50, 50);
+        addProp(crate, 375, 380, 50, 50);
+        addBarrel(385, 220);
+    }
+        if (selectedMap === "map11p4") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 0, 160, 220, 20);
+        addGlass(220, 160, 360, 20);
+        addWall(concrete, 580, 160, 220, 20);
+        addWall(concrete, 0, 420, 220, 20);
+        addGlass(220, 420, 360, 20);
+        addWall(concrete, 580, 420, 220, 20);
+        addProp(server, 260, 260, 60, 60);
+        addProp(server, 480, 260, 60, 60);
+        addBarrel(385, 285);
+    }
+            if (selectedMap === "map11p5") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addGlass(160, 140, 140, 20);
+        addGlass(500, 140, 140, 20);
+        addGlass(160, 440, 140, 20);
+        addGlass(500, 440, 140, 20);
+        addWall(concrete, 390, 210, 20, 160);
+        addProp(server, 80, 260, 60, 60);
+        addProp(server, 660, 260, 60, 60);
+    }
+            if (selectedMap === "map11p6") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 220, 80, 20, 160);
+        addWall(concrete, 220, 360, 20, 160);
+        addWall(concrete, 560, 80, 20, 160);
+        addWall(concrete, 560, 360, 20, 160);
+        addWall(fence, 300, 200, 200, 20, "penetrate");
+        addWall(fence, 300, 380, 200, 20, "penetrate");
+        addProp(crate, 120, 160, 50, 50);
+        addProp(crate, 630, 390, 50, 50);
+    }
+    if (selectedMap === "map11p7") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addWall(concrete, 160, 140, 60, 60);
+        addWall(concrete, 580, 140, 60, 60);
+        addWall(concrete, 160, 380, 60, 60);
+        addWall(concrete, 580, 380, 60, 60);
+        addBarrel(280, 210);
+        addBarrel(490, 210);
+        addBarrel(280, 360);
+        addBarrel(490, 360);
+    }
+    if (selectedMap === "map11p8") {
+        wallsVisible = true;
+        floors.push(new Floor(0, 0, 800, 600, metal));
+        addProp(server, 310, 50, 60, 60);
+        addProp(server, 370, 50, 60, 60);
+        addWall(concrete, 200, 240, 140, 20);
+        addWall(concrete, 460, 240, 140, 20);
+        addWall(concrete, 200, 340, 140, 20);
+        addWall(concrete, 580, 400, 20, 120);
+        addBarrel(385, 340);
     }
 }
 const interactables = [];
@@ -5696,6 +5864,14 @@ const mapSpawns = {
     map9p5: { player: [80, 300], enemies: [[100,80], [700, 80], [400, 60]]},
     map9p6: { player: [80, 300], enemies: [[60, 540], [740, 540], [100, 300], [700, 300]]},
     map10p1: { player: [400, 340], enemies: [[60,60], [740,60]]},
+    map11p1: { player: [400, 540], enemies: [[120,100], [400,100], [680,100]]},
+    map11p2: { player: [400, 540], enemies: [[150,90], [400,90], [650,90]]},
+    map11p3: { player: [400, 530], enemies: [[150,90], [400,220], [650,220]]},
+    map11p4: { player: [400, 540], enemies: [[150,90], [400,90], [650,90]]},
+    map11p5: { player: [400, 540], enemies: [[120, 100], [400, 100], [680, 100]]},
+    map11p6: { player: [80, 300], enemies: [[720, 120], [720, 480], [400, 80]]},
+    map11p7: { player: [400, 530], enemies: [[400, 150], [240, 150], [560, 150]]},
+    map11p8: { player: [400, 540], enemies: [[80, 500], [720, 500], [720, 100], [80, 100]]},
 }
 function pickEnemySpawn() {
     const list = mapSpawns[selectedMap]?.enemies;
@@ -6751,7 +6927,7 @@ for (const ball of balls) {
     ball.dy *= 0.96;
     ball.color = age < 0.3 ? "yellow" : age < 0.7 ? "orange" : "orangered";
     ctx.globalAlpha = Math.max(0, 1-age);} else {
-        ctx.globalAlpha = ball.isDead ? 0.25 : 1;
+        ctx.globalAlpha = ball.isDead ? 0.25 : (ball.isPlayer && Date.now() < (ball.cloakUntil || 0) ? 0.3 : 1);
     }
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius*ball.size, 0, Math.PI * 2);
@@ -6764,6 +6940,7 @@ for (const ball of balls) {
         let bestDist = Infinity;
         for (const b of balls) {
             if (!(b.isPlayer || b.isAlly) || b.isDead || b.remove) continue;
+            if (b.isPlayer && Date.now() < (b.cloakUntil || 0)) continue;
             if (ball.weapon === "Researcher" && !b.isPlayer) continue;
             const d = Math.hypot(b.x - ball.x, b.y - ball.y) * (b.isPlayer ? 0.8 : 1);
             if (d < bestDist) {
@@ -6876,7 +7053,7 @@ for (const ball of balls) {
     ball.x += ball.dx * slow;
     ball.y += ball.dy;
     const player = balls.find(b => b.isPlayer);
-    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target && !(ball.stunUntil && Date.now() < ball.stunUntil)){
+    if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target && !(ball.stunUntil && Date.now() < ball.stunUntil) && !(ball.knockbackUntil && Date.now() < ball.knockbackUntil)) {
                 startFollowing(ball, ball.target);
             }
     if (ball.isAlly && ball.following && !ball.isDead && !player.isDead && player.isDead === false) {
