@@ -26,6 +26,7 @@ const maps = ["default", "map1", "map2"];
 let enemyCountMax=2;
 let enemyCounter=0;
 let money=0;
+let warcoins=0;
 let deaths=0;
 let combo = 0;
 let comboTimer = 0;
@@ -159,7 +160,8 @@ function saveGame(){
         owned: Owned,
         achievements: [...unlockedAchievements],
         selectedClass,
-        money
+        money,
+        warcoins
     }))
 }
 function loadGame() {
@@ -170,6 +172,7 @@ function loadGame() {
     unlockedAchievements.clear();
     (data.achievements || []).forEach(id => unlockedAchievements.add(id));
     money = data.money ?? money;
+    warcoins = data.warcoins ?? warcoins;
     if (data.selectedClass) applyClass(data.selectedClass);
     showCategory(currentCategory);
 }
@@ -1405,6 +1408,8 @@ const weaponDescriptions = {
     "GrenadeLauncher": "Explosive gun",
     "Stun Gun": "Locks enemies in place",
     "Burst Rifle": "3 round burst gun",
+    "Railgun": "High damage long range gun",
+    "Freeze Ray": "Slows enemies down",
 }
 const UtilityDescriptions = {
     "Speed Boost": "Increases movement speed",
@@ -1413,6 +1418,7 @@ const UtilityDescriptions = {
     "Big Rock": "Damage on contact",
     "Refill Ammo": "Fully refills current gun",
     "Ammo Pack": "Partial refill of current gun",
+    "Med Station": "Places a heal station"
 }
 const AccessoryDescriptions = {
     "Glasses": "Cool factor, aura",
@@ -1450,7 +1456,9 @@ const weaponImages= {
     "Flamethrower": new Image(),
     "Grenade Launcher": new Image(),
     "Burst Rifle": new Image(),
-    "Stun Gun": new Image()
+    "Stun Gun": new Image(),
+    "Railgun": new Image(),
+    "Freeze Ray": new Image()
 }
 weaponImages["Pistol"].src = "assets/Pistol.png";
 weaponImages["Shotgun"].src = "assets/Shotgun.png";
@@ -1466,7 +1474,8 @@ weaponImages["Flamethrower"].src = "assets/flamethrower.png";
 weaponImages["Grenade Launcher"].src = "assets/grenade launcher.png";
 weaponImages["Stun Gun"].src = "assets/Pistol.png";
 weaponImages["Burst Rifle"].src = "assets/AK47.png";
-
+weaponImages["Railgun"].src = "assets/Sniper.png";
+weaponImages["Freeze Ray"].src = "assets/flamethrower.png";
 const floorImage = new Image();
 floorImage.src = "assets/floor.png";
 const sandFloorImage = new Image();
@@ -2393,7 +2402,15 @@ let currentCategory = "Guns";
 /*
 plans (not implemented yet):
 
-
+roadmap ->
+warcoins (loadouts)
+ui overhaul
+railgun
+freeze ray
+speed pad
+med station
+turret (engi)
+<
 for mobile: add touch controls and improve shooting, draggable aim?
 
 for gameplay: add random events (2x money multiplier?) --> use for crates? csgo style (also maybe for skins, accessories, etc)
@@ -3050,28 +3067,28 @@ function setSkin(color) {
     balls[0].color = color;
     balls[0].baseColor = color;
 }
-const achievementsButton = new Button(canvas.width - 160, 20, 140, 40, "Achievements", "gold", 0.85);
+const achievementsButton = new Button(canvas.width - 195, 12, 180, 40, "Achievements", "gold", 0.85);
 let classDropdownOpen = false;
 
-const classDropdownButton = new Button(10, 20, 200, 45, "Class: Default >", "lightblue", 0.75);
+const classDropdownButton = new Button(15, 12, 190, 40, "Class: Default >", "lightblue", 0.75);
 const classSelectButtons = [
-    new Button(10, 100, 200, 55, "Default", "lightblue", 0.75),
-    new Button(10, 180, 200, 55, "Scout", "lightblue", 0.75),
-    new Button(10, 260, 200, 55, "Heavy", "lightblue", 0.75),
-    new Button(230, 20, 200, 55, "Engineer", "lightblue", 0.75),
-    new Button(230, 100, 200, 55, "Medic", "lightblue", 0.75),
-    new Button(450, 20, 200, 55, "Sniper", "lightblue", 0.75),
+    new Button(25, 70, 170, 40, "Default", "lightblue", 0.75),
+    new Button(25, 110, 170, 40, "Scout", "lightblue", 0.75),
+    new Button(25, 150, 170, 40, "Heavy", "lightblue", 0.75),
+    new Button(25, 190, 170, 40, "Engineer", "lightblue", 0.75),
+    new Button(25, 230, 170, 40, "Medic", "lightblue", 0.75),
+    new Button(25, 270, 170, 40, "Sniper", "lightblue", 0.75),
 ]
 const modeSelectButtons = [
-    new Button(300, 200, 200, 50, "Sandbox Mode", "lightblue", 0.5),
-    new Button(300, 300, 200, 50, "5 Waves Mode", "lightblue", 0.5),
-    new Button(100, 450, 100,50, "Normal Mode", "yellow", 0.5),
-    new Button(100, 550, 100, 50, "Hard Mode", "red", 0.5), 
-    new Button(100, 350, 100, 50, "Endless Mode", "lightblue", 0.5),
-    new Button(300, 400, 200, 50, "Back", "lightblue", 0.5),
-    new Button(550, 275, 100, 100, "Tutorial", "blue", 0.5),
-    new Button(550, 400, 100, 100, "Story Mode", "orange", 0.5),
-    new Button(680, 300, 100, 100, "Advanced Tutorial", "purple", 0.5),
+    new Button(555, 210, 190, 50, "Sandbox Mode", "lightblue", 0.5),
+    new Button(305, 210, 190, 50, "5 Waves Mode", "lightblue", 0.5),
+    new Button(305, 270, 190,50, "Normal Mode", "yellow", 0.5),
+    new Button(305, 330, 190, 50, "Hard Mode", "red", 0.5), 
+    new Button(305, 390, 190, 50, "Endless Mode", "lightblue", 0.5),
+    new Button(305, 535, 190, 50, "Back", "lightblue", 0.5),
+    new Button(555, 270, 190, 50, "Tutorial", "blue", 0.5),
+    new Button(555, 330, 190, 50, "Story Mode", "orange", 0.5),
+    new Button(555, 390, 190, 50, "Advanced Tutorial", "purple", 0.5),
 ]
 const chapterSelectButtons = [
     new Button(300,150, 200, 50, "Chapter 1", "lightblue", 0.5),
@@ -3564,14 +3581,26 @@ function drawModeSelect() {
     ctx.textBaseline = "top";
     ctx.fillText("Select Game Mode", canvas.width / 2, 100);
 
+    ctx.fillStyle = isDarkMode ? "white" : "#2b2828";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.font = "12px Arial";
+    ctx.fillText(`War Coins: ${warcoins}`, canvas.width / 2, 25);
+
     ctx.font = "16px Arial";
     ctx.fillText("Class" + ` ${playerClasses[selectedClass].name}: ${playerClasses[selectedClass].desc}`, canvas.width / 2, 150);
-
+    for (const button of modeSelectButtons) {
+        button.draw(ctx);
+    }
     const classKeys = ["default", "scout", "heavy", "engineer", "medic", "sniper"];
     const arrow = classDropdownOpen ? ">" : "<";
     classDropdownButton.text = `Class: ${selectedClass} ${arrow}`;
     classDropdownButton.draw(ctx);
     if (classDropdownOpen){
+            ctx.fillStyle = isDarkMode ? "white" : "#978a8a";
+            ctx.fillRect(15, 58, 190, 280);
+            ctx.strokeStyle = isDarkMode ? "white" : "#2b2828";
+            ctx.strokeRect(15, 58, 190, 280);
         for (let i = 0; i < classSelectButtons.length; i++) {
             classSelectButtons[i].color = (selectedClass === classKeys[i]) ? "green" : "lightblue";
             classSelectButtons[i].transparency = (selectedClass === classKeys[i]) ? 0.75 : 0.5;
@@ -3603,9 +3632,7 @@ function drawModeSelect() {
         });
         ctx.restore();
     }
-    for (const button of modeSelectButtons) {
-        button.draw(ctx);
-    }
+
     if(justClicked){
         if (achievementsButton.isPressed()) {
             achievementsOpen = !achievementsOpen;
@@ -3641,6 +3668,8 @@ function drawModeSelect() {
                 classDropdownOpen = false;
                 return;
             }
+            classDropdownOpen = false;
+            return;
         }
         if (modeSelectButtons[0].isPressed()) {
             gameScreen = "mapSelect";
@@ -4009,7 +4038,7 @@ class Gun {
             this.offsetX=0;
             this.offsetY=-10;
         }
-        if(this.name==="Explosive Sniper"){
+        if(this.name==="Explosive Sniper" || this.name==="Railgun"){
             this.x=0;
             this.y=-25;
             this.width=90;
@@ -4029,7 +4058,7 @@ class Gun {
             this.offsetX=0;
             this.offsetY=0;
         }
-        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower" || this.name==="Grenade Launcher" || this.name === "Burst Rifle"){
+        if(this.name==="AK47" || this.name==="Minigun" || this.name==="Flamethrower" || this.name==="Grenade Launcher" || this.name === "Burst Rifle" || this.name === "Freeze Ray"){
             this.x=0;
             this.y=-10;
             this.width=60;
@@ -4052,7 +4081,7 @@ class Gun {
         this.lastShot = Date.now();
         if (this.name === "Shotgun") {
             playShootSound(shootSound3);
-        } else if (this.name === "Sniper" || this.name === "Explosive Sniper") {
+        } else if (this.name === "Sniper" || this.name === "Explosive Sniper" || this.name === "Railgun") {
             playShootSound(shootSound2);
         } else {
             playShootSound(shootSound);
@@ -4065,6 +4094,11 @@ class Gun {
         const dy= targetY - player.y;
         const angle=Math.atan2(dy, dx);
         const projectiles = [];
+        if (this.name === "Railgun") {
+            const dmg = this.damage * (player.isPlayer ? (stats.damage / 10) : 1);
+            fireRailgun(player, angle, dmg);
+            return [];
+        }
         
         for(let i=0;i<this.bulletCount;i++){
             const offset= this.name === "Flamethrower" ? (Math.random() - 0.5) * this.spread :this.bulletCount===1?0:(i/(this.bulletCount-1)-0.5)*this.spread;
@@ -4074,15 +4108,16 @@ class Gun {
                 y: player.y,
                 dx: Math.cos(projectileAngle)*this.projectileSpeed,
                 dy: Math.sin(projectileAngle)*this.projectileSpeed,
-                color: this.name === "Flamethrower" ? "orangered" :"yellow",
-                radius: this.name === "Flamethrower" ? 7 : 5,
-                life: this.name === "Flamethrower" ? 350 : this.name === "Grenade Launcher" ? 1000 : 3000,
+                color: this.name === "Flamethrower" ? "orangered" : this.name === "Freeze Ray" ? "deepskyblue" : "yellow",
+                radius: this.name === "Flamethrower" || this.name === "Freeze Ray" ? 7 : 5,
+                life: this.name === "Flamethrower" || this.name === "Freeze Ray" ? 350 : this.name === "Grenade Launcher" ? 1000 : 3000,
                 size: 1,
                 isProjectile: true,
                 createdAt: Date.now(),
                 damage: this.damage * (player.isPlayer ? (stats.damage / 10) : 1),
 
                 isStun: this.name === "Stun Gun",
+                isFreeze: this.name === "Freeze Ray",
                 isFlame: this.name === "Flamethrower",
                 hitSet: new Set(),
                 isExplosive: this.explosive,
@@ -4117,6 +4152,98 @@ class Gun {
     
 }
 
+let railBeams = [];
+
+function fireRailgun(player, angle, dmg) {
+    const maxDist = 1000;
+    let endX = player.x + Math.cos(angle) * maxDist;
+    let endY = player.y + Math.sin(angle) * maxDist;
+    const hitSet = new Set();
+
+    for (let d = 10; d <= maxDist; d += 6) {
+        const px = player.x + Math.cos(angle) * d;
+        const py = player.y + Math.sin(angle) * d;
+
+        if (px < 0 || px > canvas.width || py < 0 || py > canvas.height) {
+            endX = px;
+            endY = py;
+            break;
+    }
+    if (wallsVisible){
+        const wall = walls.find(w => w.solid && w.bulletBehavior !== "penetrate" && px >= w.x && px <= w.x + w.width && py >= w.y && py <= w.y + w.height);
+        if (wall) {
+            if (wall.isBarrel || wall.isGlass){
+                wall.hp -= dmg;
+            }
+            if (!wall.isGlass){
+                endX = px;
+                endY = py;
+                break;
+            }
+        }
+    }
+
+    for (const enemy of balls) {
+        if (!enemy.isEnemy || enemy.isDead || enemy.remove || hitSet.has(enemy)) continue;
+        if (Math.hypot(enemy.x - px, enemy.y - py) <= enemy.radius * enemy.size) {
+            hitSet.add(enemy);
+            enemy.health -= dmg;
+            enemy.color = "cyan";
+            checkShieldBreak(enemy);
+            if (enemy.health <= 0) {
+                addCombo();
+                enemy.isDead = true;
+                enemy.transparency = 0.95;
+                enemy.dx = 0;
+                enemy.dy = 0;
+                if (Math.random() < 0.3) {
+                    objects.push(new Object("ammo", enemy.x, enemy.y));
+                } else if (Math.random() > 0.5) {
+                    objects.push(new Object("coin", enemy.x, enemy.y));
+                }
+                setTimeout(() => {
+                    enemy.remove = true;
+                    money += 10;
+                    if (["wave", "tutorial", "endless", "story"].includes(gameMode)) {
+                        enemyCounter--;
+                    }
+                }, 800);
+            } else {
+                setTimeout(() => {
+                    if (!enemy.isDead) {
+                        enemy.color = baseColorOf(enemy);
+                    }
+                }, 200);
+            }
+        }
+    }
+}
+railBeams.push({
+    x1: player.x,
+    y1: player.y,
+    x2: endX,
+    y2: endY,
+    createdAt: Date.now(),
+    duration: 250
+});
+}
+
+function drawRailBeams(){
+    const now = Date.now();
+    for (const beam of railBeams) {
+        const progress = Math.min((now - beam.createdAt) / beam.duration, 1);
+        ctx.save();
+        ctx.globalAlpha = 1 - progress;
+        ctx.strokeStyle = "cyan";
+        ctx.lineWidth = 8 * (1 - progress);
+        ctx.beginPath();
+        ctx.moveTo(beam.x1, beam.y1);
+        ctx.lineTo(beam.x2, beam.y2);
+        ctx.stroke();
+        ctx.restore();
+    }
+    railBeams = railBeams.filter(beam => now - beam.createdAt < beam.duration);
+}
 let soundEnabled = true;
 
 const shootSound = new Audio("assets/shot2.mp3");
@@ -4933,6 +5060,9 @@ const slowZones = [];
 function addSlowZone(x, y, w, h, factor = 0.5, color = "rgba(139, 90, 43, 0.55)"){
     slowZones.push({x, y, width: w, height: h, factor, color});
 }
+function addSpeedPad(x, y, w, h, factor = 1.5, color = "rgba(0, 220, 255, 0.4)") {
+    slowZones.push({x, y, width: w, height: h, factor, color});
+}
 
 function getSlowFactor(ball){
     for (const z of slowZones){
@@ -4941,6 +5071,41 @@ function getSlowFactor(ball){
         }
     }
     return 1;
+}
+
+function addMedStation(x, y, healAmount = 50, cooldownMs = 15000) {
+    const station = new interactable(x, y, "med station", "Med Station", (prop) => {
+    const now = Date.now();
+    if (prop.nextUse && now < prop.nextUse) {
+        const sec = Math.ceil((prop.nextUse - now) / 1000);
+        interactionMessage = `Med Station on cooldown: ${sec}s`;
+        return;
+    }
+    const player = balls.find(ball => ball.isPlayer);
+    if (player && !player.isDead && !player.remove) {
+        if (player.health >= player.maxHealth) {
+            interactionMessage = "Health is full!";
+            return;
+        }
+    }
+    player.health = Math.min(player.maxHealth, player.health + healAmount);
+    prop.nextUse = now + cooldownMs;
+    prop.active = false;
+    interactionMessage = `Healed ${healAmount} HP!`;
+    setTimeout(() => {
+        prop.active = true;
+    }, cooldownMs);
+    });
+    station.active = true;
+    interactables.push(station);
+    const stations = interactables.filter(p => p.type === "med station");
+    if (stations.length >3){
+        interactables.splice(interactables.indexOf(stations[0]), 1);
+    }
+    setTimeout(() => {
+        const i = interactables.indexOf(station);
+        if (i !== -1) interactables.splice(i, 1);
+    }, 120000);
 }
 function Map() {
     bushes.length = 0;
@@ -5754,7 +5919,7 @@ class interactable {
         ctx.fillStyle = this.active ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)";
         ctx.fillRect(this.x, this.y, this.width, this.height);
 
-        ctx.fillStyle = "white";
+        ctx.fillStyle = isDarkMode ? "white" : "black";
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
         ctx.fillText(this.type.toUpperCase(), this.x + 17, this.y + 48);
@@ -5909,7 +6074,9 @@ const weapons = {
     Flamethrower: new Gun("Flamethrower", 2, 18, 400, 8, 2, 0.4),
     GrenadeLauncher: new Gun("Grenade Launcher", 5, 1, 30, 5, 1 ,0, false, 100, 60),
     StunGun: new Gun("Stun Gun", 3, 2, 100, 9, 1, 0),
-    BurstRifle: new Gun("Burst Rifle", 11, 2.2, 240, 8, 1, 0.04)
+    BurstRifle: new Gun("Burst Rifle", 11, 2.2, 240, 8, 1, 0.04),
+    Railgun: new Gun("Railgun", 120, 0.7, 25, 0, 1),
+    FreezeRay: new Gun("Freeze Ray", 3, 14, 350, 9, 1, 0.15)
 };
 
 const shopItems = {
@@ -5927,7 +6094,9 @@ const shopItems = {
         { name: "Flamethrower", price: 65, oneTime: true, action: () => currentWeapon = weapons.Flamethrower},
         { name: "Grenade Launcher", price: 80, oneTime: true, action: () => currentWeapon = weapons.GrenadeLauncher},
         { name: "Stun Gun", price: 45, oneTime: true, action: () => currentWeapon = weapons.StunGun},
-        { name: "Burst Rifle", price: 55, oneTime: true, action: () => currentWeapon = weapons.BurstRifle}
+        { name: "Burst Rifle", price: 55, oneTime: true, action: () => currentWeapon = weapons.BurstRifle},
+        { name: "Railgun", price: 100, oneTime: true, action: () => currentWeapon = weapons.Railgun},
+        { name: "Freeze Ray", price: 70, oneTime: true, action: () => currentWeapon = weapons.FreezeRay}
     ],
 
     Utility: [
@@ -5936,7 +6105,8 @@ const shopItems = {
         { name: "Speed Boost", price: 3, oneTime: false, action: () => objects.push(new Object("speedboost")) },
         { name: "Mine", price: 4, oneTime: false, action: () => objects.push(new Object("mine")) },
         { name: "Refill Ammo", price: 15, oneTime: false, canBuy: () => canBuyAmmo(), action: () => refillAmmo(1) },
-        { name: "Refill Ammo (25%)", price: 4, oneTime: false, canBuy: () => canBuyAmmo(), action: () => refillAmmo(0.25) }
+        { name: "Refill Ammo (25%)", price: 4, oneTime: false, canBuy: () => canBuyAmmo(), action: () => refillAmmo(0.25) },
+        { name: "Med Station", price: 25, oneTime: false, action: () => addMedStation(Math.max(20, Math.min(canvas.width - 54, balls[0].x - 17)), Math.max(20, Math.min(canvas.height - 54, balls[0].y - 17))) },
     ],
     Skins: [
         { name: "Red Ball", price: 0, oneTime: true, action: () => setSkin("red") },
@@ -6825,7 +6995,7 @@ function animate(){
         prop.draw(ctx);
     }
     if (nearbyInteractable) {
-        ctx.fillStyle = isDarkMode ? "#fffefe" : "#000000";
+        ctx.fillStyle = isDarkMode ? "#ffffff" : "#000000";
         ctx.font = "16px Arial";
         ctx.textAlign = "center";
         ctx.fillText("Press E to interact", nearbyInteractable.x, nearbyInteractable.y - 20);
@@ -6955,6 +7125,15 @@ for (const ball of balls) {
     drawEnemyHat(ball);
     drawEnemyHealthBar(ball);
     updateAndDrawSpeech(ball);
+    if (ball.isEnemy && ball.freezeUntil && Date.now() < ball.freezeUntil) {
+        ctx.save();
+        ctx.strokeStyle = "deepskyblue";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius * ball.size + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
     const stunned = ball.stunUntil && Date.now() < ball.stunUntil && !ball.isDead;
 
     if(stunned){
@@ -7050,8 +7229,9 @@ for (const ball of balls) {
     }
     }
     const slow = ball.isProjectile ? 1 : getSlowFactor(ball);
-    ball.x += ball.dx * slow;
-    ball.y += ball.dy;
+    const freeze = (ball.isEnemy && ball.freezeUntil && Date.now() < ball.freezeUntil) ? 0.25 : 1;
+    ball.x += ball.dx * slow * freeze;
+    ball.y += ball.dy * slow * freeze;
     const player = balls.find(b => b.isPlayer);
     if (ball.following===true&&ball.isEnemy&&!ball.isDead&&ball.target && !(ball.stunUntil && Date.now() < ball.stunUntil) && !(ball.knockbackUntil && Date.now() < ball.knockbackUntil)) {
                 startFollowing(ball, ball.target);
@@ -7169,6 +7349,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
                 if (projectile.isFlame) target.burnUntil = Date.now() + 3000;
 
                 if (projectile.isStun) target.stunUntil = Date.now() + 2000;
+                if (projectile.isFreeze) target.freezeUntil = Date.now() + 3000;
                 target.health = Math.max(0, target.health);
                 checkShieldBreak(target);
                 if (projectile.isExplosive) {
@@ -7419,6 +7600,7 @@ if (ball1.isProjectile && !ball2.isProjectile) {
             }
             if(obj.type === "coin") {
                 money += obj.coinAmount;
+                warcoins += obj.coinAmount;
             }
 
             obj.remove = true;
@@ -7552,7 +7734,7 @@ if (keys[binds.shoot] && player && !player.isDead) {
         if (gameMode === "tutorial" && tutorialStep === 5) {
             tutorialShots++;
         }
-}else if (["AK47", "Minigun", "Flamethrower"].includes(currentWeapon.name) || !fWasPressed) {
+}else if (["AK47", "Minigun", "Flamethrower", "Freeze Ray"].includes(currentWeapon.name) || !fWasPressed) {
     const newProjectiles = currentWeapon.shoot(player, mouseX, mouseY);
     balls.push(...newProjectiles);
     if (newProjectiles.length > 0 && gameMode === "tutorial" && tutorialStep === 5) {
@@ -8121,6 +8303,7 @@ canvas.style.cursor = "default"
         drawTrainingHint();
         drawTrainingUI();
         drawTrainingArrow();
+        drawRailBeams();
     }
     if (showUpgradePrompt) {
         drawUpgradePrompt();
